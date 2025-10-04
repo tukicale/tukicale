@@ -1436,6 +1436,9 @@ return (
         ) : '変更を保存してGoogleカレンダーに反映'}
       </button>
     )}
+  </div>
+);
+};
 
 const HelpSection = ({ setCurrentView }: {
   setCurrentView: (view: string) => void;
