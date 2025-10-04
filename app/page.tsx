@@ -270,44 +270,50 @@ const syncToCalendar = async (
       });
     }
     
-    if (settings.fertile && records.periods.length >= 2) {
-      const fertileDays = getFertileDays();
-      const groupedFertile = groupConsecutiveDates(fertileDays);
-      groupedFertile.forEach(group => {
-        events.push({
-          summary: '妊娠可能日',
-          start: { date: group.start },
-          end: { date: getNextDay(group.end) },
-          colorId: '10'
-        });
+if (settings.fertile) {
+  const fertileDays = getFertileDays();
+  if (fertileDays.length > 0) {
+    const groupedFertile = groupConsecutiveDates(fertileDays);
+    groupedFertile.forEach(group => {
+      events.push({
+        summary: '妊娠可能日',
+        start: { date: group.start },
+        end: { date: getNextDay(group.end) },
+        colorId: '10'
       });
-    }
+    });
+  }
+}
+
+if (settings.pms) {
+  const pmsDays = getPMSDays();
+  if (pmsDays.length > 0) {
+    const groupedPMS = groupConsecutiveDates(pmsDays);
+    groupedPMS.forEach(group => {
+      events.push({
+        summary: 'PMS予測',
+        start: { date: group.start },
+        end: { date: getNextDay(group.end) },
+        colorId: '5'
+      });
+    });
+  }
+}
     
-    if (settings.pms && records.periods.length >= 2) {
-      const pmsDays = getPMSDays();
-      const groupedPMS = groupConsecutiveDates(pmsDays);
-      groupedPMS.forEach(group => {
-        events.push({
-          summary: 'PMS予測',
-          start: { date: group.start },
-          end: { date: getNextDay(group.end) },
-          colorId: '5'
-        });
+if (settings.period) {
+  const nextPeriodDays = getNextPeriodDays();
+  if (nextPeriodDays.length > 0) {
+    const groupedNext = groupConsecutiveDates(nextPeriodDays);
+    groupedNext.forEach(group => {
+      events.push({
+        summary: '次回生理予測',
+        start: { date: group.start },
+        end: { date: getNextDay(group.end) },
+        colorId: '4'
       });
-    }
-    
-    if (settings.period && records.periods.length >= 2) {
-      const nextPeriodDays = getNextPeriodDays();
-      const groupedNext = groupConsecutiveDates(nextPeriodDays);
-      groupedNext.forEach(group => {
-        events.push({
-          summary: '次回生理予測',
-          start: { date: group.start },
-          end: { date: getNextDay(group.end) },
-          colorId: '4'
-        });
-      });
-    }
+    });
+  }
+}
     
     if (settings.intercourse) {
       records.intercourse.forEach(record => {
@@ -408,14 +414,6 @@ const PeriodTrackerApp = () => {
       setIsGoogleAuthed(true);
       setShowLoginScreen(false);
 
-      window.history.replaceState({}, '', '/');
-            // Googleドライブからデータ読み込み
-      loadFromDrive().then(driveData => {
-        if (driveData) {
-          setRecords(driveData);
-        }
-      });
-
       // データがない場合かつ初期設定が未完了の場合のみ、初期設定モーダルを表示
       if (!hasCompletedInitialSetup && !hasData) {
         setShowInitialSyncModal(true);
@@ -427,14 +425,7 @@ const PeriodTrackerApp = () => {
       // 既存ログイン（トークンが保存されている）
       setIsGoogleAuthed(true);
       setShowLoginScreen(false);
-      
-      // Googleドライブからデータ読み込み
-      loadFromDrive().then(driveData => {
-        if (driveData) {
-          setRecords(driveData);
-        }
-      });
-      
+           
       // データがあるのに初期設定フラグがない場合、フラグを立てる
       if (hasData && !hasCompletedInitialSetup) {
         localStorage.setItem('tukicale_initial_setup_completed', 'true');
@@ -473,16 +464,12 @@ const PeriodTrackerApp = () => {
     return { daysInMonth, startingDayOfWeek };
   };
 
-  const formatDate = (date: Date): string => {
-    return date.toISOString().split('T')[0];
-  };
-
-  const isToday = (day: number): boolean => {
-    const today = new Date();
-    return day === today.getDate() && 
-           currentDate.getMonth() === today.getMonth() && 
-           currentDate.getFullYear() === today.getFullYear();
-  };
+const formatDate = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
 
   const getRecordForDate = (day: number) => {
     const dateStr = formatDate(new Date(currentDate.getFullYear(), currentDate.getMonth(), day));
@@ -814,28 +801,35 @@ const handleLogout = () => {
   });
 };
 
-  const handleDeleteData = () => {
-    setRecords({
-      periods: [],
-      intercourse: []
-    });
-    localStorage.removeItem('myflow_data');
-    
-    if (deleteCalendar) {
-      setNotification({
-        message: '✓ アプリ内のデータとGoogleカレンダーのイベントを削除しました',
-        type: 'success'
-      });
-    } else {
-      setNotification({
-        message: '✓ アプリ内のデータを削除しました\nGoogleカレンダーのイベントは残っています',
-        type: 'success'
-      });
-    }
-    
-    setShowDeleteConfirm(false);
-    setDeleteCalendar(false);
+const handleDeleteData = async () => {
+  const newRecords = {
+    periods: [],
+    intercourse: []
   };
+  
+  setRecords(newRecords);
+  localStorage.removeItem('myflow_data');
+  
+  // Google Driveのデータも削除
+  await saveToDrive(newRecords);
+  
+  if (deleteCalendar) {
+    // Googleカレンダーのイベントも削除
+    await syncToCalendar(newRecords, syncSettings, getAverageCycle, getFertileDays, getPMSDays, getNextPeriodDays);
+    setNotification({
+      message: '✓ アプリ内のデータとGoogleカレンダーのイベントを削除しました',
+      type: 'success'
+    });
+  } else {
+    setNotification({
+      message: '✓ アプリ内のデータを削除しました\nGoogleカレンダーのイベントは残っています',
+      type: 'success'
+    });
+  }
+  
+  setShowDeleteConfirm(false);
+  setDeleteCalendar(false);
+};
 
   const addBulkRecord = () => {
     if (bulkRecords.length < 20) {
