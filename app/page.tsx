@@ -623,21 +623,21 @@ const updatePeriod = (id: number, startDate: string, endDate: string) => {
     });
   };
 
-const deletePeriod = (id: number) => {
-    const newRecords = {
-      ...records,
-      periods: records.periods.filter(p => p.id !== id)
-    };
-    
-    setRecords(newRecords);
-    saveToDrive(newRecords);
-    syncToCalendar(newRecords, syncSettings, getAverageCycle, getFertileDays, getPMSDays, getNextPeriodDays);
-    setDeletingPeriodId(null);
-    setNotification({
-      message: '✓ 生理記録を削除しました',
-      type: 'success'
-    });
+const deletePeriod = async (id: number) => {
+  const newRecords = {
+    ...records,
+    periods: records.periods.filter(p => p.id !== id)
   };
+  
+  setRecords(newRecords);
+  await saveToDrive(newRecords);
+  await syncToCalendar(newRecords, syncSettings, getAverageCycle, getFertileDays, getPMSDays, getNextPeriodDays);
+  setDeletingPeriodId(null);
+  setNotification({
+    message: '✓ 生理記録を削除しました',
+    type: 'success'
+  });
+};
 
 const deleteIntercourse = async (id: number) => {
   const newRecords = {
