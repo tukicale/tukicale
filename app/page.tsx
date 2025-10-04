@@ -1422,23 +1422,20 @@ return (
       </div>
     </div>
       
-      {hasChanges && (
-        <button
-          onClick={handleSave}
-          disabled={isSaving}
-          className="w-full bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center gap-2 mt-3"
-        >
-          {isSaving ? (
-            <>
-              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-              保存中...
-            </>
-          ) : '変更を保存してGoogleカレンダーに反映'}
-        </button>
-      )}
-    </div>
-  );
-};
+    {hasChanges && (
+      <button
+        onClick={handleSave}
+        disabled={isSaving}
+        className="w-full bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:opacity-50 flex items-center justify-center gap-2 mt-3"
+  >
+        {isSaving ? (
+      <>
+            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+            保存中...
+          </>
+        ) : '変更を保存してGoogleカレンダーに反映'}
+      </button>
+    )}
 
 const HelpSection = ({ setCurrentView }: {
   setCurrentView: (view: string) => void;
