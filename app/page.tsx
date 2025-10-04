@@ -54,40 +54,6 @@ const getAccessToken = async () => {
   return null;
 };
 
-const loadFromDrive = async () => {
-  const token = await getAccessToken();
-  if (!token) return null;
-  
-  try {
-    const searchResponse = await fetch(
-      `https://www.googleapis.com/drive/v3/files?q=name='${DRIVE_FILE_NAME}'&fields=files(id,name)`,
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-    
-    if (!searchResponse.ok) throw new Error('Drive search failed');
-    
-    const searchData = await searchResponse.json();
-    
-    if (searchData.files && searchData.files.length > 0) {
-      const fileId = searchData.files[0].id;
-      
-      const fileResponse = await fetch(
-        `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      
-      if (!fileResponse.ok) throw new Error('Drive read failed');
-      
-      return await fileResponse.json();
-    }
-    
-    return null;
-  } catch (error) {
-    console.error('Load from Drive error:', error);
-    return null;
-  }
-};
-
 const saveToDrive = async (data: Records) => {
   const token = await getAccessToken();
   if (!token) return false;
@@ -389,7 +355,6 @@ const PeriodTrackerApp = () => {
   } | null>(null);
   const [deletingIntercourseId, setDeletingIntercourseId] = useState<number | null>(null);
   const [editingIntercourse, setEditingIntercourse] = useState<IntercourseRecord | null>(null);
-  const [isSyncing, setIsSyncing] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -469,6 +434,13 @@ const formatDate = (date: Date): string => {
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
+};
+
+const isToday = (day: number): boolean => {
+  const today = new Date();
+  return day === today.getDate() && 
+         currentDate.getMonth() === today.getMonth() && 
+         currentDate.getFullYear() === today.getFullYear();
 };
 
   const getRecordForDate = (day: number) => {
