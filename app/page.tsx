@@ -1327,7 +1327,7 @@ const SyncSettings = () => {
               onChange={(e) => handleChange('intercourse', e.target.checked)}
             />
             <span className="text-sm text-gray-900 dark:text-gray-100">SEXを同期</span>
-            <button type="button" onClick={() => setShowIntercourseInfo(!showIntercourseInfo)} className="w-5 h-5 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-xs">
+            <button type="button" onClick={() => setShowIntercourseInfo(!showIntercourseInfo)} className="w-5 h-5 rounded-full bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 flex items-center justify-center text-xs text-gray-900 dark:text-gray-100">
               ⓘ
             </button>
           </label>
@@ -2631,7 +2631,7 @@ const DayDetailModal = ({ date, periods, intercourse, onClose, onEditPeriod, onD
                   const endDate = new Date(period.endDate);
                   const sameMonth = startDate.getMonth() === endDate.getMonth();
                   return (
-                    <div key={period.id} className="border rounded p-3 bg-red-50">
+                    <div key={period.id} className="border rounded p-3 bg-red-50 dark:bg-gray-800">
                       <div className="flex items-center justify-between gap-3">
                         <div className="flex-1">
                           <p className="text-sm font-medium">
