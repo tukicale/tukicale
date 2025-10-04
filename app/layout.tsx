@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "TukiCale(月カレ)",
   description: "不規則な周期もOK、完全プライベートな生理管理アプリ",
-  manifest: "/manifest.json",
+  manifest: "/manifest.v2.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
