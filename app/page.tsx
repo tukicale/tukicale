@@ -244,8 +244,12 @@ const syncToCalendar = async (
     
 if (settings.fertile) {
   const fertileDays = getFertileDays();
+  console.log('妊娠可能日の日付一覧:', fertileDays);
+  
   if (fertileDays.length > 0) {
     const groupedFertile = groupConsecutiveDates(fertileDays);
+    console.log('グループ化後:', groupedFertile);
+    
     groupedFertile.forEach(group => {
       events.push({
         summary: '妊娠可能日',
