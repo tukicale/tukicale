@@ -35,6 +35,302 @@ type SyncSettings = {
   intercourse: boolean;
 };
 
+// ============ Google API連携関数 ============
+
+const DRIVE_FILE_NAME = 'tukicale_data.json';
+const CALENDAR_NAME = 'TukiCale';
+
+const getAccessToken = async () => {
+  const token = localStorage.getItem('tukicale_access_token');
+  if (!token) return null;
+  
+  try {
+    const response = await fetch('https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=' + token);
+    if (response.ok) return token;
+  } catch (e) {
+    console.error('Token validation error:', e);
+  }
+  
+  return null;
+};
+
+const loadFromDrive = async () => {
+  const token = await getAccessToken();
+  if (!token) return null;
+  
+  try {
+    const searchResponse = await fetch(
+      `https://www.googleapis.com/drive/v3/files?q=name='${DRIVE_FILE_NAME}'&fields=files(id,name)`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    
+    if (!searchResponse.ok) throw new Error('Drive search failed');
+    
+    const searchData = await searchResponse.json();
+    
+    if (searchData.files && searchData.files.length > 0) {
+      const fileId = searchData.files[0].id;
+      
+      const fileResponse = await fetch(
+        `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      
+      if (!fileResponse.ok) throw new Error('Drive read failed');
+      
+      return await fileResponse.json();
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('Load from Drive error:', error);
+    return null;
+  }
+};
+
+const saveToDrive = async (data: Records) => {
+  const token = await getAccessToken();
+  if (!token) return false;
+  
+  try {
+    const searchResponse = await fetch(
+      `https://www.googleapis.com/drive/v3/files?q=name='${DRIVE_FILE_NAME}'&fields=files(id,name)`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    
+    if (!searchResponse.ok) throw new Error('Drive search failed');
+    
+    const searchData = await searchResponse.json();
+    const jsonData = JSON.stringify(data);
+    
+    if (searchData.files && searchData.files.length > 0) {
+      const fileId = searchData.files[0].id;
+      const response = await fetch(
+        `https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`,
+        {
+          method: 'PATCH',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: jsonData
+        }
+      );
+      
+      return response.ok;
+    } else {
+      const metadata = {
+        name: DRIVE_FILE_NAME,
+        mimeType: 'application/json'
+      };
+      
+      const form = new FormData();
+      form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+      form.append('file', new Blob([jsonData], { type: 'application/json' }));
+      
+      const response = await fetch(
+        'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',
+        {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` },
+          body: form
+        }
+      );
+      
+      return response.ok;
+    }
+  } catch (error) {
+    console.error('Save to Drive error:', error);
+    return false;
+  }
+};
+
+const getOrCreateCalendar = async () => {
+  const token = await getAccessToken();
+  if (!token) return null;
+  
+  try {
+    const response = await fetch(
+      'https://www.googleapis.com/calendar/v3/users/me/calendarList',
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    
+    if (!response.ok) throw new Error('Calendar list failed');
+    
+    const data = await response.json();
+    const calendar = data.items?.find((cal: any) => cal.summary === CALENDAR_NAME);
+    
+    if (calendar) return calendar.id;
+    
+    const createResponse = await fetch(
+      'https://www.googleapis.com/calendar/v3/calendars',
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ summary: CALENDAR_NAME })
+      }
+    );
+    
+    if (!createResponse.ok) throw new Error('Calendar creation failed');
+    
+    const newCalendar = await createResponse.json();
+    return newCalendar.id;
+  } catch (error) {
+    console.error('Get/Create calendar error:', error);
+    return null;
+  }
+};
+
+const getNextDay = (dateStr: string): string => {
+  const date = new Date(dateStr);
+  date.setDate(date.getDate() + 1);
+  return date.toISOString().split('T')[0];
+};
+
+const groupConsecutiveDates = (dates: string[]): { start: string; end: string }[] => {
+  if (dates.length === 0) return [];
+  
+  const sorted = [...dates].sort();
+  const groups: { start: string; end: string }[] = [];
+  let currentGroup = { start: sorted[0], end: sorted[0] };
+  
+  for (let i = 1; i < sorted.length; i++) {
+    const prevDate = new Date(sorted[i - 1]);
+    const currDate = new Date(sorted[i]);
+    const diffDays = Math.floor((currDate.getTime() - prevDate.getTime()) / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 1) {
+      currentGroup.end = sorted[i];
+    } else {
+      groups.push({ ...currentGroup });
+      currentGroup = { start: sorted[i], end: sorted[i] };
+    }
+  }
+  
+  groups.push(currentGroup);
+  return groups;
+};
+
+const syncToCalendar = async (
+  records: Records, 
+  settings: SyncSettings, 
+  getAverageCycle: () => number, 
+  getFertileDays: () => string[], 
+  getPMSDays: () => string[], 
+  getNextPeriodDays: () => string[]
+) => {
+  const token = await getAccessToken();
+  if (!token) return false;
+  
+  const calendarId = await getOrCreateCalendar();
+  if (!calendarId) return false;
+  
+  try {
+    const eventsResponse = await fetch(
+      `https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events?timeMin=${new Date(new Date().getFullYear() - 1, 0, 1).toISOString()}`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    
+    if (eventsResponse.ok) {
+      const eventsData = await eventsResponse.json();
+      for (const event of eventsData.items || []) {
+        await fetch(
+          `https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events/${event.id}`,
+          {
+            method: 'DELETE',
+            headers: { Authorization: `Bearer ${token}` }
+          }
+        );
+      }
+    }
+    
+    const events: any[] = [];
+    
+    if (settings.period) {
+      records.periods.forEach(period => {
+        events.push({
+          summary: '生理',
+          start: { date: period.startDate },
+          end: { date: getNextDay(period.endDate) },
+          colorId: '11'
+        });
+      });
+    }
+    
+    if (settings.fertile && records.periods.length >= 2) {
+      const fertileDays = getFertileDays();
+      const groupedFertile = groupConsecutiveDates(fertileDays);
+      groupedFertile.forEach(group => {
+        events.push({
+          summary: '妊娠可能日',
+          start: { date: group.start },
+          end: { date: getNextDay(group.end) },
+          colorId: '10'
+        });
+      });
+    }
+    
+    if (settings.pms && records.periods.length >= 2) {
+      const pmsDays = getPMSDays();
+      const groupedPMS = groupConsecutiveDates(pmsDays);
+      groupedPMS.forEach(group => {
+        events.push({
+          summary: 'PMS予測',
+          start: { date: group.start },
+          end: { date: getNextDay(group.end) },
+          colorId: '5'
+        });
+      });
+    }
+    
+    if (settings.period && records.periods.length >= 2) {
+      const nextPeriodDays = getNextPeriodDays();
+      const groupedNext = groupConsecutiveDates(nextPeriodDays);
+      groupedNext.forEach(group => {
+        events.push({
+          summary: '次回生理予測',
+          start: { date: group.start },
+          end: { date: getNextDay(group.end) },
+          colorId: '4'
+        });
+      });
+    }
+    
+    if (settings.intercourse) {
+      records.intercourse.forEach(record => {
+        events.push({
+          summary: '●',
+          start: { date: record.date },
+          end: { date: getNextDay(record.date) },
+          colorId: '8'
+        });
+      });
+    }
+    
+    for (const event of events) {
+      await fetch(
+        `https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(event)
+        }
+      );
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Sync to calendar error:', error);
+    return false;
+  }
+};
+
 const PeriodTrackerApp = () => {
   const [currentView, setCurrentView] = useState('calendar');
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -77,6 +373,7 @@ const PeriodTrackerApp = () => {
   } | null>(null);
   const [deletingIntercourseId, setDeletingIntercourseId] = useState<number | null>(null);
   const [editingIntercourse, setEditingIntercourse] = useState<IntercourseRecord | null>(null);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -389,7 +686,7 @@ const getNextPeriodDays = () => {
     const days = [];
     
     for (let i = 0; i < startingDayOfWeek; i++) {
-      days.push(<div key={`empty-${i}`} className="h-20 border border-gray-100"></div>);
+      days.push(<div key={`empty-${i}`} className="h-20 border border-gray-100 dark:border-gray-700"></div>);
     }
     
     for (let day = 1; day <= daysInMonth; day++) {
@@ -399,7 +696,7 @@ const getNextPeriodDays = () => {
         <div
           key={day}
           onClick={() => handleDayClick(day)}
-          className={`h-20 border border-gray-100 p-1 cursor-pointer hover:bg-gray-50 relative
+          className={`h-20 border border-gray-100 dark:border-gray-700 p-1 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-800 dark:bg-gray-800 relative
             ${isToday(day) ? 'bg-blue-50 border-blue-300' : ''}`}
         >
           <div className="text-sm font-medium">{day}</div>
@@ -569,10 +866,10 @@ const handleLogout = () => {
 
   if (isInitializing) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
+      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-900">
         <div className="flex flex-col items-center gap-4">
           <i className="fa-regular fa-moon text-5xl text-gray-400 animate-pulse"></i>
-          <p className="text-gray-600">読み込み中...</p>
+          <p className="text-gray-600 dark:text-gray-300">読み込み中...</p>
         </div>
       </div>
     );
@@ -583,10 +880,10 @@ const handleLogout = () => {
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-4 bg-white min-h-screen">
-      <div className="flex items-center justify-between mb-6">
+    <div className="max-w-4xl mx-auto p-4 bg-white dark:bg-gray-900 dark:bg-gray-900 min-h-screen">
+          <div className="flex items-center justify-between mb-6">
         <h1 
-          className="text-lg font-semibold text-gray-600 flex items-center gap-2 cursor-pointer hover:opacity-70"
+          className="text-lg font-semibold text-gray-600 dark:text-gray-300 dark:text-gray-300 flex items-center gap-2 cursor-pointer hover:opacity-70"
           onClick={() => setCurrentView('calendar')}
         >
           <i className="fa-regular fa-moon"></i>
@@ -595,24 +892,24 @@ const handleLogout = () => {
         <div className="flex gap-2">
           <button
             onClick={() => setCurrentView('calendar')}
-            className={`p-2 rounded ${currentView === 'calendar' ? 'border-2 border-gray-600' : 'hover:border hover:border-gray-300'}`}
+            className={`p-2 rounded ${currentView === 'calendar' ? 'border-2 border-gray-600' : 'hover:border hover:border-gray-300 dark:border-gray-600'}`}
             title="カレンダー"
           >
-            <i className="fa-regular fa-calendar-days text-gray-600"></i>
+            <i className="fa-regular fa-calendar-days text-gray-600 dark:text-gray-300"></i>
           </button>
           <button
             onClick={() => setCurrentView('stats')}
-            className={`p-2 rounded ${currentView === 'stats' ? 'border-2 border-gray-600' : 'hover:border hover:border-gray-300'}`}
+            className={`p-2 rounded ${currentView === 'stats' ? 'border-2 border-gray-600' : 'hover:border hover:border-gray-300 dark:border-gray-600'}`}
             title="マイデータ"
           >
-            <i className="fa-solid fa-table text-gray-600"></i>
+            <i className="fa-solid fa-table text-gray-600 dark:text-gray-300"></i>
           </button>
           <button
             onClick={() => setCurrentView('settings')}
-            className={`p-2 rounded ${currentView === 'settings' ? 'border-2 border-gray-600' : 'hover:border hover:border-gray-300'}`}
+            className={`p-2 rounded ${currentView === 'settings' ? 'border-2 border-gray-600' : 'hover:border hover:border-gray-300 dark:border-gray-600'}`}
             title="設定"
           >
-            <i className="fa-solid fa-gear text-gray-600"></i>
+            <i className="fa-solid fa-gear text-gray-600 dark:text-gray-300"></i>
           </button>
         </div>
       </div>
@@ -620,14 +917,14 @@ const handleLogout = () => {
       {currentView === 'calendar' && (
         <>
           <div className="flex items-center justify-between mb-4 gap-2">
-            <button onClick={prevMonth} className="px-4 py-2 hover:bg-gray-100 rounded">
+            <button onClick={prevMonth} className="px-4 py-2 border border-gray-300 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-600 rounded text-gray-900 dark:text-gray-100">
               ←
             </button>
             <div className="flex gap-2 items-center">
               <select 
                 value={currentDate.getFullYear()} 
                 onChange={handleYearChange}
-                className="border rounded px-3 py-2 text-lg font-semibold"
+                className="border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-lg font-semibold bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
               >
                 {Array.from({length: 11}, (_, i) => new Date().getFullYear() - 10 + i).map(year => (
                   <option key={year} value={year}>{year}年</option>
@@ -636,14 +933,14 @@ const handleLogout = () => {
               <select 
                 value={currentDate.getMonth()} 
                 onChange={handleMonthChange}
-                className="border rounded px-3 py-2 text-lg font-semibold"
+                className="border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-lg font-semibold bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
               >
                 {Array.from({length: 12}, (_, i) => i).map(month => (
                   <option key={month} value={month}>{month + 1}月</option>
                 ))}
               </select>
             </div>
-            <button onClick={nextMonth} className="px-4 py-2 hover:bg-gray-100 rounded">
+            <button onClick={nextMonth} className="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-gray-900 dark:text-gray-100">
               →
             </button>
           </div>
@@ -658,14 +955,14 @@ const handleLogout = () => {
             </button>
             <button 
               onClick={() => setCurrentView('settings')}
-              className="flex-1 bg-gray-50 text-gray-700 px-3 py-2 rounded text-sm hover:bg-gray-100 flex items-center justify-center gap-2"
+              className="flex-1 bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-3 py-2 rounded text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center gap-2"
             >
               <i className="fa-solid fa-arrows-rotate"></i>
               <span>同期設定</span>
             </button>
           </div>
 
-          <div className="flex flex-wrap gap-4 mb-4 text-xs text-gray-500">
+          <div className="flex flex-wrap gap-4 mb-4 text-xs text-gray-500 dark:text-gray-400">
             <div className="flex items-center gap-1">
               <div className="w-3 h-3 rounded-full bg-red-300"></div>
               <span>生理</span>
@@ -690,7 +987,7 @@ const handleLogout = () => {
 
           <div className="grid grid-cols-7 gap-0 mb-4">
             {['日', '月', '火', '水', '木', '金', '土'].map(day => (
-              <div key={day} className="text-center font-semibold p-2 bg-gray-50">
+              <div key={day} className="text-center font-semibold p-2 bg-gray-50 dark:bg-gray-800">
                 {day}
               </div>
             ))}
@@ -854,16 +1151,16 @@ const StatsView = ({ records, getAverageCycle, setShowIntercourseList }: {
   setShowIntercourseList: (show: boolean) => void;
 }) => (
   <div className="space-y-4">
-    <h2 className="text-xl font-semibold mb-4">マイデータ</h2>
+    <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-gray-100">マイデータ</h2>
     
-    <div className="bg-pink-50 p-4 rounded-lg">
-      <div className="text-sm text-gray-600">平均周期</div>
-      <div className="text-2xl font-bold">{getAverageCycle()}日</div>
+    <div className="bg-pink-50 dark:bg-gray-800 p-4 rounded-lg">
+      <div className="text-sm text-gray-600 dark:text-gray-300">平均周期</div>
+      <div className="text-2xl font-bold text-gray-900 dark:text-gray-100 text-gray-900 dark:text-gray-100">{getAverageCycle()}日</div>
     </div>
     
-    <div className="bg-purple-50 p-4 rounded-lg">
-      <div className="text-sm text-gray-600">次回生理予定</div>
-      <div className="text-2xl font-bold">
+    <div className="bg-purple-50 dark:bg-gray-800 p-4 rounded-lg">
+      <div className="text-sm text-gray-600 dark:text-gray-300">次回生理予定</div>
+      <div className="text-2xl font-bold text-gray-900 dark:text-gray-100 text-gray-900 dark:text-gray-100">
         {records.periods.length > 0 ? 
           (() => {
             const lastPeriod = [...records.periods].sort((a, b) => 
@@ -878,14 +1175,14 @@ const StatsView = ({ records, getAverageCycle, setShowIntercourseList }: {
       </div>
     </div>
     
-    <div className="bg-blue-50 p-4 rounded-lg">
-      <div className="text-sm text-gray-600">記録された生理回数</div>
-      <div className="text-2xl font-bold">{records.periods.length}回</div>
+    <div className="bg-blue-50 dark:bg-gray-800 p-4 rounded-lg">
+      <div className="text-sm text-gray-600 dark:text-gray-300">記録された生理回数</div>
+      <div className="text-2xl font-bold text-gray-900 dark:text-gray-100 text-gray-900 dark:text-gray-100">{records.periods.length}回</div>
     </div>
 
     {records.intercourse.length > 0 && (
-      <div className="bg-green-50 p-4 rounded-lg">
-        <div className="text-sm text-gray-600">SEX記録</div>
+      <div className="bg-green-50 dark:bg-gray-800 p-4 rounded-lg">
+        <div className="text-sm text-gray-600 dark:text-gray-300">SEX記録</div>
         <button 
           onClick={() => setShowIntercourseList(true)}
           className="mt-2 text-sm text-blue-600 hover:underline"
@@ -906,14 +1203,14 @@ const SettingsView = ({ isGoogleAuthed, handleLogout, setShowBulkAddModal, setSh
   setCurrentView: (view: string) => void;
 }) => (
   <div className="space-y-4">
-    <h2 className="text-xl font-semibold mb-4">設定</h2>
+    <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-gray-100">設定</h2>
     
     <div className="border rounded-lg p-4">
-      <h3 className="font-semibold mb-2 flex items-center gap-2">
-        <i className="fa-brands fa-google-drive text-gray-600"></i>
+      <h3 className="font-semibold mb-2 text-gray-900 dark:text-gray-100 flex items-center gap-2">
+        <i className="fa-brands fa-google-drive text-gray-600 dark:text-gray-300"></i>
         Googleカレンダー連携
       </h3>
-      <p className="text-sm text-gray-600 mb-3">
+      <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
         {isGoogleAuthed ? '連携済み' : '未連携'}
       </p>
       {isGoogleAuthed && (
@@ -930,11 +1227,11 @@ const SettingsView = ({ isGoogleAuthed, handleLogout, setShowBulkAddModal, setSh
     <HelpSection setCurrentView={setCurrentView} />
 
     <div className="border rounded-lg p-4">
-      <h3 className="font-semibold mb-2">過去データ一括登録</h3>
-      <p className="text-sm text-gray-600 mb-1">
+      <h3 className="font-semibold mb-2 text-gray-900 dark:text-gray-100">過去データ一括登録</h3>
+      <p className="text-sm text-gray-600 dark:text-gray-300 mb-1">
         手帳やメモの記録を登録・編集・削除できます
       </p>
-      <p className="text-xs text-gray-500 mb-3">
+      <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
         ※1度に20件登録できます
       </p>
       <div className="space-y-2">
@@ -946,7 +1243,7 @@ const SettingsView = ({ isGoogleAuthed, handleLogout, setShowBulkAddModal, setSh
         </button>
         <button 
           onClick={() => setShowRecordsList(true)}
-          className="w-full border border-gray-300 px-4 py-2 rounded hover:bg-gray-50"
+          className="w-full border border-gray-300 dark:border-gray-600 px-4 py-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-800"
         >
           登録済み記録を確認
         </button>
@@ -954,7 +1251,7 @@ const SettingsView = ({ isGoogleAuthed, handleLogout, setShowBulkAddModal, setSh
     </div>
 
     <div className="border rounded-lg p-4">
-      <h3 className="font-semibold mb-2">データ管理</h3>
+      <h3 className="font-semibold mb-2 text-gray-900 dark:text-gray-100">データ管理</h3>
       <div className="space-y-2">
         <button 
           onClick={() => setShowDeleteConfirm(true)}
@@ -991,7 +1288,7 @@ const SyncSettings = () => {
 
   return (
     <div className="border rounded-lg p-4">
-      <h3 className="font-semibold mb-2">同期設定</h3>
+      <h3 className="font-semibold mb-2 text-gray-900 dark:text-gray-100">同期設定</h3>
       <div className="space-y-2">
         <label className="flex items-center gap-2">
           <input 
@@ -999,7 +1296,7 @@ const SyncSettings = () => {
             checked={localSettings.period}
             onChange={(e) => handleChange('period', e.target.checked)}
           />
-          <span className="text-sm">生理期間を同期</span>
+          <span className="text-sm text-gray-900 dark:text-gray-100">生理期間を同期</span>
         </label>
         <label className="flex items-center gap-2">
           <input 
@@ -1007,7 +1304,7 @@ const SyncSettings = () => {
             checked={localSettings.fertile}
             onChange={(e) => handleChange('fertile', e.target.checked)}
           />
-          <span className="text-sm">妊娠可能日を同期</span>
+          <span className="text-sm text-gray-900 dark:text-gray-100">妊娠可能日を同期</span>
         </label>
         <label className="flex items-center gap-2">
           <input 
@@ -1015,7 +1312,7 @@ const SyncSettings = () => {
             checked={localSettings.pms}
             onChange={(e) => handleChange('pms', e.target.checked)}
           />
-          <span className="text-sm">PMS予測を同期</span>
+          <span className="text-sm text-gray-900 dark:text-gray-100">PMS予測を同期</span>
         </label>
         <div>
           <label className="flex items-center gap-2">
@@ -1024,13 +1321,13 @@ const SyncSettings = () => {
               checked={localSettings.intercourse}
               onChange={(e) => handleChange('intercourse', e.target.checked)}
             />
-            <span className="text-sm">SEXを同期</span>
+            <span className="text-sm text-gray-900 dark:text-gray-100">SEXを同期</span>
             <button type="button" onClick={() => setShowIntercourseInfo(!showIntercourseInfo)} className="w-5 h-5 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-xs">
               ⓘ
             </button>
           </label>
           {showIntercourseInfo && (
-            <div className="mt-2 p-3 bg-blue-50 rounded text-xs text-gray-700">
+            <div className="mt-2 p-3 bg-blue-50 dark:bg-gray-800 rounded text-xs text-gray-700 dark:text-gray-300 dark:text-gray-300">
               <p className="font-semibold mb-1">📅 カレンダーに表示される内容：</p>
               <p className="mb-2">「●」などの記号のみ（カスタマイズ可能）</p>
               <p className="font-semibold mb-1">🔒 同期されない情報：</p>
@@ -1039,7 +1336,7 @@ const SyncSettings = () => {
                 <li>避妊具使用状況</li>
                 <li>メモ</li>
               </ul>
-              <p className="mt-2 text-gray-600">詳細情報はアプリ内にのみ保存されます。</p>
+              <p className="mt-2 text-gray-600 dark:text-gray-300">詳細情報はアプリ内にのみ保存されます。</p>
             </div>
           )}
         </div>
@@ -1062,16 +1359,16 @@ const HelpSection = ({ setCurrentView }: {
   return (
     <>
       <div className="border rounded-lg p-4">
-        <h3 className="font-semibold mb-3">ヘルプ・よくある質問</h3>
+        <h3 className="font-semibold mb-3 text-gray-900 dark:text-gray-100">ヘルプ・よくある質問</h3>
         
         <div className="space-y-2">
           <div className="border-b pb-2">
-            <button onClick={() => toggleSection('data')} className="w-full text-left flex items-center justify-between py-2 hover:bg-gray-50 rounded px-2">
+            <button onClick={() => toggleSection('data')} className="w-full text-left flex items-center justify-between py-2 hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-800 rounded px-2">
               <span className="text-sm font-medium">データはどこに保存されますか？</span>
               <span>{expandedSection === 'data' ? '−' : '+'}</span>
             </button>
             {expandedSection === 'data' && (
-              <div className="mt-2 p-3 bg-gray-50 rounded text-sm text-gray-700">
+              <div className="mt-2 p-3 bg-gray-50 dark:bg-gray-800 rounded text-sm text-gray-700 dark:text-gray-300">
                 <p className="mb-2"><strong>Googleドライブに保存：</strong></p>
                 <ul className="list-disc ml-4 space-y-1 mb-3">
                   <li>生理記録・SEX記録などの詳細データ</li>
@@ -1090,12 +1387,12 @@ const HelpSection = ({ setCurrentView }: {
           </div>
 
           <div className="border-b pb-2">
-            <button onClick={() => toggleSection('privacy')} className="w-full text-left flex items-center justify-between py-2 hover:bg-gray-50 rounded px-2">
+            <button onClick={() => toggleSection('privacy')} className="w-full text-left flex items-center justify-between py-2 hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-800 rounded px-2">
               <span className="text-sm font-medium">プライバシーは保護されますか？</span>
               <span>{expandedSection === 'privacy' ? '−' : '+'}</span>
             </button>
             {expandedSection === 'privacy' && (
-              <div className="mt-2 p-3 bg-gray-50 rounded text-sm text-gray-700">
+              <div className="mt-2 p-3 bg-gray-50 dark:bg-gray-800 rounded text-sm text-gray-700 dark:text-gray-300">
                 <p className="mb-2 font-semibold">完全にプライベートです：</p>
                 <ul className="list-disc ml-4 space-y-1">
                   <li>データはあなたのGoogleアカウントにのみ保存</li>
@@ -1108,12 +1405,12 @@ const HelpSection = ({ setCurrentView }: {
           </div>
 
           <div className="border-b pb-2">
-            <button onClick={() => toggleSection('prediction')} className="w-full text-left flex items-center justify-between py-2 hover:bg-gray-50 rounded px-2">
+            <button onClick={() => toggleSection('prediction')} className="w-full text-left flex items-center justify-between py-2 hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-800 rounded px-2">
               <span className="text-sm font-medium">予測はどう計算されていますか？</span>
               <span>{expandedSection === 'prediction' ? '−' : '+'}</span>
             </button>
             {expandedSection === 'prediction' && (
-              <div className="mt-2 p-3 bg-gray-50 rounded text-sm text-gray-700">
+              <div className="mt-2 p-3 bg-gray-50 dark:bg-gray-800 rounded text-sm text-gray-700 dark:text-gray-300">
                 <p className="mb-2"><strong>妊娠可能日：</strong></p>
                 <p className="mb-2">過去の生理周期から平均を計算し、排卵日（生理開始の約14日前）の前後3日間を表示</p>
                 <p className="mb-2"><strong>PMS予測：</strong></p>
@@ -1125,12 +1422,12 @@ const HelpSection = ({ setCurrentView }: {
           </div>
 
           <div className="border-b pb-2">
-            <button onClick={() => toggleSection('irregular')} className="w-full text-left flex items-center justify-between py-2 hover:bg-gray-50 rounded px-2">
+            <button onClick={() => toggleSection('irregular')} className="w-full text-left flex items-center justify-between py-2 hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-800 rounded px-2">
               <span className="text-sm font-medium">不規則な周期でも使えますか？</span>
               <span>{expandedSection === 'irregular' ? '−' : '+'}</span>
             </button>
             {expandedSection === 'irregular' && (
-              <div className="mt-2 p-3 bg-gray-50 rounded text-sm text-gray-700">
+              <div className="mt-2 p-3 bg-gray-50 dark:bg-gray-800 rounded text-sm text-gray-700 dark:text-gray-300">
                 <p className="mb-2"><strong>はい、使えます！</strong></p>
                 <p className="mb-2">このアプリは、生理不順の運営者自身が機種変更時にデータ移行できず、人気アプリでは「周期が不規則すぎる」と数年分のデータを保存できなかった経験から生まれました。</p>
                 <p className="mb-2">同じ悩みを持つ方でも安心して使えるよう、不規則な周期にも対応する設計になっています。</p>                <p>予測は過去のデータの平均から計算されるため、記録が2回以上あれば表示されます。データが増えると平均値がより安定します。</p>
@@ -1139,12 +1436,12 @@ const HelpSection = ({ setCurrentView }: {
           </div>
 
           <div className="border-b pb-2">
-            <button onClick={() => toggleSection('edit')} className="w-full text-left flex items-center justify-between py-2 hover:bg-gray-50 rounded px-2">
+            <button onClick={() => toggleSection('edit')} className="w-full text-left flex items-center justify-between py-2 hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-800 rounded px-2">
               <span className="text-sm font-medium">記録の修正・削除方法</span>
               <span>{expandedSection === 'edit' ? '−' : '+'}</span>
             </button>
             {expandedSection === 'edit' && (
-              <div className="mt-2 p-3 bg-gray-50 rounded text-sm text-gray-700">
+              <div className="mt-2 p-3 bg-gray-50 dark:bg-gray-800 rounded text-sm text-gray-700 dark:text-gray-300">
                 <p className="mb-2"><strong>登録済み記録の編集：</strong></p>
                 <p className="mb-2">
                   <button 
@@ -1155,26 +1452,26 @@ const HelpSection = ({ setCurrentView }: {
                     className="inline-flex items-center px-1 py-0.5 rounded hover:bg-gray-200"
                     title="設定を開く"
       >
-                    <i className="fa-solid fa-gear text-gray-600"></i>
+                    <i className="fa-solid fa-gear text-gray-600 dark:text-gray-300"></i>
                   </button>
                   設定から「登録済み記録を確認」を選択
                 </p>
                 <ul className="list-disc ml-4 space-y-1 mb-3">
-                  <li><i className="fa-solid fa-pen-to-square text-gray-600"></i> 記録を修正</li>
-                  <li><i className="fa-solid fa-trash text-gray-600"></i> 記録を削除</li>
+                  <li><i className="fa-solid fa-pen-to-square text-gray-600 dark:text-gray-300"></i> 記録を修正</li>
+                  <li><i className="fa-solid fa-trash text-gray-600 dark:text-gray-300"></i> 記録を削除</li>
                 </ul>
-                <p className="text-xs text-gray-600">※削除した記録は復元できません</p>
+                <p className="text-xs text-gray-600 dark:text-gray-300">※削除した記録は復元できません</p>
               </div>
             )}
           </div>
 
           <div className="border-b pb-2">
-            <button onClick={() => toggleSection('sexrecord')} className="w-full text-left flex items-center justify-between py-2 hover:bg-gray-50 rounded px-2">
+            <button onClick={() => toggleSection('sexrecord')} className="w-full text-left flex items-center justify-between py-2 hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-800 rounded px-2">
               <span className="text-sm font-medium">SEX記録はどこで確認できますか？</span>
               <span>{expandedSection === 'sexrecord' ? '−' : '+'}</span>
             </button>
             {expandedSection === 'sexrecord' && (
-              <div className="mt-2 p-3 bg-gray-50 rounded text-sm text-gray-700">
+              <div className="mt-2 p-3 bg-gray-50 dark:bg-gray-800 rounded text-sm text-gray-700 dark:text-gray-300">
                 <p className="mb-2"><strong>マイデータ画面で確認：</strong></p>
                 <ol className="list-decimal ml-4 space-y-1 mb-3">
                   <li>
@@ -1187,37 +1484,37 @@ const HelpSection = ({ setCurrentView }: {
                       className="inline-flex items-center mx-1 px-1 py-0.5 rounded hover:bg-gray-200"
                       title="マイデータを開く"
                     >
-                 <i className="fa-solid fa-table text-gray-600 text-xs"></i>
+                 <i className="fa-solid fa-table text-gray-600 dark:text-gray-300 text-xs"></i>
                  </button>
                  マイデータ」を選択
                </li>
                <li>SEX記録が1件以上ある場合、「SEX記録」カードが表示されます</li>
                <li>「詳細を確認」ボタンをタップすると、記録の詳細（日付・避妊具使用状況・パートナー・メモ）が確認できます</li>
              </ol>
-             <p className="text-xs text-gray-600">※記録が0件の場合、カードは表示されません</p>
+             <p className="text-xs text-gray-600 dark:text-gray-300">※記録が0件の場合、カードは表示されません</p>
            </div>
           )}
           </div>
           <div className="border-b pb-2">
-            <button onClick={() => toggleSection('sync')} className="w-full text-left flex items-center justify-between py-2 hover:bg-gray-50 rounded px-2">
+            <button onClick={() => toggleSection('sync')} className="w-full text-left flex items-center justify-between py-2 hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-800 rounded px-2">
               <span className="text-sm font-medium">カレンダーの同期について</span>
               <span>{expandedSection === 'sync' ? '−' : '+'}</span>
             </button>
             {expandedSection === 'sync' && (
-              <div className="mt-2 p-3 bg-gray-50 rounded text-sm text-gray-700">
+              <div className="mt-2 p-3 bg-gray-50 dark:bg-gray-800 rounded text-sm text-gray-700 dark:text-gray-300">
                 <p className="mb-2"><strong>データ入力中にカレンダーにリアルタイムで同期されます。</strong></p>
                 <ul className="list-disc ml-4 space-y-1 mb-3">
                   <li>生理記録を追加・編集・削除すると、即座にGoogleドライブに保存</li>
                   <li>同期設定でONにしている項目は、Googleカレンダーにも即座に反映</li>
                   <li>一括登録の場合も、登録ボタンを押した瞬間に全て同期</li>
                 </ul>
-                <p className="text-gray-600 text-xs">※データの流れは <strong>TukiCale → Google</strong> の一方向です</p>
+                <p className="text-gray-600 dark:text-gray-300 text-xs">※データの流れは <strong>TukiCale → Google</strong> の一方向です</p>
               </div>
             )}
           </div>
 
           <div className="border-b pb-2">
-            <button onClick={() => toggleSection('calendarWarning')} className="w-full text-left flex items-center justify-between py-2 hover:bg-gray-50 rounded px-2">
+            <button onClick={() => toggleSection('calendarWarning')} className="w-full text-left flex items-center justify-between py-2 hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-800 rounded px-2">
               <span className="text-sm font-medium flex items-center gap-2">
                 <span className="text-red-600">⚠️</span>
                 Googleカレンダーで直接編集・削除しないでください
@@ -1225,7 +1522,7 @@ const HelpSection = ({ setCurrentView }: {
               <span>{expandedSection === 'calendarWarning' ? '−' : '+'}</span>
             </button>
             {expandedSection === 'calendarWarning' && (
-              <div className="mt-2 p-3 bg-white rounded text-sm text-gray-700 border-2 border-red-200">
+              <div className="mt-2 p-3 bg-white dark:bg-gray-900 rounded text-sm text-gray-700 dark:text-gray-300 border-2 border-red-200">
                 <p className="mb-3 font-semibold text-red-700">Googleカレンダー側で変更しないでください</p>
                 <p className="mb-2"><strong>理由：</strong></p>
                 <ul className="list-disc ml-4 space-y-1 mb-3">
@@ -1235,22 +1532,22 @@ const HelpSection = ({ setCurrentView }: {
                 </ul>
                 <p className="font-semibold text-blue-700 mb-1">✅ 正しい使い方：</p>
                 <p>すべての編集・削除は<strong>TukiCaleアプリ内</strong>で行ってください。</p>
-                <p className="mt-2 text-xs text-gray-600">Googleカレンダーは「表示用」として使用します。</p>
+                <p className="mt-2 text-xs text-gray-600 dark:text-gray-300">Googleカレンダーは「表示用」として使用します。</p>
               </div>
             )}
           </div>
 
           <div className="border rounded-lg mt-4">
-            <button onClick={() => toggleSection('contact')} className="w-full text-left py-3 px-4 hover:bg-gray-50 rounded-t-lg border-b flex items-center justify-between">
+            <button onClick={() => toggleSection('contact')} className="w-full text-left py-3 px-4 hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-800 rounded-t-lg border-b flex items-center justify-between">
               <span className="text-sm font-medium flex items-center gap-2">
-                <i className="fa-solid fa-envelope text-gray-600"></i>
+                <i className="fa-solid fa-envelope text-gray-600 dark:text-gray-300"></i>
                 フィードバック・機能リクエスト
               </span>
               <span>{expandedSection === 'contact' ? '−' : '+'}</span>
             </button>
             {expandedSection === 'contact' && (
-              <div className="px-4 py-3 bg-gray-50 border-b">
-                <div className="text-sm text-gray-700">
+              <div className="px-4 py-3 bg-gray-50 dark:bg-gray-800 border-b">
+                <div className="text-sm text-gray-700 dark:text-gray-300">
                   <p className="mb-2">バグ報告や機能リクエストをお待ちしています！</p>
                   <p className="mb-2"><strong>📱 TikTokでご連絡ください：</strong></p>
                   <p className="mb-2">
@@ -1264,24 +1561,24 @@ const HelpSection = ({ setCurrentView }: {
                     </a>
                     の固定動画のコメント欄にお願いします
                   </p>
-                  <ul className="list-disc ml-4 space-y-1 text-xs text-gray-600 mt-2">
+                  <ul className="list-disc ml-4 space-y-1 text-xs text-gray-600 dark:text-gray-300 mt-2">
                     <li>バグを見つけたら具体的に教えてください</li>
                     <li>「こんな機能が欲しい！」も大歓迎</li>
                     <li>使いにくい部分があれば教えてください</li>
                   </ul>
-                  <p className="mt-2 text-gray-600 text-xs">※皆さんのフィードバックで一緒に良いアプリを作っていきましょう！</p>
+                  <p className="mt-2 text-gray-600 dark:text-gray-300 text-xs">※皆さんのフィードバックで一緒に良いアプリを作っていきましょう！</p>
                 </div>
               </div>
             )}
-            <button onClick={() => setShowTerms(true)} className="w-full text-left py-3 px-4 hover:bg-gray-50 border-b">
+            <button onClick={() => setShowTerms(true)} className="w-full text-left py-3 px-4 hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-800 border-b">
               <span className="text-sm font-medium flex items-center gap-2">
-                <i className="fa-solid fa-file text-gray-600"></i>
+                <i className="fa-solid fa-file text-gray-600 dark:text-gray-300"></i>
                 利用規約
               </span>
             </button>
-            <button onClick={() => setShowPrivacy(true)} className="w-full text-left py-3 px-4 hover:bg-gray-50 rounded-b-lg">
+            <button onClick={() => setShowPrivacy(true)} className="w-full text-left py-3 px-4 hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-800 rounded-b-lg">
               <span className="text-sm font-medium flex items-center gap-2">
-                <i className="fa-solid fa-lock text-gray-600"></i>
+                <i className="fa-solid fa-lock text-gray-600 dark:text-gray-300"></i>
                 プライバシーポリシー
               </span>
             </button>
@@ -1297,21 +1594,21 @@ const HelpSection = ({ setCurrentView }: {
 
 const TermsModal = ({ onClose }: { onClose: () => void }) => (
   <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4" style={{zIndex: 10003}}>
-    <div className="bg-white rounded-lg w-full max-w-2xl flex flex-col" style={{maxHeight: '90vh'}}>
+    <div className="bg-white dark:bg-gray-900 rounded-lg w-full max-w-2xl flex flex-col" style={{maxHeight: '90vh'}}>
       <div className="p-6 border-b">
         <h3 className="text-lg font-semibold">利用規約</h3>
       </div>
       <div className="flex-1 px-6 py-4 overflow-y-auto text-sm">
-        <h4 className="font-semibold mb-2">第1条（適用）</h4>
+        <h4 className="font-semibold mb-2 text-gray-900 dark:text-gray-100">第1条（適用）</h4>
         <p className="mb-4">本規約は、TukiCale運営チーム（以下「当チーム」）が提供する生理管理アプリ「TukiCale」（以下「本サービス」）の利用条件を定めるものです。ユーザーは本規約に同意した上で本サービスを利用するものとします。</p>
 
-        <h4 className="font-semibold mb-2">第2条（サービス内容）</h4>
+        <h4 className="font-semibold mb-2 text-gray-900 dark:text-gray-100">第2条（サービス内容）</h4>
         <p className="mb-4">本サービスは、生理周期の記録・管理を支援するためのアプリケーションです。予測機能はあくまで参考情報であり、医療行為ではありません。</p>
 
-        <h4 className="font-semibold mb-2">第3条（利用資格）</h4>
+        <h4 className="font-semibold mb-2 text-gray-900 dark:text-gray-100">第3条（利用資格）</h4>
         <p className="mb-4">本サービスは、Googleアカウントを保有するすべての方がご利用いただけます。未成年者が利用する場合は、保護者の方と相談の上でご利用ください。</p>
 
-        <h4 className="font-semibold mb-2">第4条（禁止事項）</h4>
+        <h4 className="font-semibold mb-2 text-gray-900 dark:text-gray-100">第4条（禁止事項）</h4>
         <ul className="list-disc ml-6 mb-4 space-y-1">
           <li>法令または公序良俗に違反する行為</li>
           <li>犯罪行為に関連する行為</li>
@@ -1320,7 +1617,7 @@ const TermsModal = ({ onClose }: { onClose: () => void }) => (
           <li>不正アクセスまたはこれを試みる行為</li>
         </ul>
 
-        <h4 className="font-semibold mb-2">第5条（免責事項）</h4>
+        <h4 className="font-semibold mb-2 text-gray-900 dark:text-gray-100">第5条（免責事項）</h4>
         <ul className="list-disc ml-6 mb-4 space-y-1">
           <li>本サービスの予測機能は参考情報であり、正確性を保証するものではありません</li>
           <li>本サービスは医療行為ではなく、診断・治療の代替とはなりません</li>
@@ -1328,10 +1625,10 @@ const TermsModal = ({ onClose }: { onClose: () => void }) => (
           <li>システム障害等により一時的にサービスが利用できない場合があります</li>
         </ul>
 
-        <h4 className="font-semibold mb-2">第6条（サービスの変更・終了）</h4>
+        <h4 className="font-semibold mb-2 text-gray-900 dark:text-gray-100">第6条（サービスの変更・終了）</h4>
         <p className="mb-4">当チームは、ユーザーへの事前通知なく、本サービスの内容を変更または終了することができるものとします。</p>
 
-        <h4 className="font-semibold mb-2">第7条（お問い合わせ）</h4>
+        <h4 className="font-semibold mb-2 text-gray-900 dark:text-gray-100">第7条（お問い合わせ）</h4>
         <p className="mb-4">
           本サービスに関するお問い合わせは、TikTok（<a 
             href="https://www.tiktok.com/@tukicale_app" 
@@ -1343,10 +1640,10 @@ const TermsModal = ({ onClose }: { onClose: () => void }) => (
           </a>）のコメント欄よりお願いいたします。
         </p>
 
-        <p className="text-gray-600 mt-6">最終更新日：2025年1月1日</p>
+        <p className="text-gray-600 dark:text-gray-300 mt-6">最終更新日：2025年1月1日</p>
       </div>
       <div className="p-6 border-t">
-        <button onClick={onClose} className="w-full border px-4 py-2 rounded hover:bg-gray-50">閉じる</button>
+        <button onClick={onClose} className="w-full border px-4 py-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-800">閉じる</button>
       </div>
     </div>
   </div>
@@ -1354,12 +1651,12 @@ const TermsModal = ({ onClose }: { onClose: () => void }) => (
 
 const PrivacyModal = ({ onClose }: { onClose: () => void }) => (
   <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4" style={{zIndex: 10003}}>
-    <div className="bg-white rounded-lg w-full max-w-2xl flex flex-col" style={{maxHeight: '90vh'}}>
+    <div className="bg-white dark:bg-gray-900 rounded-lg w-full max-w-2xl flex flex-col" style={{maxHeight: '90vh'}}>
       <div className="p-6 border-b">
         <h3 className="text-lg font-semibold">プライバシーポリシー</h3>
       </div>
       <div className="flex-1 px-6 py-4 overflow-y-auto text-sm">
-        <h4 className="font-semibold mb-2">1. 収集する情報</h4>
+        <h4 className="font-semibold mb-2 text-gray-900 dark:text-gray-100">1. 収集する情報</h4>
         <p className="mb-2">本サービスでは、以下の情報を収集します：</p>
         <ul className="list-disc ml-6 mb-4 space-y-1">
           <li>生理開始日・終了日</li>
@@ -1367,7 +1664,7 @@ const PrivacyModal = ({ onClose }: { onClose: () => void }) => (
           <li>Googleアカウント情報（メールアドレス、プロフィール情報）</li>
         </ul>
 
-        <h4 className="font-semibold mb-2">2. 情報の利用目的</h4>
+        <h4 className="font-semibold mb-2 text-gray-900 dark:text-gray-100">2. 情報の利用目的</h4>
         <p className="mb-2">収集した情報は、以下の目的で利用します：</p>
         <ul className="list-disc ml-6 mb-4 space-y-1">
           <li>生理周期の記録・管理</li>
@@ -1376,29 +1673,29 @@ const PrivacyModal = ({ onClose }: { onClose: () => void }) => (
           <li>サービスの改善</li>
         </ul>
 
-        <h4 className="font-semibold mb-2">3. 情報の保存場所</h4>
+        <h4 className="font-semibold mb-2 text-gray-900 dark:text-gray-100">3. 情報の保存場所</h4>
         <p className="mb-4">すべてのデータは、ユーザーのGoogleドライブに保存されます。当チームのサーバーには保存されません。</p>
 
-        <h4 className="font-semibold mb-2">4. 第三者への提供</h4>
+        <h4 className="font-semibold mb-2 text-gray-900 dark:text-gray-100">4. 第三者への提供</h4>
         <p className="mb-4">当チームは、ユーザーの個人情報を第三者に提供することはありません。ただし、以下の場合を除きます：</p>
         <ul className="list-disc ml-6 mb-4 space-y-1">
           <li>ユーザーの同意がある場合</li>
           <li>法令に基づく場合</li>
         </ul>
 
-        <h4 className="font-semibold mb-2">5. Google APIの利用</h4>
+        <h4 className="font-semibold mb-2 text-gray-900 dark:text-gray-100">5. Google APIの利用</h4>
         <p className="mb-4">本サービスは、Google Drive API及びGoogle Calendar APIを利用しています。これらのAPIを通じて取得した情報は、本サービスの提供目的以外には使用しません。</p>
 
-        <h4 className="font-semibold mb-2">6. データの削除</h4>
+        <h4 className="font-semibold mb-2 text-gray-900 dark:text-gray-100">6. データの削除</h4>
         <p className="mb-4">ユーザーは、設定画面から「すべてのデータを削除」を実行することで、アプリ内のすべてのデータを削除できます。Googleドライブ上のデータは、Google Driveから直接削除してください。</p>
 
-        <h4 className="font-semibold mb-2">7. セキュリティ</h4>
+        <h4 className="font-semibold mb-2 text-gray-900 dark:text-gray-100">7. セキュリティ</h4>
         <p className="mb-4">当チームは、個人情報の漏洩、滅失または毀損の防止に努めます。ただし、完全な安全性を保証するものではありません。</p>
 
-        <h4 className="font-semibold mb-2">8. 未成年者の利用</h4>
+        <h4 className="font-semibold mb-2 text-gray-900 dark:text-gray-100">8. 未成年者の利用</h4>
         <p className="mb-4">未成年者が本サービスを利用する場合は、保護者の方と相談の上でご利用ください。本サービスは同意確認の機能を持っておりませんので、保護者の方の責任においてご判断ください。</p>
 
-        <h4 className="font-semibold mb-2">9. お問い合わせ</h4>
+        <h4 className="font-semibold mb-2 text-gray-900 dark:text-gray-100">9. お問い合わせ</h4>
         <p className="mb-2">本ポリシーに関するお問い合わせは、以下までお願いいたします：</p>
         <p className="mb-4">
           TikTok: <a 
@@ -1411,13 +1708,13 @@ const PrivacyModal = ({ onClose }: { onClose: () => void }) => (
           </a>のコメント欄
         </p>
 
-        <h4 className="font-semibold mb-2">10. プライバシーポリシーの変更</h4>
+        <h4 className="font-semibold mb-2 text-gray-900 dark:text-gray-100">10. プライバシーポリシーの変更</h4>
         <p className="mb-4">当チームは、本ポリシーを予告なく変更することがあります。変更後のポリシーは、本アプリ上に掲載した時点で効力を生じるものとします。</p>
 
-        <p className="text-gray-600 mt-6">最終更新日：2025年1月1日</p>
+        <p className="text-gray-600 dark:text-gray-300 mt-6">最終更新日：2025年1月1日</p>
       </div>
       <div className="p-6 border-t">
-        <button onClick={onClose} className="w-full border px-4 py-2 rounded hover:bg-gray-50">閉じる</button>
+        <button onClick={onClose} className="w-full border px-4 py-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-800">閉じる</button>
       </div>
     </div>
   </div>
@@ -1428,12 +1725,12 @@ const LoginScreen = ({ onLogin, isLoading }: { onLogin: () => void; isLoading: b
   const [showPrivacy, setShowPrivacy] = useState(false);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-white p-4">
-      <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-6">
+    <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-900 p-4">
+      <div className="max-w-md w-full bg-white dark:bg-gray-900 rounded-2xl shadow-xl p-6">
         <div className="flex justify-center mb-4">
           <div className="flex items-center gap-2">
             <i className="fa-regular fa-moon text-3xl text-gray-400"></i>
-            <h1 className="text-3xl text-gray-700">TukiCale</h1>
+            <h1 className="text-3xl text-gray-700 dark:text-gray-300">TukiCale</h1>
           </div>
         </div>
 
@@ -1441,10 +1738,10 @@ const LoginScreen = ({ onLogin, isLoading }: { onLogin: () => void; isLoading: b
           <h2 className="text-base font-semibold text-gray-800 mb-2">
             生理記録を簡単管理
           </h2>
-          <p className="text-xs text-gray-600 mb-1">
+          <p className="text-xs text-gray-600 dark:text-gray-300 mb-1">
             Googleカレンダーに一括登録
           </p>
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-gray-500 dark:text-gray-400">
             データはあなたのGoogleドライブに保存
           </p>
         </div>
@@ -1458,12 +1755,12 @@ const LoginScreen = ({ onLogin, isLoading }: { onLogin: () => void; isLoading: b
             { title: 'マルチデバイス対応', desc: '複数の端末で同時に使える' }
           ].map((item, i) => (
             <div key={i} className="flex items-start gap-2">
-              <div className="w-5 h-5 rounded-full bg-white flex items-center justify-center flex-shrink-0 mt-0.5">
+              <div className="w-5 h-5 rounded-full bg-white dark:bg-gray-900 flex items-center justify-center flex-shrink-0 mt-0.5">
                 <span className="text-green-500 text-xs font-bold">✓</span>
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-800">{item.title}</p>
-                <p className="text-xs text-gray-600">{item.desc}</p>
+                <p className="text-xs text-gray-600 dark:text-gray-300">{item.desc}</p>
               </div>
             </div>
           ))}
@@ -1472,11 +1769,11 @@ const LoginScreen = ({ onLogin, isLoading }: { onLogin: () => void; isLoading: b
         <button
           onClick={onLogin}
           disabled={isLoading}
-          className="w-full bg-white border-2 border-gray-300 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-center gap-3 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full bg-white dark:bg-gray-900 border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 px-6 py-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-800 transition-colors flex items-center justify-center gap-3 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isLoading ? (
             <>
-              <div className="w-5 h-5 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin"></div>
+              <div className="w-5 h-5 border-2 border-gray-300 dark:border-gray-600 border-t-gray-600 rounded-full animate-spin"></div>
               <span>ログイン中...</span>
             </>
           ) : (
@@ -1492,14 +1789,14 @@ const LoginScreen = ({ onLogin, isLoading }: { onLogin: () => void; isLoading: b
           )}
         </button>
 
-        <p className="text-xs text-gray-500 text-center mt-4">
+        <p className="text-xs text-gray-500 dark:text-gray-400 text-center mt-4">
           ログインすることで、
           <button 
             onClick={(e) => {
               e.preventDefault();
               setShowTerms(true);
             }} 
-            className="underline mx-1 hover:text-gray-700 cursor-pointer"
+            className="underline mx-1 hover:text-gray-700 dark:text-gray-300 cursor-pointer"
           >
             利用規約
           </button>
@@ -1509,7 +1806,7 @@ const LoginScreen = ({ onLogin, isLoading }: { onLogin: () => void; isLoading: b
               e.preventDefault();
               setShowPrivacy(true);
             }} 
-            className="underline mx-1 hover:text-gray-700 cursor-pointer"
+            className="underline mx-1 hover:text-gray-700 dark:text-gray-300 cursor-pointer"
           >
             プライバシーポリシー
           </button>
@@ -1572,7 +1869,7 @@ const DatePicker = ({ selectedDate, onSelect, onClose }: {
           key={day}
           type="button"
           onClick={() => onSelect(dateStr)}
-          className={`h-10 rounded flex items-center justify-center hover:bg-gray-100 ${isSelected(day) ? 'bg-gray-200 font-semibold' : ''}`}
+          className={`h-10 rounded flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-900 dark:text-gray-100 ${isSelected(day) ? 'bg-gray-200 dark:bg-gray-600 font-semibold' : ''}`}
         >
           {day}
         </button>
@@ -1583,14 +1880,14 @@ const DatePicker = ({ selectedDate, onSelect, onClose }: {
   };
 
   return (
-    <div className="bg-white border border-gray-300 rounded-lg shadow-lg p-4 w-80">
+    <div className="bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg p-4 w-80">
       <div className="flex items-center justify-between mb-3">
-        <button type="button" onClick={() => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() - 1))} className="p-1 hover:bg-gray-100 rounded">←</button>
+        <button type="button" onClick={() => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() - 1))} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-gray-900 dark:text-gray-100">←</button>
         <div className="flex items-center gap-2">
           <select 
             value={viewDate.getFullYear()} 
             onChange={(e) => setViewDate(new Date(parseInt(e.target.value), viewDate.getMonth(), 1))}
-            className="border rounded px-2 py-1 text-sm font-semibold"
+            className="border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-sm font-semibold bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
           >
             {Array.from({length: 11}, (_, i) => currentYear - 10 + i).map(year => (
               <option key={year} value={year}>{year}年</option>
@@ -1598,18 +1895,18 @@ const DatePicker = ({ selectedDate, onSelect, onClose }: {
           </select>
           <span className="font-semibold">{viewDate.getMonth() + 1}月</span>
         </div>
-        <button type="button" onClick={() => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() + 1))} className="p-1 hover:bg-gray-100 rounded">→</button>
+        <button type="button" onClick={() => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() + 1))} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-gray-900 dark:text-gray-100">→</button>
       </div>
       
       <div className="grid grid-cols-7 gap-1 mb-2">
         {['日', '月', '火', '水', '木', '金', '土'].map(day => (
-          <div key={day} className="text-center text-sm text-gray-500 h-8 flex items-center justify-center">{day}</div>
+          <div key={day} className="text-center text-sm text-gray-500 dark:text-gray-400 h-8 flex items-center justify-center">{day}</div>
         ))}
       </div>
       
       <div className="grid grid-cols-7 gap-1">{renderCalendar()}</div>
       
-      <button type="button" onClick={onClose} className="w-full mt-3 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded">閉じる</button>
+      <button type="button" onClick={onClose} className="w-full mt-3 py-2 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 rounded">閉じる</button>
     </div>
   );
 };
@@ -1641,8 +1938,8 @@ const PeriodForm = ({ selectedDate, onSubmit, onCancel }: {
   return (
     <div className="space-y-4">
       <div>
-        <label className="block text-sm font-medium mb-1">開始日</label>
-        <button type="button" onClick={() => setShowStartPicker(!showStartPicker)} className="w-full border border-gray-300 rounded px-3 py-2 bg-gray-50 text-left">
+        <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-100">開始日</label>
+        <button type="button" onClick={() => setShowStartPicker(!showStartPicker)} className="w-full border border-gray-300 dark:border-gray-600 rounded px-3 py-2 bg-gray-50 dark:bg-gray-800 text-left">
           {formatBulkDisplayDate(startDate)}
         </button>
         {showStartPicker && (
@@ -1650,8 +1947,8 @@ const PeriodForm = ({ selectedDate, onSubmit, onCancel }: {
         )}
       </div>
       <div>
-        <label className="block text-sm font-medium mb-1">終了日</label>
-        <button type="button" onClick={() => setShowEndPicker(!showEndPicker)} className="w-full border border-gray-300 rounded px-3 py-2 bg-gray-50 text-left">
+        <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-100">終了日</label>
+        <button type="button" onClick={() => setShowEndPicker(!showEndPicker)} className="w-full border border-gray-300 dark:border-gray-600 rounded px-3 py-2 bg-gray-50 dark:bg-gray-800 text-left">
           {formatBulkDisplayDate(endDate)}
         </button>
         {showEndPicker && (
@@ -1685,8 +1982,8 @@ const EditPeriodForm = ({ period, onSubmit, onCancel }: {
   return (
     <div className="space-y-4">
       <div>
-        <label className="block text-sm font-medium mb-1">開始日</label>
-        <button type="button" onClick={() => setShowStartPicker(!showStartPicker)} className="w-full border rounded px-2 py-1 text-sm text-left bg-white hover:bg-gray-50">
+        <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-100">開始日</label>
+        <button type="button" onClick={() => setShowStartPicker(!showStartPicker)} className="w-full border rounded px-2 py-1 text-sm text-left bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-800">
           {formatBulkDisplayDate(startDate)}
         </button>
         {showStartPicker && (
@@ -1694,8 +1991,8 @@ const EditPeriodForm = ({ period, onSubmit, onCancel }: {
         )}
       </div>
       <div>
-        <label className="block text-sm font-medium mb-1">終了日</label>
-        <button type="button" onClick={() => setShowEndPicker(!showEndPicker)} className="w-full border rounded px-2 py-1 text-sm text-left bg-white hover:bg-gray-50">
+        <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-100">終了日</label>
+        <button type="button" onClick={() => setShowEndPicker(!showEndPicker)} className="w-full border rounded px-2 py-1 text-sm text-left bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-800">
           {formatBulkDisplayDate(endDate)}
         </button>
         {showEndPicker && (
@@ -1738,8 +2035,8 @@ const IntercourseForm = ({ selectedDate, onSubmit, onCancel }: {
   return (
     <div className="space-y-4">
       <div>
-        <label className="block text-sm font-medium mb-1">日付</label>
-        <button type="button" onClick={() => setShowDatePicker(!showDatePicker)} className="w-full border border-gray-300 rounded px-3 py-2 bg-gray-50 text-left">
+        <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-100">日付</label>
+        <button type="button" onClick={() => setShowDatePicker(!showDatePicker)} className="w-full border border-gray-300 dark:border-gray-600 rounded px-3 py-2 bg-gray-50 dark:bg-gray-800 text-left">
           {formatBulkDisplayDate(date)}
         </button>
         {showDatePicker && (
@@ -1747,24 +2044,24 @@ const IntercourseForm = ({ selectedDate, onSubmit, onCancel }: {
         )}
       </div>
       <div>
-        <label className="block text-sm font-medium mb-1">避妊具使用</label>
-        <select value={contraception} onChange={(e) => setContraception(e.target.value)} className="w-full border border-gray-300 rounded px-3 py-2 bg-gray-50">
-          <option value="不明">❓ 不明</option>
-          <option value="使用">✅ 使用</option>
-          <option value="不使用">❌ 不使用</option>
+        <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-100">避妊具使用</label>
+        <select value={contraception} onChange={(e) => setContraception(e.target.value)} className="w-full border border-gray-300 dark:border-gray-600 rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100">
+          <option value="不明" className="text-gray-900 dark:text-gray-100">❓ 不明</option>
+          <option value="使用" className="text-gray-900 dark:text-gray-100">✅ 使用</option>
+          <option value="不使用" className="text-gray-900 dark:text-gray-100">❌ 不使用</option>
         </select>
       </div>
       <div>
-        <label className="block text-sm font-medium mb-1">パートナー（任意）</label>
-        <input type="text" value={partner} onChange={(e) => setPartner(e.target.value)} placeholder="イニシャル、ニックネームなど" className="w-full border border-gray-300 rounded px-3 py-2 bg-gray-50" />
+        <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-100">パートナー（任意）</label>
+        <input type="text" value={partner} onChange={(e) => setPartner(e.target.value)} placeholder="イニシャル、ニックネームなど" className="w-full border border-gray-300 dark:border-gray-600 rounded px-3 py-2 bg-gray-50 dark:bg-gray-800" />
       </div>
       <div>
-        <label className="block text-sm font-medium mb-1">メモ（任意）</label>
-        <textarea value={memo} onChange={(e) => setMemo(e.target.value)} placeholder="体調, その他" className="w-full border border-gray-300 rounded px-3 py-2 bg-gray-50" rows={2} />
+        <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-100">メモ（任意）</label>
+        <textarea value={memo} onChange={(e) => setMemo(e.target.value)} placeholder="体調, その他" className="w-full border border-gray-300 dark:border-gray-600 rounded px-3 py-2 bg-gray-50 dark:bg-gray-800" rows={2} />
       </div>
       <div className="flex gap-2">
         <button type="button" onClick={onCancel} className="flex-1 border px-4 py-2 rounded">キャンセル</button>
-        <button type="button" onClick={(e) => { e.preventDefault(); onSubmit(date, contraception, partner, memo); }} className="flex-1 bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500">保存</button>
+        <button type="button" onClick={(e) => { e.preventDefault(); onSubmit(date, contraception, partner, memo); }} className="flex-1 bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-8000">保存</button>
       </div>
     </div>
   );
@@ -1780,21 +2077,21 @@ const AddModal = ({ selectedDate, modalType, setModalType, addPeriodRecord, addI
   currentDate: Date;
 }) => (
   <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 overflow-y-auto">
-    <div className="bg-white rounded-lg p-6 max-w-md w-full my-4">
-      <h3 className="text-lg font-semibold mb-4">
+    <div className="bg-white dark:bg-gray-900 rounded-lg p-6 max-w-md w-full my-4">
+      <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">
         {selectedDate && `${currentDate.getFullYear()}/${currentDate.getMonth() + 1}/${selectedDate.getDate()}`} の記録
       </h3>
       
       <div className="flex gap-2 mb-4">
         <button
           onClick={() => setModalType('period')}
-          className={`flex-1 py-2 rounded ${modalType === 'period' ? 'bg-red-500 text-white' : 'bg-gray-100'}`}
+          className={`flex-1 py-2 rounded ${modalType === 'period' ? 'bg-red-500 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100'}`}
         >
           生理
         </button>
         <button
           onClick={() => setModalType('intercourse')}
-          className={`flex-1 py-2 rounded text-sm ${modalType === 'intercourse' ? 'bg-gray-400 text-white' : 'bg-gray-100'}`}
+          className={`flex-1 py-2 rounded text-sm ${modalType === 'intercourse' ? 'bg-gray-400 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100'}`}
         >
           SEX
         </button>
@@ -1824,8 +2121,8 @@ const DeleteConfirmModal = ({ deleteCalendar, setDeleteCalendar, handleDeleteDat
   setShowDeleteConfirm: (show: boolean) => void;
 }) => (
   <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-    <div className="bg-white rounded-lg p-6 max-w-md w-full">
-      <h3 className="text-lg font-semibold mb-4 text-red-600">
+    <div className="bg-white dark:bg-gray-900 rounded-lg p-6 max-w-md w-full">
+      <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100 text-red-600">
         データを削除しますか？
       </h3>
       
@@ -1840,7 +2137,7 @@ const DeleteConfirmModal = ({ deleteCalendar, setDeleteCalendar, handleDeleteDat
             />
             <div>
               <p className="text-sm font-medium">アプリ内データ</p>
-              <p className="text-xs text-gray-500">生理記録・SEX記録（必須）</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">生理記録・SEX記録（必須）</p>
             </div>
           </label>
           
@@ -1853,7 +2150,7 @@ const DeleteConfirmModal = ({ deleteCalendar, setDeleteCalendar, handleDeleteDat
             />
             <div>
               <p className="text-sm font-medium">Googleカレンダー</p>
-              <p className="text-xs text-gray-500">同期したイベントも削除</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">同期したイベントも削除</p>
             </div>
           </label>
         </div>
@@ -1869,7 +2166,7 @@ const DeleteConfirmModal = ({ deleteCalendar, setDeleteCalendar, handleDeleteDat
             setShowDeleteConfirm(false);
             setDeleteCalendar(false);
           }}
-          className="flex-1 border px-4 py-2 rounded hover:bg-gray-50"
+          className="flex-1 border px-4 py-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-800"
         >
           キャンセル
         </button>
@@ -1898,14 +2195,14 @@ const BulkAddModal = ({ bulkRecords, setBulkRecords, bulkPickerState, setBulkPic
   currentDate: Date;
 }) => (
   <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center p-4 overflow-y-auto" style={{zIndex: 9999}}>
-    <div className="bg-white rounded-lg p-6 w-full max-w-2xl my-4">
-      <h3 className="text-lg font-semibold mb-4">
+    <div className="bg-white dark:bg-gray-900 rounded-lg p-6 w-full max-w-2xl my-4">
+      <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">
         過去の生理記録を一括登録
       </h3>
 
       <div className="space-y-3 mb-4">
         {bulkRecords.map((record, index) => (
-          <div key={record.id} className="border rounded p-3 bg-gray-50">
+          <div key={record.id} className="border rounded p-3 bg-gray-50 dark:bg-gray-800">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium">記録 {index + 1}</span>
               {bulkRecords.length > 1 && (
@@ -1920,21 +2217,21 @@ const BulkAddModal = ({ bulkRecords, setBulkRecords, bulkPickerState, setBulkPic
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="block text-xs text-gray-600 mb-1">開始日</label>
+                <label className="block text-xs text-gray-600 dark:text-gray-300 mb-1">開始日</label>
                 <button
                   type="button"
                   onClick={() => setBulkPickerState({ recordId: record.id, field: 'startDate' })}
-                  className="w-full border rounded px-2 py-1 text-sm text-left bg-white hover:bg-gray-50"
+                  className="w-full border rounded px-2 py-1 text-sm text-left bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-800"
                 >
                   {formatBulkDisplayDate(record.startDate)}
                 </button>
               </div>
               <div>
-                <label className="block text-xs text-gray-600 mb-1">終了日</label>
+                <label className="block text-xs text-gray-600 dark:text-gray-300 mb-1">終了日</label>
                 <button
                   type="button"
                   onClick={() => setBulkPickerState({ recordId: record.id, field: 'endDate' })}
-                  className="w-full border rounded px-2 py-1 text-sm text-left bg-white hover:bg-gray-50"
+                  className="w-full border rounded px-2 py-1 text-sm text-left bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-800"
                 >
                   {formatBulkDisplayDate(record.endDate)}
                 </button>
@@ -1947,7 +2244,7 @@ const BulkAddModal = ({ bulkRecords, setBulkRecords, bulkPickerState, setBulkPic
           <button
             type="button"
             onClick={addBulkRecord}
-            className="w-full border-2 border-dashed border-gray-300 text-gray-600 px-4 py-2 rounded hover:bg-gray-50"
+            className="w-full border-2 border-dashed border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 px-4 py-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-800"
           >
             + 記録を追加
           </button>
@@ -1955,7 +2252,7 @@ const BulkAddModal = ({ bulkRecords, setBulkRecords, bulkPickerState, setBulkPic
       </div>
 
       {bulkPickerState.recordId && (
-        <div className="fixed inset-0 bg-white flex items-center justify-center" style={{zIndex: 10000}}>
+        <div className="fixed inset-0 bg-white dark:bg-gray-900 flex items-center justify-center" style={{zIndex: 10000}}>
           <div 
             className="absolute inset-0 bg-black bg-opacity-30" 
             onClick={() => setBulkPickerState({ recordId: null, field: null })}
@@ -1981,7 +2278,7 @@ const BulkAddModal = ({ bulkRecords, setBulkRecords, bulkPickerState, setBulkPic
             setBulkRecords([{ id: 1, startDate: '', endDate: '' }]);
             setBulkPickerState({ recordId: null, field: null });
           }}
-          className="flex-1 border px-4 py-2 rounded hover:bg-gray-50"
+          className="flex-1 border px-4 py-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-800"
         >
           キャンセル
         </button>
@@ -2003,8 +2300,8 @@ const EditPeriodModal = ({ period, updatePeriod, setEditingPeriod }: {
   setEditingPeriod: (period: Period | null) => void;
 }) => (
   <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4" style={{zIndex: 10001}}>
-    <div className="bg-white rounded-lg p-6 max-w-md w-full">
-      <h3 className="text-lg font-semibold mb-4">生理記録を修正</h3>
+    <div className="bg-white dark:bg-gray-900 rounded-lg p-6 max-w-md w-full">
+      <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">生理記録を修正</h3>
       <EditPeriodForm
         period={period}
         onSubmit={(startDate, endDate) => updatePeriod(period.id, startDate, endDate)}
@@ -2020,11 +2317,11 @@ const DeletePeriodModal = ({ deletePeriod, deletingPeriodId, setDeletingPeriodId
   setDeletingPeriodId: (id: number | null) => void;
 }) => (
   <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4" style={{zIndex: 10002}}>
-    <div className="bg-white rounded-lg p-6 max-w-sm w-full">
-      <h3 className="text-lg font-semibold mb-4 text-red-600">記録を削除しますか？</h3>
-      <p className="text-sm text-gray-600 mb-6">この操作は取り消せません</p>
+    <div className="bg-white dark:bg-gray-900 rounded-lg p-6 max-w-sm w-full">
+      <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100 text-red-600">記録を削除しますか？</h3>
+      <p className="text-sm text-gray-600 dark:text-gray-300 mb-6">この操作は取り消せません</p>
       <div className="flex gap-2">
-        <button onClick={() => setDeletingPeriodId(null)} className="flex-1 border px-4 py-2 rounded hover:bg-gray-50">キャンセル</button>
+        <button onClick={() => setDeletingPeriodId(null)} className="flex-1 border px-4 py-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-800">キャンセル</button>
         <button onClick={() => deletePeriod(deletingPeriodId)} className="flex-1 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">削除する</button>
       </div>
     </div>
@@ -2050,27 +2347,27 @@ const RecordsList = ({ records, onClose, onEdit, onDelete }: {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4" style={{zIndex: 9999}}>
-      <div className="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] flex flex-col">
+      <div className="bg-white dark:bg-gray-900 rounded-lg w-full max-w-2xl max-h-[90vh] flex flex-col">
         <div className="p-6 border-b">
           <h3 className="text-lg font-semibold">登録済み生理記録一覧</h3>
-          {records.periods.length > 0 && <p className="text-sm text-gray-600 mt-2">全{records.periods.length}件の記録</p>}
+          {records.periods.length > 0 && <p className="text-sm text-gray-600 dark:text-gray-300 mt-2">全{records.periods.length}件の記録</p>}
         </div>
 
         {records.periods.length === 0 ? (
-          <div className="text-center py-8 text-gray-500 flex-1"><p>まだ記録がありません</p></div>
+          <div className="text-center py-8 text-gray-500 dark:text-gray-400 flex-1"><p>まだ記録がありません</p></div>
         ) : (
           <div className="flex-1 overflow-y-auto px-6 py-4">
             <div className="space-y-4">
               {years.map(year => (
                 <div key={year}>
-                  <h4 className="text-sm font-bold text-gray-700 mb-2 sticky top-0 bg-white py-2 border-b">{year}年 ({periodsByYear[year].length}件)</h4>
+                  <h4 className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 sticky top-0 bg-white dark:bg-gray-900 py-2 border-b">{year}年 ({periodsByYear[year].length}件)</h4>
                   <div className="space-y-2">
                     {periodsByYear[year].map(period => {
                       const startDate = new Date(period.startDate);
                       const endDate = new Date(period.endDate);
                       const sameMonth = startDate.getMonth() === endDate.getMonth();
                       return (
-                        <div key={period.id} className="border rounded p-3 bg-gray-50">
+                        <div key={period.id} className="border rounded p-3 bg-gray-50 dark:bg-gray-800">
                           <div className="flex items-center justify-between gap-3">
                             <div className="flex-1">
                               <p className="text-sm font-medium">
@@ -2078,10 +2375,10 @@ const RecordsList = ({ records, onClose, onEdit, onDelete }: {
                               </p>
                             </div>
                             <div className="flex gap-2">
-                              <button onClick={() => onEdit(period)} className="text-gray-600 hover:bg-gray-100 p-1 rounded" title="修正">
+                              <button onClick={() => onEdit(period)} className="text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 p-1 rounded" title="修正">
                                 <i className="fa-solid fa-pen-to-square"></i>
                               </button>
-                              <button onClick={() => onDelete(period.id)} className="text-gray-600 hover:bg-gray-100 p-1 rounded" title="削除">
+                              <button onClick={() => onDelete(period.id)} className="text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 p-1 rounded" title="削除">
                                 <i className="fa-solid fa-trash"></i>
                               </button>
                             </div>
@@ -2097,7 +2394,7 @@ const RecordsList = ({ records, onClose, onEdit, onDelete }: {
         )}
 
         <div className="p-6 border-t">
-          <button onClick={onClose} className="w-full border px-4 py-2 rounded hover:bg-gray-50">閉じる</button>
+          <button onClick={onClose} className="w-full border px-4 py-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-800">閉じる</button>
         </div>
       </div>
     </div>
@@ -2123,39 +2420,39 @@ const IntercourseList = ({ records, onClose, onEdit, onDelete }: {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4" style={{zIndex: 9999}}>
-      <div className="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] flex flex-col">
+      <div className="bg-white dark:bg-gray-900 rounded-lg w-full max-w-2xl max-h-[90vh] flex flex-col">
         <div className="p-6 border-b">
           <h3 className="text-lg font-semibold">SEX記録一覧</h3>
-          {records.length > 0 && <p className="text-sm text-gray-600 mt-2">全{records.length}件の記録</p>}
+          {records.length > 0 && <p className="text-sm text-gray-600 dark:text-gray-300 mt-2">全{records.length}件の記録</p>}
         </div>
 
         {records.length === 0 ? (
-          <div className="text-center py-8 text-gray-500 flex-1"><p>まだ記録がありません</p></div>
+          <div className="text-center py-8 text-gray-500 dark:text-gray-400 flex-1"><p>まだ記録がありません</p></div>
         ) : (
           <div className="flex-1 overflow-y-auto px-6 py-4">
             <div className="space-y-4">
               {years.map(year => (
                 <div key={year}>
-                  <h4 className="text-sm font-bold text-gray-700 mb-2 sticky top-0 bg-white py-2 border-b">{year}年 ({recordsByYear[year].length}件)</h4>
+                  <h4 className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 sticky top-0 bg-white dark:bg-gray-900 py-2 border-b">{year}年 ({recordsByYear[year].length}件)</h4>
                   <div className="space-y-2">
                     {recordsByYear[year].map(record => {
                       const date = new Date(record.date);
                       return (
-                        <div key={record.id} className="border rounded p-3 bg-gray-50">
+                        <div key={record.id} className="border rounded p-3 bg-gray-50 dark:bg-gray-800">
                           <div className="flex items-start justify-between gap-3">
                             <div className="flex-1">
                               <p className="text-sm font-medium mb-1">{date.getMonth() + 1}月{date.getDate()}日</p>
-                              <div className="text-xs text-gray-600 space-y-1">
+                              <div className="text-xs text-gray-600 dark:text-gray-300 space-y-1">
                                 <p>避妊具：{record.contraception}</p>
                                 {record.partner && <p>パートナー：{record.partner}</p>}
                                 {record.memo && <p>メモ：{record.memo}</p>}
                               </div>
                             </div>
                             <div className="flex gap-2">
-                              <button onClick={() => onEdit(record)} className="text-gray-600 hover:bg-gray-100 p-1 rounded" title="修正">
+                              <button onClick={() => onEdit(record)} className="text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 p-1 rounded" title="修正">
                                 <i className="fa-solid fa-pen-to-square"></i>
                               </button>
-                              <button onClick={() => onDelete(record.id)} className="text-gray-600 hover:bg-gray-100 p-1 rounded" title="削除">
+                              <button onClick={() => onDelete(record.id)} className="text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 p-1 rounded" title="削除">
                                 <i className="fa-solid fa-trash"></i>
                               </button>
                             </div>
@@ -2171,7 +2468,7 @@ const IntercourseList = ({ records, onClose, onEdit, onDelete }: {
         )}
 
         <div className="p-6 border-t">
-          <button onClick={onClose} className="w-full border px-4 py-2 rounded hover:bg-gray-50">閉じる</button>
+          <button onClick={onClose} className="w-full border px-4 py-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-800">閉じる</button>
         </div>
       </div>
     </div>
@@ -2191,9 +2488,9 @@ const InitialSyncModal = ({ onSave }: {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4" style={{zIndex: 10004}}>
-      <div className="bg-white rounded-lg p-6 max-w-md w-full">
+      <div className="bg-white dark:bg-gray-900 rounded-lg p-6 max-w-md w-full">
         <h3 className="text-lg font-semibold mb-2">同期設定</h3>
-        <p className="text-sm text-gray-600 mb-4">
+        <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
           Googleカレンダーに同期する情報を選択してください。<br/>
           後から設定ページでも変更できます。
         </p>
@@ -2205,7 +2502,7 @@ const InitialSyncModal = ({ onSave }: {
               checked={settings.period}
               onChange={(e) => setSettings({...settings, period: e.target.checked})}
             />
-            <span className="text-sm">生理期間を同期</span>
+            <span className="text-sm text-gray-900 dark:text-gray-100">生理期間を同期</span>
           </label>
           <label className="flex items-center gap-2 cursor-pointer">
             <input 
@@ -2213,7 +2510,7 @@ const InitialSyncModal = ({ onSave }: {
               checked={settings.fertile}
               onChange={(e) => setSettings({...settings, fertile: e.target.checked})}
             />
-            <span className="text-sm">妊娠可能日を同期</span>
+            <span className="text-sm text-gray-900 dark:text-gray-100">妊娠可能日を同期</span>
           </label>
           <label className="flex items-center gap-2 cursor-pointer">
             <input 
@@ -2221,7 +2518,7 @@ const InitialSyncModal = ({ onSave }: {
               checked={settings.pms}
               onChange={(e) => setSettings({...settings, pms: e.target.checked})}
             />
-            <span className="text-sm">PMS予測を同期</span>
+            <span className="text-sm text-gray-900 dark:text-gray-100">PMS予測を同期</span>
           </label>
           <div>
             <label className="flex items-center gap-2 cursor-pointer">
@@ -2230,7 +2527,7 @@ const InitialSyncModal = ({ onSave }: {
                 checked={settings.intercourse}
                 onChange={(e) => setSettings({...settings, intercourse: e.target.checked})}
               />
-              <span className="text-sm">SEXを同期</span>
+              <span className="text-sm text-gray-900 dark:text-gray-100">SEXを同期</span>
               <button 
                 type="button" 
                 onClick={() => setShowIntercourseInfo(!showIntercourseInfo)} 
@@ -2240,7 +2537,7 @@ const InitialSyncModal = ({ onSave }: {
               </button>
             </label>
             {showIntercourseInfo && (
-              <div className="mt-2 p-3 bg-blue-50 rounded text-xs text-gray-700">
+              <div className="mt-2 p-3 bg-blue-50 dark:bg-gray-800 rounded text-xs text-gray-700 dark:text-gray-300 dark:text-gray-300">
                 <p className="font-semibold mb-1">📅 カレンダーに表示される内容：</p>
                 <p className="mb-2">「●」などの記号のみ（カスタマイズ可能）</p>
                 <p className="font-semibold mb-1">🔒 同期されない情報：</p>
@@ -2249,7 +2546,7 @@ const InitialSyncModal = ({ onSave }: {
                   <li>避妊具使用状況</li>
                   <li>メモ</li>
                 </ul>
-                <p className="mt-2 text-gray-600">詳細情報はアプリ内にのみ保存されます。</p>
+                <p className="mt-2 text-gray-600 dark:text-gray-300">詳細情報はアプリ内にのみ保存されます。</p>
               </div>
             )}
           </div>
@@ -2282,7 +2579,7 @@ const NotificationModal = ({ message, type, onClose }: {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center p-4" style={{zIndex: 10005}}>
-      <div className="bg-white rounded-lg p-6 max-w-sm w-full shadow-xl">
+      <div className="bg-white dark:bg-gray-900 rounded-lg p-6 max-w-sm w-full shadow-xl">
         <p className="text-center whitespace-pre-line flex items-center justify-center min-h-[60px]">{message}</p>
         {type === 'error' && (
           <button 
@@ -2310,7 +2607,7 @@ const DayDetailModal = ({ date, periods, intercourse, onClose, onEditPeriod, onD
 }) => {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4" style={{zIndex: 9999}}>
-      <div className="bg-white rounded-lg w-full max-w-md max-h-[90vh] flex flex-col">
+      <div className="bg-white dark:bg-gray-900 rounded-lg w-full max-w-md max-h-[90vh] flex flex-col">
         <div className="p-6 border-b">
           <h3 className="text-lg font-semibold">{date.getMonth() + 1}月{date.getDate()}日の記録</h3>
         </div>
@@ -2318,7 +2615,7 @@ const DayDetailModal = ({ date, periods, intercourse, onClose, onEditPeriod, onD
         <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
           {periods.length > 0 && (
             <div>
-              <h4 className="text-sm font-bold text-gray-700 mb-2">生理記録 ({periods.length}件)</h4>
+              <h4 className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">生理記録 ({periods.length}件)</h4>
               <div className="space-y-2">
                 {periods.map(period => {
                   const startDate = new Date(period.startDate);
@@ -2333,10 +2630,10 @@ const DayDetailModal = ({ date, periods, intercourse, onClose, onEditPeriod, onD
                           </p>
                         </div>
                         <div className="flex gap-2">
-                          <button onClick={() => onEditPeriod(period)} className="text-gray-600 hover:bg-gray-100 p-1 rounded" title="修正">
+                          <button onClick={() => onEditPeriod(period)} className="text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 p-1 rounded" title="修正">
                             <i className="fa-solid fa-pen-to-square"></i>
                           </button>
-                          <button onClick={() => onDeletePeriod(period.id)} className="text-gray-600 hover:bg-gray-100 p-1 rounded" title="削除">
+                          <button onClick={() => onDeletePeriod(period.id)} className="text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 p-1 rounded" title="削除">
                             <i className="fa-solid fa-trash"></i>
                           </button>
                         </div>
@@ -2350,23 +2647,23 @@ const DayDetailModal = ({ date, periods, intercourse, onClose, onEditPeriod, onD
 
           {intercourse.length > 0 && (
             <div>
-              <h4 className="text-sm font-bold text-gray-700 mb-2">SEX記録 ({intercourse.length}件)</h4>
+              <h4 className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">SEX記録 ({intercourse.length}件)</h4>
               <div className="space-y-2">
                 {intercourse.map(record => (
-                  <div key={record.id} className="border rounded p-3 bg-gray-50">
+                  <div key={record.id} className="border rounded p-3 bg-gray-50 dark:bg-gray-800">
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1">
-                        <div className="text-xs text-gray-600 space-y-1">
+                        <div className="text-xs text-gray-600 dark:text-gray-300 space-y-1">
                           <p>避妊具：{record.contraception}</p>
                           {record.partner && <p>パートナー：{record.partner}</p>}
                           {record.memo && <p>メモ：{record.memo}</p>}
                         </div>
                       </div>
                       <div className="flex gap-2">
-                        <button onClick={() => onEditIntercourse(record)} className="text-gray-600 hover:bg-gray-100 p-1 rounded" title="修正">
+                        <button onClick={() => onEditIntercourse(record)} className="text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 p-1 rounded" title="修正">
                           <i className="fa-solid fa-pen-to-square"></i>
                         </button>
-                        <button onClick={() => onDeleteIntercourse(record.id)} className="text-gray-600 hover:bg-gray-100 p-1 rounded" title="削除">
+                        <button onClick={() => onDeleteIntercourse(record.id)} className="text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 p-1 rounded" title="削除">
                           <i className="fa-solid fa-trash"></i>
                         </button>
                       </div>
@@ -2382,7 +2679,7 @@ const DayDetailModal = ({ date, periods, intercourse, onClose, onEditPeriod, onD
           <button onClick={onAddNew} className="w-full bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
             この日に新しい記録を追加
           </button>
-          <button onClick={onClose} className="w-full border px-4 py-2 rounded hover:bg-gray-50">
+          <button onClick={onClose} className="w-full border px-4 py-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-800">
             閉じる
           </button>
         </div>
@@ -2410,12 +2707,12 @@ const EditIntercourseModal = ({ record, updateIntercourse, setEditingIntercourse
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4" style={{zIndex: 10001}}>
-      <div className="bg-white rounded-lg p-6 max-w-md w-full">
-        <h3 className="text-lg font-semibold mb-4">SEX記録を修正</h3>
+      <div className="bg-white dark:bg-gray-900 rounded-lg p-6 max-w-md w-full">
+        <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">SEX記録を修正</h3>
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-1">日付</label>
-            <button type="button" onClick={() => setShowDatePicker(!showDatePicker)} className="w-full border rounded px-2 py-1 text-sm text-left bg-white hover:bg-gray-50">
+            <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-100">日付</label>
+            <button type="button" onClick={() => setShowDatePicker(!showDatePicker)} className="w-full border rounded px-2 py-1 text-sm text-left bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-800">
               {formatBulkDisplayDate(date)}
             </button>
             {showDatePicker && (
@@ -2423,20 +2720,20 @@ const EditIntercourseModal = ({ record, updateIntercourse, setEditingIntercourse
             )}
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">避妊具使用</label>
-            <select value={contraception} onChange={(e) => setContraception(e.target.value)} className="w-full border rounded px-2 py-1 text-sm bg-white">
-              <option value="不明">❓ 不明</option>
-              <option value="使用">✅ 使用</option>
-              <option value="不使用">❌ 不使用</option>
+            <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-100">避妊具使用</label>
+            <select value={contraception} onChange={(e) => setContraception(e.target.value)} className="w-full border rounded px-2 py-1 text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 [&>option]:text-gray-900 [&>option]:dark:text-gray-100">
+              <option value="不明" className="text-gray-900 dark:text-gray-100">❓ 不明</option>
+              <option value="使用" className="text-gray-900 dark:text-gray-100">✅ 使用</option>
+              <option value="不使用" className="text-gray-900 dark:text-gray-100">❌ 不使用</option>
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">パートナー（任意）</label>
-            <input type="text" value={partner} onChange={(e) => setPartner(e.target.value)} placeholder="イニシャル、ニックネームなど" className="w-full border rounded px-2 py-1 text-sm bg-white" />
+            <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-100">パートナー（任意）</label>
+            <input type="text" value={partner} onChange={(e) => setPartner(e.target.value)} placeholder="イニシャル、ニックネームなど" className="w-full border rounded px-2 py-1 text-sm bg-white dark:bg-gray-900" />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">メモ（任意）</label>
-            <textarea value={memo} onChange={(e) => setMemo(e.target.value)} placeholder="体調, その他" className="w-full border rounded px-2 py-1 text-sm bg-white" rows={2} />
+            <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-100">メモ（任意）</label>
+            <textarea value={memo} onChange={(e) => setMemo(e.target.value)} placeholder="体調, その他" className="w-full border rounded px-2 py-1 text-sm bg-white dark:bg-gray-900" rows={2} />
           </div>
           <div className="flex gap-2">
             <button type="button" onClick={() => setEditingIntercourse(null)} className="flex-1 border px-4 py-2 rounded">キャンセル</button>
@@ -2454,11 +2751,11 @@ const DeleteIntercourseModal = ({ deleteIntercourse, deletingIntercourseId, setD
   setDeletingIntercourseId: (id: number | null) => void;
 }) => (
   <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4" style={{zIndex: 10002}}>
-    <div className="bg-white rounded-lg p-6 max-w-sm w-full">
-      <h3 className="text-lg font-semibold mb-4 text-red-600">SEX記録を削除しますか？</h3>
-      <p className="text-sm text-gray-600 mb-6">この操作は取り消せません</p>
+    <div className="bg-white dark:bg-gray-900 rounded-lg p-6 max-w-sm w-full">
+      <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100 text-red-600">SEX記録を削除しますか？</h3>
+      <p className="text-sm text-gray-600 dark:text-gray-300 mb-6">この操作は取り消せません</p>
       <div className="flex gap-2">
-        <button onClick={() => setDeletingIntercourseId(null)} className="flex-1 border px-4 py-2 rounded hover:bg-gray-50">キャンセル</button>
+        <button onClick={() => setDeletingIntercourseId(null)} className="flex-1 border px-4 py-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-800">キャンセル</button>
         <button onClick={() => deleteIntercourse(deletingIntercourseId)} className="flex-1 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">削除する</button>
       </div>
     </div>
