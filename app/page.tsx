@@ -1327,7 +1327,7 @@ const SyncSettings = () => {
               onChange={(e) => handleChange('intercourse', e.target.checked)}
             />
             <span className="text-sm text-gray-900 dark:text-gray-100">SEXを同期</span>
-            <button type="button" onClick={() => setShowIntercourseInfo(!showIntercourseInfo)} className="w-5 h-5 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-xs">
+            <button type="button" onClick={() => setShowIntercourseInfo(!showIntercourseInfo)} className="w-5 h-5 rounded-full bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 flex items-center justify-center text-xs text-gray-900 dark:text-gray-100">
               ⓘ
             </button>
           </label>
