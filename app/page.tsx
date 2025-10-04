@@ -2344,18 +2344,45 @@ const DeletePeriodModal = ({ deletePeriod, deletingPeriodId, setDeletingPeriodId
   deletePeriod: (id: number) => void;
   deletingPeriodId: number;
   setDeletingPeriodId: (id: number | null) => void;
-}) => (
-  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4" style={{zIndex: 10002}}>
-    <div className="bg-white dark:bg-gray-900 rounded-lg p-6 max-w-sm w-full">
-      <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100 text-red-600">記録を削除しますか？</h3>
-      <p className="text-sm text-gray-600 dark:text-gray-300 mb-6">この操作は取り消せません</p>
-      <div className="flex gap-2">
-        <button onClick={() => setDeletingPeriodId(null)} className="flex-1 border px-4 py-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-800">キャンセル</button>
-        <button onClick={() => deletePeriod(deletingPeriodId)} className="flex-1 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">削除する</button>
+}) => {
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleDelete = async () => {
+    setIsDeleting(true);
+    await deletePeriod(deletingPeriodId);
+    setIsDeleting(false);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4" style={{zIndex: 10002}}>
+      <div className="bg-white dark:bg-gray-900 rounded-lg p-6 max-w-sm w-full">
+        <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100 text-red-600">記録を削除しますか？</h3>
+        <p className="text-sm text-gray-600 dark:text-gray-300 mb-6">この操作は取り消せません</p>
+        <div className="flex gap-2">
+          <button 
+            onClick={() => setDeletingPeriodId(null)}
+            disabled={isDeleting}
+            className="flex-1 border px-4 py-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-800 disabled:opacity-50"
+          >
+            キャンセル
+          </button>
+          <button 
+            onClick={handleDelete}
+            disabled={isDeleting}
+            className="flex-1 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 disabled:opacity-50 flex items-center justify-center gap-2"
+          >
+            {isDeleting ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                削除中...
+              </>
+            ) : '削除する'}
+          </button>
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 const RecordsList = ({ records, onClose, onEdit, onDelete }: {
   records: Records;
@@ -2787,17 +2814,44 @@ const DeleteIntercourseModal = ({ deleteIntercourse, deletingIntercourseId, setD
   deleteIntercourse: (id: number) => void;
   deletingIntercourseId: number;
   setDeletingIntercourseId: (id: number | null) => void;
-}) => (
-  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4" style={{zIndex: 10002}}>
-    <div className="bg-white dark:bg-gray-900 rounded-lg p-6 max-w-sm w-full">
-      <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100 text-red-600">SEX記録を削除しますか？</h3>
-      <p className="text-sm text-gray-600 dark:text-gray-300 mb-6">この操作は取り消せません</p>
-      <div className="flex gap-2">
-        <button onClick={() => setDeletingIntercourseId(null)} className="flex-1 border px-4 py-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-800">キャンセル</button>
-        <button onClick={() => deleteIntercourse(deletingIntercourseId)} className="flex-1 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">削除する</button>
+}) => {
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleDelete = async () => {
+    setIsDeleting(true);
+    await deleteIntercourse(deletingIntercourseId);
+    setIsDeleting(false);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4" style={{zIndex: 10002}}>
+      <div className="bg-white dark:bg-gray-900 rounded-lg p-6 max-w-sm w-full">
+        <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100 text-red-600">SEX記録を削除しますか？</h3>
+        <p className="text-sm text-gray-600 dark:text-gray-300 mb-6">この操作は取り消せません</p>
+        <div className="flex gap-2">
+          <button 
+            onClick={() => setDeletingIntercourseId(null)} 
+            disabled={isDeleting}
+            className="flex-1 border px-4 py-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-800 disabled:opacity-50"
+          >
+            キャンセル
+          </button>
+          <button 
+            onClick={handleDelete}
+            disabled={isDeleting}
+            className="flex-1 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 disabled:opacity-50 flex items-center justify-center gap-2"
+          >
+            {isDeleting ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                削除中...
+              </>
+            ) : '削除する'}
+          </button>
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 export default PeriodTrackerApp;
