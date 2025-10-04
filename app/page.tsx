@@ -2536,7 +2536,7 @@ const InitialSyncModal = ({ onSave }: {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4" style={{zIndex: 10004}}>
-      <div className="bg-white dark:bg-gray-900 rounded-lg p-6 max-w-md w-full">
+      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full">
         <h3 className="text-lg font-semibold mb-2">同期設定</h3>
         <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
           Googleカレンダーに同期する情報を選択してください。<br/>
@@ -2571,7 +2571,7 @@ const InitialSyncModal = ({ onSave }: {
             />
             <span className="text-sm text-gray-900 dark:text-gray-100">PMS予測を同期</span>
           </label>
-            <div className="block">
+          <div>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input 
                   type="checkbox" 
