@@ -158,7 +158,7 @@ const getOrCreateCalendar = async () => {
     if (!response.ok) throw new Error('Calendar list failed');
     
     const data = await response.json();
-    const calendar = data.items?.find((cal: any) => cal.summary === CALENDAR_NAME);
+    const calendar = data.items?.find((cal: { summary: string; id: string }) => cal.summary === CALENDAR_NAME);
     
     if (calendar) return calendar.id;
     
@@ -235,7 +235,7 @@ const syncToCalendar = async (
     );
     
     if (eventsResponse.ok) {
-      const eventsData = await eventsResponse.json();
+      const eventsData = await eventsResponse.json() as { items?: { id: string }[] };
       for (const event of eventsData.items || []) {
         await fetch(
           `https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events/${event.id}`,
