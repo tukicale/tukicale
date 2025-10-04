@@ -633,39 +633,39 @@ const deletePeriod = (id: number) => {
     });
   };
 
-const deleteIntercourse = (id: number) => {
-    const newRecords = {
-      ...records,
-      intercourse: records.intercourse.filter(i => i.id !== id)
-    };
-    
-    setRecords(newRecords);
-    saveToDrive(newRecords);
-    syncToCalendar(newRecords, syncSettings, getAverageCycle, getFertileDays, getPMSDays, getNextPeriodDays);
-    setDeletingIntercourseId(null);
-    setNotification({
-      message: '✓ SEX記録を削除しました',
-      type: 'success'
-    });
+const deleteIntercourse = async (id: number) => {
+  const newRecords = {
+    ...records,
+    intercourse: records.intercourse.filter(i => i.id !== id)
   };
+  
+  setRecords(newRecords);
+  await saveToDrive(newRecords);
+  await syncToCalendar(newRecords, syncSettings, getAverageCycle, getFertileDays, getPMSDays, getNextPeriodDays);
+  setDeletingIntercourseId(null);
+  setNotification({
+    message: '✓ SEX記録を削除しました',
+    type: 'success'
+  });
+};
 
-const updateIntercourse = (id: number, date: string, contraception: string, partner: string, memo: string) => {
-    const newRecords = {
-      ...records,
-      intercourse: records.intercourse.map(i => 
-        i.id === id ? { ...i, date, contraception, partner, memo } : i
-      )
-    };
-    
-    setRecords(newRecords);
-    saveToDrive(newRecords);
-    syncToCalendar(newRecords, syncSettings, getAverageCycle, getFertileDays, getPMSDays, getNextPeriodDays);
-    setEditingIntercourse(null);
-    setNotification({
-      message: '✓ SEX記録を更新しました',
-      type: 'success'
-    });
+const updateIntercourse = async (id: number, date: string, contraception: string, partner: string, memo: string) => {
+  const newRecords = {
+    ...records,
+    intercourse: records.intercourse.map(i => 
+      i.id === id ? { ...i, date, contraception, partner, memo } : i
+    )
   };
+  
+  setRecords(newRecords);
+  await saveToDrive(newRecords);
+  await syncToCalendar(newRecords, syncSettings, getAverageCycle, getFertileDays, getPMSDays, getNextPeriodDays);
+  setEditingIntercourse(null);
+  setNotification({
+    message: '✓ SEX記録を更新しました',
+    type: 'success'
+  });
+};
 
 const addIntercourseRecord = (date: string, contraception: string, partner: string, memo: string) => {
     const newRecord = {
