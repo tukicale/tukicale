@@ -2506,6 +2506,7 @@ const InitialSyncModal = ({ onSave }: {
               type="checkbox" 
               checked={settings.period}
               onChange={(e) => setSettings({...settings, period: e.target.checked})}
+              className="accent-blue-600"
             />
             <span className="text-sm text-gray-900 dark:text-gray-100">生理期間を同期</span>
           </label>
@@ -2514,6 +2515,7 @@ const InitialSyncModal = ({ onSave }: {
               type="checkbox" 
               checked={settings.fertile}
               onChange={(e) => setSettings({...settings, fertile: e.target.checked})}
+              className="accent-blue-600"
             />
             <span className="text-sm text-gray-900 dark:text-gray-100">妊娠可能日を同期</span>
           </label>
@@ -2522,21 +2524,22 @@ const InitialSyncModal = ({ onSave }: {
               type="checkbox" 
               checked={settings.pms}
               onChange={(e) => setSettings({...settings, pms: e.target.checked})}
+              className="accent-blue-600"
             />
             <span className="text-sm text-gray-900 dark:text-gray-100">PMS予測を同期</span>
           </label>
-          <div>
             <label className="flex items-center gap-2 cursor-pointer">
               <input 
                 type="checkbox" 
                 checked={settings.intercourse}
                 onChange={(e) => setSettings({...settings, intercourse: e.target.checked})}
+                className="accent-blue-600"
               />
               <span className="text-sm text-gray-900 dark:text-gray-100">SEXを同期</span>
               <button 
                 type="button" 
                 onClick={() => setShowIntercourseInfo(!showIntercourseInfo)} 
-                className="w-5 h-5 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-xs"
+                className="w-5 h-5 rounded-full bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 flex items-center justify-center text-xs text-gray-900 dark:text-gray-100"
               >
                 ⓘ
               </button>
