@@ -1,10 +1,10 @@
 {
-"name": "月カレ - TukiCale - 生理管理アプリ",
-"short_name": "TukiCale",
-"description": "生理管理アプリ",
+  "name": "TukiCale(月カレ)",
+  "short_name": "TukiCale",
+  "description": "生理管理アプリ",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#C5D3DD",
+  "background_color": "#C2D2DA",
   "theme_color": "#C2D2DA",
   "icons": [
     {
