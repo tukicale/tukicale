@@ -238,7 +238,7 @@ const syncToCalendar = async (
       });
     }
     
-    // ★★★ ここにログ追加 ★★★
+    // ★★★ ここにログ追加 ★★★★
     console.log('作成するイベント数:', events.length);
     console.log('イベント詳細:', events);
     
