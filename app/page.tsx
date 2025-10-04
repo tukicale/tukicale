@@ -920,7 +920,7 @@ const handleSaveSyncSettings = (newSettings: SyncSettings) => {
             className={`p-2 rounded ${currentView === 'stats' ? 'border-2 border-gray-600' : 'hover:border hover:border-gray-300 dark:border-gray-600'}`}
             title="マイデータ"
           >
-            <i className="fa-solid fa-table text-gray-600 dark:text-gray-300"></i>
+            <i className="fa-solid fa-user-circle text-gray-600 dark:text-gray-300"></i>
           </button>
           <button
             onClick={() => setCurrentView('settings')}
@@ -1579,7 +1579,7 @@ const HelpSection = ({ setCurrentView }: {
               className="inline-flex items-center mx-1 px-1 py-0.5 rounded hover:bg-gray-200 dark:hover:bg-gray-600"
               title="マイデータを開く"
 >
-              <i className="fa-solid fa-table text-gray-600 dark:text-gray-300 text-xs"></i>
+              <i className="fa-solid fa-user-circle text-gray-600 dark:text-gray-300 text-xs"></i>
             </button>
                  マイデータ」を選択
                </li>
