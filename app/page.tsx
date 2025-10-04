@@ -2536,42 +2536,45 @@ const InitialSyncModal = ({ onSave }: {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4" style={{zIndex: 10004}}>
-      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full">
-        <h3 className="text-lg font-semibold mb-2">同期設定</h3>
-        <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
-          Googleカレンダーに同期する情報を選択してください。<br/>
-          後から設定ページでも変更できます。
-        </p>
+      <div className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full flex flex-col" style={{maxHeight: '90vh'}}>
+        <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+          <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-gray-100">同期設定</h3>
+          <p className="text-sm text-gray-600 dark:text-gray-300">
+            Googleカレンダーに同期する情報を選択してください。<br/>
+            後から設定ページでも変更できます。
+          </p>
+        </div>
         
-        <div className="space-y-3 mb-6">
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input 
-              type="checkbox" 
-              checked={settings.period}
-              onChange={(e) => setSettings({...settings, period: e.target.checked})}
-              className="accent-blue-600"
-            />
-            <span className="text-sm text-gray-900 dark:text-gray-100">生理期間を同期</span>
-          </label>
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input 
-              type="checkbox" 
-              checked={settings.fertile}
-              onChange={(e) => setSettings({...settings, fertile: e.target.checked})}
-              className="accent-blue-600"
-            />
-            <span className="text-sm text-gray-900 dark:text-gray-100">妊娠可能日を同期</span>
-          </label>
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input 
-              type="checkbox" 
-              checked={settings.pms}
-              onChange={(e) => setSettings({...settings, pms: e.target.checked})}
-              className="accent-blue-600"
-            />
-            <span className="text-sm text-gray-900 dark:text-gray-100">PMS予測を同期</span>
-          </label>
-          <div>
+        <div className="flex-1 overflow-y-auto px-6 py-4">
+          <div className="space-y-3">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input 
+                type="checkbox" 
+                checked={settings.period}
+                onChange={(e) => setSettings({...settings, period: e.target.checked})}
+                className="accent-blue-600"
+              />
+              <span className="text-sm text-gray-900 dark:text-gray-100">生理期間を同期</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input 
+                type="checkbox" 
+                checked={settings.fertile}
+                onChange={(e) => setSettings({...settings, fertile: e.target.checked})}
+                className="accent-blue-600"
+              />
+              <span className="text-sm text-gray-900 dark:text-gray-100">妊娠可能日を同期</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input 
+                type="checkbox" 
+                checked={settings.pms}
+                onChange={(e) => setSettings({...settings, pms: e.target.checked})}
+                className="accent-blue-600"
+              />
+              <span className="text-sm text-gray-900 dark:text-gray-100">PMS予測を同期</span>
+            </label>
+            <div>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input 
                   type="checkbox" 
@@ -2588,33 +2591,35 @@ const InitialSyncModal = ({ onSave }: {
                   ⓘ
                 </button>
               </label>
+              {showIntercourseInfo && (
+                <div className="mt-2 p-3 bg-blue-50 dark:bg-gray-700 rounded text-xs text-gray-700 dark:text-gray-300">
+                  <p className="font-semibold mb-1">📅 カレンダーに表示される内容：</p>
+                  <p className="mb-2">「●」などの記号のみ（カスタマイズ可能）</p>
+                  <p className="font-semibold mb-1">🔒 同期されない情報：</p>
+                  <ul className="list-disc ml-4">
+                    <li>パートナー名</li>
+                    <li>避妊具使用状況</li>
+                    <li>メモ</li>
+                  </ul>
+                  <p className="mt-2 text-gray-600 dark:text-gray-300">詳細情報はアプリ内にのみ保存されます。</p>
+                </div>
+              )}
             </div>
-            {showIntercourseInfo && (
-              <div className="mt-2 p-3 bg-blue-50 dark:bg-gray-700 rounded text-xs text-gray-700 dark:text-gray-300">
-                <p className="font-semibold mb-1">カレンダーに表示される内容：</p>
-                <p className="mb-2">「●」などの記号のみ（カスタマイズ可能）</p>
-                <p className="font-semibold mb-1">同期されない情報：</p>
-                <ul className="list-disc ml-4">
-                  <li>パートナー名</li>
-                  <li>避妊具使用状況</li>
-                  <li>メモ</li>
-                </ul>
-                <p className="mt-2 text-gray-600 dark:text-gray-300">詳細情報はアプリ内にのみ保存されます。</p>
-              </div>
-            )}
           </div>
         </div>
 
-        <button 
-          onClick={() => onSave(settings)}
-          className="w-full bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 font-medium"
-        >
-          設定を保存して始める
-        </button>
+        <div className="p-6 border-t border-gray-200 dark:border-gray-700">
+          <button 
+            onClick={() => onSave(settings)}
+            className="w-full bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 font-medium"
+          >
+            設定を保存して始める
+          </button>
+        </div>
       </div>
+    </div>
   );
 };
-
 const NotificationModal = ({ message, type, onClose }: {
   message: string;
   type: 'success' | 'error';
