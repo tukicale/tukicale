@@ -247,7 +247,12 @@ const syncToCalendar = async (
       }
     }
     
-    const events: any[] = [];
+    const events: Array<{
+    summary: string;
+    start: { date: string };
+    end: { date: string };
+    colorId: string;
+    }> = [];
     
     if (settings.period) {
       records.periods.forEach(period => {
