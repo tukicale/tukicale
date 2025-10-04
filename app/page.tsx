@@ -2341,7 +2341,7 @@ const EditPeriodModal = ({ period, updatePeriod, setEditingPeriod }: {
 );
 
 const DeletePeriodModal = ({ deletePeriod, deletingPeriodId, setDeletingPeriodId }: {
-  deleteIntercourse: (id: number) => Promise<void>;
+  deletePeriod: (id: number) => Promise<void>;
   deletingPeriodId: number;
   setDeletingPeriodId: (id: number | null) => void;
 }) => {
