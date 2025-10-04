@@ -2667,7 +2667,7 @@ const DayDetailModal = ({ date, periods, intercourse, onClose, onEditPeriod, onD
   onEditPeriod: (period: Period) => void;
   onDeletePeriod: (id: number) => void;
   onEditIntercourse: (record: IntercourseRecord) => void;
-  deleteIntercourse: (id: number) => Promise<void>;
+  onDeleteIntercourse: (id: number) => void;
   onAddNew: () => void;
 }) => {
   return (
