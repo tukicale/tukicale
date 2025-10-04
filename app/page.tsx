@@ -2341,7 +2341,7 @@ const EditPeriodModal = ({ period, updatePeriod, setEditingPeriod }: {
 );
 
 const DeletePeriodModal = ({ deletePeriod, deletingPeriodId, setDeletingPeriodId }: {
-  deletePeriod: (id: number) => void;
+  deleteIntercourse: (id: number) => Promise<void>;
   deletingPeriodId: number;
   setDeletingPeriodId: (id: number | null) => void;
 }) => {
@@ -2667,7 +2667,7 @@ const DayDetailModal = ({ date, periods, intercourse, onClose, onEditPeriod, onD
   onEditPeriod: (period: Period) => void;
   onDeletePeriod: (id: number) => void;
   onEditIntercourse: (record: IntercourseRecord) => void;
-  onDeleteIntercourse: (id: number) => void;
+  deleteIntercourse: (id: number) => Promise<void>;
   onAddNew: () => void;
 }) => {
   return (
@@ -2811,7 +2811,7 @@ const EditIntercourseModal = ({ record, updateIntercourse, setEditingIntercourse
 };
 
 const DeleteIntercourseModal = ({ deleteIntercourse, deletingIntercourseId, setDeletingIntercourseId }: {
-  deleteIntercourse: (id: number) => void;
+  deleteIntercourse: (id: number) => Promise<void>;
   deletingIntercourseId: number;
   setDeletingIntercourseId: (id: number | null) => void;
 }) => {
