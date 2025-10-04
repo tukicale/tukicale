@@ -779,7 +779,7 @@ const addIntercourseRecord = (date: string, contraception: string, partner: stri
     const redirectUri = `${window.location.origin}/api/auth`;
     const scope = [
       'https://www.googleapis.com/auth/drive.file',
-      'https://www.googleapis.com/auth/calendar.events',
+      'https://www.googleapis.com/auth/calendar',
     ].join(' ');
 
     const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?${new URLSearchParams({
