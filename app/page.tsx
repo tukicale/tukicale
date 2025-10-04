@@ -1482,15 +1482,15 @@ const HelpSection = ({ setCurrentView }: {
                   <li>
                     ヘッダーの「
                     <button 
-                      onClick={() => {
-                        setCurrentView('stats');
-                        setExpandedSection(null);
-                      }}
-                      className="inline-flex items-center mx-1 px-1 py-0.5 rounded hover:bg-gray-200"
-                      title="マイデータを開く"
-                    >
-                 <i className="fa-solid fa-table text-gray-600 dark:text-gray-300 text-xs"></i>
-                 </button>
+              onClick={() => {
+                setCurrentView('stats');
+                setExpandedSection(null);
+              }}
+              className="inline-flex items-center mx-1 px-1 py-0.5 rounded hover:bg-gray-200 dark:hover:bg-gray-600"
+              title="マイデータを開く"
+>
+              <i className="fa-solid fa-table text-gray-600 dark:text-gray-300 text-xs"></i>
+            </button>
                  マイデータ」を選択
                </li>
                <li>SEX記録が1件以上ある場合、「SEX記録」カードが表示されます</li>
@@ -1545,7 +1545,7 @@ const HelpSection = ({ setCurrentView }: {
           <div className="border rounded-lg mt-4">
             <button onClick={() => toggleSection('contact')} className="w-full text-left py-3 px-4 hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-800 rounded-t-lg border-b flex items-center justify-between">
               <span className="text-sm font-medium flex items-center gap-2">
-                <i className="fa-solid fa-envelope text-gray-600 dark:text-gray-300"></i>
+                <i className="fa-solid fa-envelope text-gray-600 dark:text-gray-300"></i> TikTokでご連絡ください
                 フィードバック・機能リクエスト
               </span>
               <span>{expandedSection === 'contact' ? '−' : '+'}</span>
@@ -1554,7 +1554,7 @@ const HelpSection = ({ setCurrentView }: {
               <div className="px-4 py-3 bg-gray-50 dark:bg-gray-800 border-b">
                 <div className="text-sm text-gray-700 dark:text-gray-300">
                   <p className="mb-2">バグ報告や機能リクエストをお待ちしています！</p>
-                  <p className="mb-2"><strong>📱 TikTokでご連絡ください：</strong></p>
+                  <p className="mb-2"><strong>TikTokでご連絡ください：</strong></p>
                   <p className="mb-2">
                     <a 
                       href="https://www.tiktok.com/@tukicale_app" 
@@ -2528,27 +2528,29 @@ const InitialSyncModal = ({ onSave }: {
             />
             <span className="text-sm text-gray-900 dark:text-gray-100">PMS予測を同期</span>
           </label>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input 
-                type="checkbox" 
-                checked={settings.intercourse}
-                onChange={(e) => setSettings({...settings, intercourse: e.target.checked})}
-                className="accent-blue-600"
-              />
-              <span className="text-sm text-gray-900 dark:text-gray-100">SEXを同期</span>
-              <button 
-                type="button" 
-                onClick={() => setShowIntercourseInfo(!showIntercourseInfo)} 
-                className="w-5 h-5 rounded-full bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 flex items-center justify-center text-xs text-gray-900 dark:text-gray-100"
-              >
-                ⓘ
-              </button>
-            </label>
+            <div>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input 
+                  type="checkbox" 
+                  checked={settings.intercourse}
+                  onChange={(e) => setSettings({...settings, intercourse: e.target.checked})}
+                  className="accent-blue-600"
+                />
+                <span className="text-sm text-gray-900 dark:text-gray-100">SEXを同期</span>
+                <button 
+                  type="button" 
+                  onClick={() => setShowIntercourseInfo(!showIntercourseInfo)} 
+                  className="w-5 h-5 rounded-full bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 flex items-center justify-center text-xs text-gray-900 dark:text-gray-100"
+                >
+                  ⓘ
+                </button>
+              </label>
+            </div>
             {showIntercourseInfo && (
-              <div className="mt-2 p-3 bg-blue-50 dark:bg-gray-800 rounded text-xs text-gray-700 dark:text-gray-300 dark:text-gray-300">
-                <p className="font-semibold mb-1"><i className="fa-solid fa-calendar"></i> カレンダーに表示される内容：</p>
+              <div className="mt-2 p-3 bg-blue-50 dark:bg-gray-700 rounded text-xs text-gray-700 dark:text-gray-300">
+                <p className="font-semibold mb-1">カレンダーに表示される内容：</p>
                 <p className="mb-2">「●」などの記号のみ（カスタマイズ可能）</p>
-                <p className="font-semibold mb-1"><i className="fa-solid fa-lock"></i> 同期されない情報：</p>
+                <p className="font-semibold mb-1">同期されない情報：</p>
                 <ul className="list-disc ml-4">
                   <li>パートナー名</li>
                   <li>避妊具使用状況</li>
