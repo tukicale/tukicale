@@ -2546,9 +2546,9 @@ const InitialSyncModal = ({ onSave }: {
             </label>
             {showIntercourseInfo && (
               <div className="mt-2 p-3 bg-blue-50 dark:bg-gray-800 rounded text-xs text-gray-700 dark:text-gray-300 dark:text-gray-300">
-                <p className="font-semibold mb-1">📅 カレンダーに表示される内容：</p>
+                <p className="font-semibold mb-1"><i className="fa-solid fa-calendar"></i> カレンダーに表示される内容：</p>
                 <p className="mb-2">「●」などの記号のみ（カスタマイズ可能）</p>
-                <p className="font-semibold mb-1">🔒 同期されない情報：</p>
+                <p className="font-semibold mb-1"><i className="fa-solid fa-lock"></i> 同期されない情報：</p>
                 <ul className="list-disc ml-4">
                   <li>パートナー名</li>
                   <li>避妊具使用状況</li>
