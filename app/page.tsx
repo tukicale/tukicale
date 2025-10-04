@@ -2602,7 +2602,6 @@ const InitialSyncModal = ({ onSave }: {
                 <p className="mt-2 text-gray-600 dark:text-gray-300">詳細情報はアプリ内にのみ保存されます。</p>
               </div>
             )}
-          </div>
         </div>
 
         <button 
