@@ -1327,7 +1327,7 @@ const SyncSettings = () => {
               onChange={(e) => handleChange('intercourse', e.target.checked)}
             />
             <span className="text-sm text-gray-900 dark:text-gray-100">SEXを同期</span>
-            <button type="button" onClick={() => setShowIntercourseInfo(!showIntercourseInfo)} className="w-5 h-5 rounded-full bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 flex items-center justify-center text-xs text-gray-900 dark:text-gray-100">
+            <button type="button" onClick={() => setShowIntercourseInfo(!showIntercourseInfo)} className="w-5 h-5 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-xs">
               ⓘ
             </button>
           </label>
@@ -1740,7 +1740,7 @@ const LoginScreen = ({ onLogin, isLoading }: { onLogin: () => void; isLoading: b
         </div>
 
         <div className="text-center mb-6">
-          <h2 className="text-base font-semibold text-gray-800 mb-2">
+          <h2 className="text-base font-semibold text-gray-800 dark:text-gray-100 mb-2">
             生理記録を簡単管理
           </h2>
           <p className="text-xs text-gray-600 dark:text-gray-300 mb-1">
@@ -1764,7 +1764,7 @@ const LoginScreen = ({ onLogin, isLoading }: { onLogin: () => void; isLoading: b
                 <span className="text-green-500 text-xs font-bold">✓</span>
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-800">{item.title}</p>
+                <p className="text-sm font-medium text-gray-800 dark:text-gray-100">{item.title}</p>
                 <p className="text-xs text-gray-600 dark:text-gray-300">{item.desc}</p>
               </div>
             </div>
