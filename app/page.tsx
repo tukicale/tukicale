@@ -402,8 +402,15 @@ const PeriodTrackerApp = () => {
       }
       setIsGoogleAuthed(true);
       setShowLoginScreen(false);
+
       window.history.replaceState({}, '', '/');
-      
+            // Googleドライブからデータ読み込み
+      loadFromDrive().then(driveData => {
+        if (driveData) {
+          setRecords(driveData);
+        }
+      });
+
       // データがない場合かつ初期設定が未完了の場合のみ、初期設定モーダルを表示
       if (!hasCompletedInitialSetup && !hasData) {
         setShowInitialSyncModal(true);
@@ -411,10 +418,17 @@ const PeriodTrackerApp = () => {
         // データがある場合は、自動的に初期設定完了フラグを立てる
         localStorage.setItem('tukicale_initial_setup_completed', 'true');
       }
-    } else if (savedToken) {
+} else if (savedToken) {
       // 既存ログイン（トークンが保存されている）
       setIsGoogleAuthed(true);
       setShowLoginScreen(false);
+      
+      // Googleドライブからデータ読み込み
+      loadFromDrive().then(driveData => {
+        if (driveData) {
+          setRecords(driveData);
+        }
+      });
       
       // データがあるのに初期設定フラグがない場合、フラグを立てる
       if (hasData && !hasCompletedInitialSetup) {
@@ -595,7 +609,7 @@ const getNextPeriodDays = () => {
     }
   };
 
-  const addPeriodRecord = (startDate: string, endDate: string) => {
+const addPeriodRecord = (startDate: string, endDate: string) => {
     const start = new Date(startDate);
     const end = new Date(endDate);
     const days = Math.floor((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
@@ -607,23 +621,31 @@ const getNextPeriodDays = () => {
       days
     };
   
-    setRecords(prev => ({
-      ...prev,
-      periods: [...prev.periods, newPeriod]
-    }));
+    const newRecords = {
+      ...records,
+      periods: [...records.periods, newPeriod]
+    };
+    
+    setRecords(newRecords);
+    saveToDrive(newRecords);
+    syncToCalendar(newRecords, syncSettings, getAverageCycle, getFertileDays, getPMSDays, getNextPeriodDays);
   
     setShowAddModal(false);
   };
 
-  const updatePeriod = (id: number, startDate: string, endDate: string) => {
+const updatePeriod = (id: number, startDate: string, endDate: string) => {
     const start = new Date(startDate);
     const end = new Date(endDate);
     const days = Math.floor((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
   
-    setRecords(prev => ({
-      ...prev,
-      periods: prev.periods.map(p => p.id === id ? { ...p, startDate, endDate, days } : p)
-    }));
+    const newRecords = {
+      ...records,
+      periods: records.periods.map(p => p.id === id ? { ...p, startDate, endDate, days } : p)
+    };
+    
+    setRecords(newRecords);
+    saveToDrive(newRecords);
+    syncToCalendar(newRecords, syncSettings, getAverageCycle, getFertileDays, getPMSDays, getNextPeriodDays);
     setEditingPeriod(null);
     setNotification({
       message: '✓ 生理記録を更新しました',
@@ -631,11 +653,15 @@ const getNextPeriodDays = () => {
     });
   };
 
-  const deletePeriod = (id: number) => {
-    setRecords(prev => ({
-      ...prev,
-      periods: prev.periods.filter(p => p.id !== id)
-    }));
+const deletePeriod = (id: number) => {
+    const newRecords = {
+      ...records,
+      periods: records.periods.filter(p => p.id !== id)
+    };
+    
+    setRecords(newRecords);
+    saveToDrive(newRecords);
+    syncToCalendar(newRecords, syncSettings, getAverageCycle, getFertileDays, getPMSDays, getNextPeriodDays);
     setDeletingPeriodId(null);
     setNotification({
       message: '✓ 生理記録を削除しました',
@@ -643,11 +669,15 @@ const getNextPeriodDays = () => {
     });
   };
 
-  const deleteIntercourse = (id: number) => {
-    setRecords(prev => ({
-      ...prev,
-      intercourse: prev.intercourse.filter(i => i.id !== id)
-    }));
+const deleteIntercourse = (id: number) => {
+    const newRecords = {
+      ...records,
+      intercourse: records.intercourse.filter(i => i.id !== id)
+    };
+    
+    setRecords(newRecords);
+    saveToDrive(newRecords);
+    syncToCalendar(newRecords, syncSettings, getAverageCycle, getFertileDays, getPMSDays, getNextPeriodDays);
     setDeletingIntercourseId(null);
     setNotification({
       message: '✓ SEX記録を削除しました',
@@ -655,13 +685,17 @@ const getNextPeriodDays = () => {
     });
   };
 
-  const updateIntercourse = (id: number, date: string, contraception: string, partner: string, memo: string) => {
-    setRecords(prev => ({
-      ...prev,
-      intercourse: prev.intercourse.map(i => 
+const updateIntercourse = (id: number, date: string, contraception: string, partner: string, memo: string) => {
+    const newRecords = {
+      ...records,
+      intercourse: records.intercourse.map(i => 
         i.id === id ? { ...i, date, contraception, partner, memo } : i
       )
-    }));
+    };
+    
+    setRecords(newRecords);
+    saveToDrive(newRecords);
+    syncToCalendar(newRecords, syncSettings, getAverageCycle, getFertileDays, getPMSDays, getNextPeriodDays);
     setEditingIntercourse(null);
     setNotification({
       message: '✓ SEX記録を更新しました',
@@ -669,7 +703,7 @@ const getNextPeriodDays = () => {
     });
   };
 
-  const addIntercourseRecord = (date: string, contraception: string, partner: string, memo: string) => {
+const addIntercourseRecord = (date: string, contraception: string, partner: string, memo: string) => {
     const newRecord = {
       id: Date.now(),
       date,
@@ -678,10 +712,14 @@ const getNextPeriodDays = () => {
       memo
     };
     
-    setRecords(prev => ({
-      ...prev,
-      intercourse: [...prev.intercourse, newRecord]
-    }));
+    const newRecords = {
+      ...records,
+      intercourse: [...records.intercourse, newRecord]
+    };
+    
+    setRecords(newRecords);
+    saveToDrive(newRecords);
+    syncToCalendar(newRecords, syncSettings, getAverageCycle, getFertileDays, getPMSDays, getNextPeriodDays);
     
     setShowAddModal(false);
   };
@@ -822,7 +860,7 @@ const handleLogout = () => {
     }));
   };
 
-  const submitBulkRecords = () => {
+const submitBulkRecords = () => {
     const validRecords = bulkRecords.filter(r => r.startDate && r.endDate);
     
     if (validRecords.length === 0) {
@@ -843,10 +881,14 @@ const handleLogout = () => {
       };
     });
 
-    setRecords(prev => ({
-      ...prev,
-      periods: [...prev.periods, ...newPeriods]
-    }));
+    const newRecords = {
+      ...records,
+      periods: [...records.periods, ...newPeriods]
+    };
+
+    setRecords(newRecords);
+    saveToDrive(newRecords);
+    syncToCalendar(newRecords, syncSettings, getAverageCycle, getFertileDays, getPMSDays, getNextPeriodDays);
 
     setNotification({
       message: `✓ ${validRecords.length}件の生理期間を登録しました`,
@@ -862,10 +904,11 @@ const handleLogout = () => {
     return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`;
   };
 
-  const handleSaveSyncSettings = (newSettings: SyncSettings) => {
+const handleSaveSyncSettings = (newSettings: SyncSettings) => {
     setSyncSettings(newSettings);
     localStorage.setItem('tukicale_sync_settings', JSON.stringify(newSettings));
     localStorage.setItem('tukicale_initial_setup_completed', 'true');
+    syncToCalendar(records, newSettings, getAverageCycle, getFertileDays, getPMSDays, getNextPeriodDays);
     setShowInitialSyncModal(false);
   };
 
