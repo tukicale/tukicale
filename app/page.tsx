@@ -2109,7 +2109,11 @@ const IntercourseForm = ({ selectedDate, onSubmit, onCancel }: {
       </div>
       <div className="flex gap-2">
         <button type="button" onClick={onCancel} className="flex-1 border px-4 py-2 rounded">キャンセル</button>
-        <button type="button" onClick={(e) => { e.preventDefault(); onSubmit(date, contraception, partner, memo); }} className="flex-1 bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-8000">保存</button>
+        <button   type="button" onClick={(e) => { e.preventDefault(); onSubmit(date, contraception, partner, memo); }} 
+  className="flex-1 bg-gray-400 dark:bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-500 dark:hover:bg-gray-600"
+>
+  保存
+</button>
       </div>
     </div>
   );
