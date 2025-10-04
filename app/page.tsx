@@ -218,11 +218,13 @@ const syncToCalendar = async (
       }
     }
     
+    // ... 既存のイベント削除処理 ...
+    
     const events: Array<{
-    summary: string;
-    start: { date: string };
-    end: { date: string };
-    colorId: string;
+      summary: string;
+      start: { date: string };
+      end: { date: string };
+      colorId: string;
     }> = [];
     
     if (settings.period) {
@@ -235,6 +237,10 @@ const syncToCalendar = async (
         });
       });
     }
+    
+    // ★★★ ここにログ追加 ★★★
+    console.log('作成するイベント数:', events.length);
+    console.log('イベント詳細:', events);
     
 if (settings.fertile) {
   const fertileDays = getFertileDays();
