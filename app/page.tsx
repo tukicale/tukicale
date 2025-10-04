@@ -222,10 +222,15 @@ const syncToCalendar = async (
   getPMSDays: () => string[], 
   getNextPeriodDays: () => string[]
 ) => {
+  console.log('=== syncToCalendar 開始 ===');
+  console.log('settings:', settings);
+  
   const token = await getAccessToken();
+  console.log('token:', token ? 'あり' : 'なし');
   if (!token) return false;
   
   const calendarId = await getOrCreateCalendar();
+  console.log('calendarId:', calendarId);
   if (!calendarId) return false;
   
   try {
