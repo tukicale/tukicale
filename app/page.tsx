@@ -767,16 +767,9 @@ const addIntercourseRecord = (date: string, contraception: string, partner: stri
 const handleLogout = () => {
   localStorage.removeItem('tukicale_access_token');
   localStorage.removeItem('tukicale_refresh_token');
-  localStorage.removeItem('tukicale_sync_settings');
   localStorage.removeItem('tukicale_initial_setup_completed');
   setIsGoogleAuthed(false);
   setShowLoginScreen(true);
-  setSyncSettings({
-    period: true,
-    fertile: true,
-    pms: true,
-    intercourse: false
-  });
 };
 
 const handleDeleteData = async () => {
@@ -1289,27 +1282,126 @@ const SettingsView = ({ isGoogleAuthed, handleLogout, setShowBulkAddModal, setSh
   </div>
 );
 
-const SyncSettings = () => {
+const SyncSettings = ({ 
+  records, 
+  syncSettings, 
+  setSyncSettings, 
+  getAverageCycle, 
+  getFertileDays, 
+  getPMSDays, 
+  getNextPeriodDays 
+}: {
+  records: Records;
+  syncSettings: SyncSettings;
+  setSyncSettings: (settings: SyncSettings) => void;
+  getAverageCycle: () => number;
+  getFertileDays: () => string[];
+  getPMSDays: () => string[];
+  getNextPeriodDays: () => string[];
+}) => {
   const [showIntercourseInfo, setShowIntercourseInfo] = useState(false);
-  const [localSettings, setLocalSettings] = useState<SyncSettings>({
-    period: true,
-    fertile: true,
-    pms: true,
-    intercourse: false
-  });
+  const [localSettings, setLocalSettings] = useState<SyncSettings>(syncSettings);
+  const [isSaving, setIsSaving] = useState(false);
+  const [hasChanges, setHasChanges] = useState(false);
 
   useEffect(() => {
-    const saved = localStorage.getItem('tukicale_sync_settings');
-    if (saved) {
-      setLocalSettings(JSON.parse(saved));
-    }
-  }, []);
+    setLocalSettings(syncSettings);
+  }, [syncSettings]);
 
   const handleChange = (key: keyof SyncSettings, value: boolean) => {
     const newSettings = { ...localSettings, [key]: value };
     setLocalSettings(newSettings);
-    localStorage.setItem('tukicale_sync_settings', JSON.stringify(newSettings));
+    setHasChanges(true);
   };
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    localStorage.setItem('tukicale_sync_settings', JSON.stringify(localSettings));
+    setSyncSettings(localSettings);
+    
+    await syncToCalendar(records, localSettings, getAverageCycle, getFertileDays, getPMSDays, getNextPeriodDays);
+    
+    setHasChanges(false);
+    setIsSaving(false);
+  };
+
+  return (
+    <div className="border rounded-lg p-4">
+      <h3 className="font-semibold mb-2 text-gray-900 dark:text-gray-100">同期設定</h3>
+      <div className="space-y-2 mb-3">
+        <label className="flex items-center gap-2">
+          <input 
+            type="checkbox" 
+            checked={localSettings.period}
+            onChange={(e) => handleChange('period', e.target.checked)}
+          />
+          <span className="text-sm text-gray-900 dark:text-gray-100">生理期間を同期</span>
+        </label>
+        <label className="flex items-center gap-2">
+          <input 
+            type="checkbox" 
+            checked={localSettings.fertile}
+            onChange={(e) => handleChange('fertile', e.target.checked)}
+          />
+          <span className="text-sm text-gray-900 dark:text-gray-100">妊娠可能日を同期</span>
+        </label>
+        <label className="flex items-center gap-2">
+          <input 
+            type="checkbox" 
+            checked={localSettings.pms}
+            onChange={(e) => handleChange('pms', e.target.checked)}
+          />
+          <span className="text-sm text-gray-900 dark:text-gray-100">PMS予測を同期</span>
+        </label>
+        <div>
+          <label className="flex items-center gap-2">
+            <input 
+              type="checkbox" 
+              checked={localSettings.intercourse}
+              onChange={(e) => handleChange('intercourse', e.target.checked)}
+            />
+            <span className="text-sm text-gray-900 dark:text-gray-100">SEXを同期</span>
+            <button 
+              type="button" 
+              onClick={() => setShowIntercourseInfo(!showIntercourseInfo)} 
+              className="w-5 h-5 rounded-full bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 flex items-center justify-center text-xs text-gray-900 dark:text-gray-100"
+            >
+              ⓘ
+            </button>
+          </label>
+          {showIntercourseInfo && (
+            <div className="mt-2 p-3 bg-blue-50 dark:bg-gray-800 rounded text-xs text-gray-700 dark:text-gray-300">
+              <p className="font-semibold mb-1">📅 カレンダーに表示される内容：</p>
+              <p className="mb-2">「●」などの記号のみ（カスタマイズ可能）</p>
+              <p className="font-semibold mb-1">🔒 同期されない情報：</p>
+              <ul className="list-disc ml-4">
+                <li>パートナー名</li>
+                <li>避妊具使用状況</li>
+                <li>メモ</li>
+              </ul>
+              <p className="mt-2 text-gray-600 dark:text-gray-300">詳細情報はアプリ内にのみ保存されます。</p>
+            </div>
+          )}
+        </div>
+      </div>
+      
+      {hasChanges && (
+        <button
+          onClick={handleSave}
+          disabled={isSaving}
+          className="w-full bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center gap-2"
+        >
+          {isSaving ? (
+            <>
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              保存中...
+            </>
+          ) : '変更を保存してGoogleカレンダーに反映'}
+        </button>
+      )}
+    </div>
+  );
+};
 
   return (
     <div className="border rounded-lg p-4">
