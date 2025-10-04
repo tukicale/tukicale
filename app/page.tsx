@@ -2571,7 +2571,7 @@ const InitialSyncModal = ({ onSave }: {
             />
             <span className="text-sm text-gray-900 dark:text-gray-100">PMS予測を同期</span>
           </label>
-            <div>
+            <div className="block">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input 
                   type="checkbox" 
@@ -2602,6 +2602,7 @@ const InitialSyncModal = ({ onSave }: {
                 <p className="mt-2 text-gray-600 dark:text-gray-300">詳細情報はアプリ内にのみ保存されます。</p>
               </div>
             )}
+          </div>
         </div>
 
         <button 
