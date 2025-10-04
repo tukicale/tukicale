@@ -2567,7 +2567,6 @@ const InitialSyncModal = ({ onSave }: {
           設定を保存して始める
         </button>
       </div>
-    </div>
   );
 };
 
