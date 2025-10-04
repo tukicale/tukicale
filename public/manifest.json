@@ -4,8 +4,8 @@
   "description": "生理管理アプリ",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#ec4899",
+  "background_color": "#C5D3DD",
+  "theme_color": "#C2D2DA",
   "icons": [
     {
       "src": "/icon-192.png",
