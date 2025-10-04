@@ -235,7 +235,7 @@ const syncToCalendar = async (
     );
     
     if (eventsResponse.ok) {
-      const eventsData = await eventsResponse.json() as { items?: { id: string }[] };
+      const eventsData = await eventsResponse.json() as { items?: Array<{ id: string }> };
       for (const event of eventsData.items || []) {
         await fetch(
           `https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events/${event.id}`,
