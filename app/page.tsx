@@ -1026,7 +1026,7 @@ return (
         </div>
       </div>
 
-      {currentView === 'calendar' && (
+{currentView === 'calendar' && (
         <>
           <div className="flex items-center justify-between mb-4 gap-2">
             <button onClick={prevMonth} className="px-4 py-2 border border-gray-300 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-600 rounded text-gray-900 dark:text-gray-100">
@@ -1057,21 +1057,13 @@ return (
             </button>
           </div>
 
-          <div className="flex gap-2 mb-4">
-            <button 
-              onClick={() => setShowBulkAddModal(true)}
-              className="flex-1 bg-blue-50 text-blue-700 px-3 py-2 rounded text-sm hover:bg-blue-100 flex items-center justify-center gap-2"
-            >
-              <i className="fa-solid fa-calendar-plus"></i>
-              <span>過去データ一括登録</span>
-            </button>
-            <button 
-              onClick={() => setCurrentView('settings')}
-              className="flex-1 bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-3 py-2 rounded text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center gap-2"
-            >
-              <i className="fa-solid fa-arrows-rotate"></i>
-              <span>同期設定</span>
-            </button>
+          <div className="grid grid-cols-7 gap-0 mb-4">
+            {['日', '月', '火', '水', '木', '金', '土'].map(day => (
+              <div key={day} className="text-center font-semibold p-2 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+                {day}
+              </div>
+            ))}
+            {renderCalendar()}
           </div>
 
           <div className="flex flex-wrap gap-4 mb-4 text-xs text-gray-500 dark:text-gray-400">
@@ -1097,13 +1089,21 @@ return (
             </div>
           </div>
 
-<div className="grid grid-cols-7 gap-0 mb-4">
-            {['日', '月', '火', '水', '木', '金', '土'].map(day => (
-              <div key={day} className="text-center font-semibold p-2 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
-                {day}
-              </div>
-            ))}
-            {renderCalendar()}
+          <div className="flex gap-2 mb-4">
+            <button 
+              onClick={() => setShowBulkAddModal(true)}
+              className="flex-1 bg-blue-50 text-blue-700 px-3 py-2 rounded text-sm hover:bg-blue-100 flex items-center justify-center gap-2"
+            >
+              <i className="fa-solid fa-calendar-plus"></i>
+              <span>過去データ一括登録</span>
+            </button>
+            <button 
+              onClick={() => setCurrentView('settings')}
+              className="flex-1 bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-3 py-2 rounded text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center gap-2"
+            >
+              <i className="fa-solid fa-arrows-rotate"></i>
+              <span>同期設定</span>
+            </button>
           </div>
           </>
       )}
