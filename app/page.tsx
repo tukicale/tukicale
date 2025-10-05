@@ -780,8 +780,8 @@ const addIntercourseRecord = (date: string, contraception: string, partner: stri
     const days = [];
     
 for (let i = 0; i < startingDayOfWeek; i++) {
-      days.push(<div key={`empty-${i}`} className="h-20 border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800"></div>);
-    }    
+days.push(<div key={`empty-${i}`} className="h-14 border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800"></div>);
+}    
 for (let day = 1; day <= daysInMonth; day++) {
       const { period, intercourse, fertile, pms, nextPeriod } = getRecordForDate(day);
       
@@ -789,9 +789,10 @@ for (let day = 1; day <= daysInMonth; day++) {
         <div
           key={day}
           onClick={() => handleDayClick(day)}
-          className={`h-20 border border-gray-200 dark:border-gray-700 p-1 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 dark:bg-gray-800 dark:bg-gray-800 relative
+          className={`h-14 border border-gray-200 dark:border-gray-700 p-1 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 dark:bg-gray-800 dark:bg-gray-800 relative
             ${isToday(day) ? 'bg-blue-50 border-blue-300' : ''}`}
         >
+
           <div className="text-sm font-medium">{day}</div>
           <div className="flex flex-wrap gap-0.5 mt-1">
             {period && <div className="w-2 h-2 rounded-full bg-red-300" title="生理"></div>}
