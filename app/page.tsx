@@ -782,10 +782,11 @@ const addIntercourseRecord = (date: string, contraception: string, partner: stri
 for (let i = 0; i < startingDayOfWeek; i++) {
       days.push(<div key={`empty-${i}`} className="h-20 border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800"></div>);
     }    
-    for (let day = 1; day <= daysInMonth; day++) {
+for (let day = 1; day <= daysInMonth; day++) {
       const { period, intercourse, fertile, pms, nextPeriod } = getRecordForDate(day);
       
-<div
+      days.push(
+        <div
           key={day}
           onClick={() => handleDayClick(day)}
           className={`h-20 border border-gray-200 dark:border-gray-700 p-1 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 dark:bg-gray-800 dark:bg-gray-800 relative
@@ -802,7 +803,7 @@ for (let i = 0; i < startingDayOfWeek; i++) {
         </div>
       );
     }
-    
+        
     return days;
   };
 
