@@ -1666,8 +1666,10 @@ const HelpSection = ({ setCurrentView }: {
             )}
           </div>
 
-          <div className="border-b pb-2">
-            <button onClick={() => toggleSection('edit')} className="w-full text-left flex items-center justify-between py-2 hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-800 rounded px-2">              <span>{expandedSection === 'edit' ? '−' : '+'}</span>
+<div className="border-b pb-2">
+            <button onClick={() => toggleSection('edit')} className="w-full text-left flex items-center justify-between py-2 hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-800 rounded px-2">
+              <span className="text-sm font-medium">登録済み記録の編集</span>
+              <span>{expandedSection === 'edit' ? '−' : '+'}</span>
             </button>
             {expandedSection === 'edit' && (
               <div className="mt-2 p-3 bg-gray-50 dark:bg-gray-800 rounded text-sm text-gray-700 dark:text-gray-300">
@@ -1680,7 +1682,7 @@ const HelpSection = ({ setCurrentView }: {
                     }}
                     className="inline-flex items-center px-1 py-0.5 rounded hover:bg-gray-200"
                     title="設定を開く"
-      >
+                  >
                     <i className="fa-solid fa-gear text-gray-600 dark:text-gray-300"></i>
                   </button>
                   設定から「登録済み記録を確認」を選択
