@@ -412,7 +412,7 @@ const [editingIntercourse, setEditingIntercourse] = useState<IntercourseRecord |
         await syncToCalendar(driveData, syncSettings, getAverageCycle, getFertileDays, getPMSDays, getNextPeriodDays);
         
         setNotification({
-          message: '✓ 最新データに更新しました',
+          message: '最新データに更新しました',
           type: 'success'
         });
       } else {
@@ -689,7 +689,7 @@ const updatePeriod = (id: number, startDate: string, endDate: string) => {
     syncToCalendar(newRecords, syncSettings, getAverageCycle, getFertileDays, getPMSDays, getNextPeriodDays);
     setEditingPeriod(null);
     setNotification({
-      message: '✓ 生理記録を更新しました',
+      message: '生理記録を更新しました',
       type: 'success'
     });
   };
@@ -705,7 +705,7 @@ const deletePeriod = async (id: number) => {
   await syncToCalendar(newRecords, syncSettings, getAverageCycle, getFertileDays, getPMSDays, getNextPeriodDays);
   setDeletingPeriodId(null);
   setNotification({
-    message: '✓ 生理記録を削除しました',
+    message: '生理記録を削除しました',
     type: 'success'
   });
 };
@@ -721,7 +721,7 @@ const deleteIntercourse = async (id: number) => {
   await syncToCalendar(newRecords, syncSettings, getAverageCycle, getFertileDays, getPMSDays, getNextPeriodDays);
   setDeletingIntercourseId(null);
   setNotification({
-    message: '✓ SEX記録を削除しました',
+    message: 'SEX記録を削除しました',
     type: 'success'
   });
 };
@@ -739,7 +739,7 @@ const updateIntercourse = async (id: number, date: string, contraception: string
   await syncToCalendar(newRecords, syncSettings, getAverageCycle, getFertileDays, getPMSDays, getNextPeriodDays);
   setEditingIntercourse(null);
   setNotification({
-    message: '✓ SEX記録を更新しました',
+    message: 'SEX記録を更新しました',
     type: 'success'
   });
 };
@@ -859,12 +859,12 @@ const handleDeleteData = async () => {
     // Googleカレンダーのイベントも削除
     await syncToCalendar(newRecords, syncSettings, getAverageCycle, getFertileDays, getPMSDays, getNextPeriodDays);
     setNotification({
-      message: '✓ アプリ内のデータとGoogleカレンダーのイベントを削除しました',
+      message: 'アプリ内のデータとGoogleカレンダーのイベントを削除しました',
       type: 'success'
     });
   } else {
     setNotification({
-      message: '✓ アプリ内のデータを削除しました\nGoogleカレンダーのイベントは残っています',
+      message: 'アプリ内のデータを削除しました\nGoogleカレンダーのイベントは残っています',
       type: 'success'
     });
   }
@@ -932,7 +932,7 @@ const submitBulkRecords = () => {
     syncToCalendar(newRecords, syncSettings, getAverageCycle, getFertileDays, getPMSDays, getNextPeriodDays);
 
     setNotification({
-      message: `✓ ${validRecords.length}件の生理期間を登録しました`,
+      message: `${validRecords.length}件の生理期間を登録しました`,
       type: 'success'
     });
     setShowBulkAddModal(false);
@@ -2858,10 +2858,14 @@ const NotificationModal = ({ message, type, onClose }: {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center p-4" style={{zIndex: 10005}}>
-      <div className="bg-white dark:bg-gray-900 rounded-lg p-6 max-w-sm w-full shadow-xl">
-        <p className="text-center whitespace-pre-line flex items-center justify-center min-h-[60px]">{message}</p>
-        {type === 'error' && (
-          <button 
+<div className="bg-white dark:bg-gray-900 rounded-lg p-6 max-w-sm w-full shadow-xl">
+        <div className="flex flex-col items-center justify-center gap-3 min-h-[60px]">
+          {type === 'success' && (
+            <i className="fas fa-check-circle text-4xl text-green-400"></i>
+          )}
+          <p className="text-center whitespace-pre-line">{message}</p>
+        </div>
+        {type === 'error' && (          <button 
             onClick={onClose}
             className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 font-medium mt-4"
           >
