@@ -360,9 +360,80 @@ const PeriodTrackerApp = () => {
     intercourse: IntercourseRecord[];
   } | null>(null);
   const [deletingIntercourseId, setDeletingIntercourseId] = useState<number | null>(null);
-  const [editingIntercourse, setEditingIntercourse] = useState<IntercourseRecord | null>(null);
+const [editingIntercourse, setEditingIntercourse] = useState<IntercourseRecord | null>(null);
+  const [isReloading, setIsReloading] = useState(false);
+
+  const loadFromDrive = async () => {
+    const token = await getAccessToken();
+    if (!token) return null;
+    
+    try {
+      const searchResponse = await fetch(
+        `https://www.googleapis.com/drive/v3/files?q=name='${DRIVE_FILE_NAME}'&fields=files(id,name)`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      
+      if (!searchResponse.ok) return null;
+      
+      const searchData = await searchResponse.json();
+      
+      if (searchData.files && searchData.files.length > 0) {
+        const fileId = searchData.files[0].id;
+        const response = await fetch(
+          `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        
+        if (response.ok) {
+          const data = await response.json();
+          return data;
+        }
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Load from Drive error:', error);
+      return null;
+    }
+  };
+
+  const handleReload = async () => {
+    setIsReloading(true);
+    
+    try {
+      // Googleドライブから最新データを取得
+      const driveData = await loadFromDrive();
+      
+      if (driveData) {
+        setRecords(driveData);
+        localStorage.setItem('myflow_data', JSON.stringify(driveData));
+        
+        // Googleカレンダーも同期
+        await syncToCalendar(driveData, syncSettings, getAverageCycle, getFertileDays, getPMSDays, getNextPeriodDays);
+        
+        setNotification({
+          message: '✓ 最新データに更新しました',
+          type: 'success'
+        });
+      } else {
+        setNotification({
+          message: 'データの読み込みに失敗しました',
+          type: 'error'
+        });
+      }
+    } catch (error) {
+      console.error('Reload error:', error);
+      setNotification({
+        message: 'エラーが発生しました',
+        type: 'error'
+      });
+    } finally {
+      setIsReloading(false);
+    }
+  };
 
   useEffect(() => {
+
     const params = new URLSearchParams(window.location.search);
     const token = params.get('access_token');
     const refreshToken = params.get('refresh_token');
@@ -898,8 +969,7 @@ const handleSaveSyncSettings = (newSettings: SyncSettings) => {
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-4 bg-white dark:bg-gray-900 dark:bg-gray-900 min-h-screen">
-          <div className="flex items-center justify-between mb-6">
+<div className="flex items-center justify-between mb-6">
         <h1 
           className="text-lg font-semibold text-gray-600 dark:text-gray-300 dark:text-gray-300 flex items-center gap-2 cursor-pointer hover:opacity-70"
           onClick={() => setCurrentView('calendar')}
@@ -909,13 +979,24 @@ const handleSaveSyncSettings = (newSettings: SyncSettings) => {
         </h1>
         <div className="flex gap-2">
           <button
+            onClick={handleReload}
+            disabled={isReloading}
+            className="p-2 rounded hover:border hover:border-gray-300 dark:border-gray-600 disabled:opacity-50"
+            title="最新データに更新"
+          >
+            {isReloading ? (
+              <div className="w-4 h-4 border-2 border-gray-600 dark:border-gray-300 border-t-transparent rounded-full animate-spin"></div>
+            ) : (
+              <i className="fa-solid fa-rotate-right text-gray-600 dark:text-gray-300"></i>
+            )}
+          </button>
+          <button
             onClick={() => setCurrentView('calendar')}
             className={`p-2 rounded ${currentView === 'calendar' ? 'border-2 border-gray-600' : 'hover:border hover:border-gray-300 dark:border-gray-600'}`}
             title="カレンダー"
           >
             <i className="fa-regular fa-calendar-days text-gray-600 dark:text-gray-300"></i>
-          </button>
-          <button
+          </button>          <button
             onClick={() => setCurrentView('stats')}
             className={`p-2 rounded ${currentView === 'stats' ? 'border-2 border-gray-600' : 'hover:border hover:border-gray-300 dark:border-gray-600'}`}
             title="マイデータ"
@@ -1365,52 +1446,68 @@ const SyncSettings = ({
 return (
   <div className="border rounded-lg p-4">
     <h3 className="font-semibold mb-2 text-gray-900 dark:text-gray-100">同期設定</h3>
-    <div className="space-y-2 mb-3">
-      <label className="flex items-center gap-2">
-        <input 
-          type="checkbox" 
-          checked={localSettings.period}
-          onChange={(e) => handleChange('period', e.target.checked)}
-        />
+<div className="space-y-2 mb-3">
+      <label className="flex items-center gap-2 cursor-pointer">
+        <div className="relative">
+          <input 
+            type="checkbox" 
+            checked={localSettings.period}
+            onChange={(e) => handleChange('period', e.target.checked)}
+            className="sr-only peer"
+          />
+          <i className={`${localSettings.period ? 'fa-solid fa-square-check text-blue-600' : 'fa-regular fa-square text-gray-400'} text-xl`}></i>
+        </div>
         <span className="text-sm text-gray-900 dark:text-gray-100">生理期間を同期</span>
       </label>
-      <label className="flex items-center gap-2">
-        <input 
-          type="checkbox" 
-          checked={localSettings.fertile}
-          onChange={(e) => handleChange('fertile', e.target.checked)}
-        />
+      <label className="flex items-center gap-2 cursor-pointer">
+        <div className="relative">
+          <input 
+            type="checkbox" 
+            checked={localSettings.fertile}
+            onChange={(e) => handleChange('fertile', e.target.checked)}
+            className="sr-only peer"
+          />
+          <i className={`${localSettings.fertile ? 'fa-solid fa-square-check text-blue-600' : 'fa-regular fa-square text-gray-400'} text-xl`}></i>
+        </div>
         <span className="text-sm text-gray-900 dark:text-gray-100">妊娠可能日を同期</span>
       </label>
-      <label className="flex items-center gap-2">
-        <input 
-          type="checkbox" 
-          checked={localSettings.pms}
-          onChange={(e) => handleChange('pms', e.target.checked)}
-        />
+      <label className="flex items-center gap-2 cursor-pointer">
+        <div className="relative">
+          <input 
+            type="checkbox" 
+            checked={localSettings.pms}
+            onChange={(e) => handleChange('pms', e.target.checked)}
+            className="sr-only peer"
+          />
+          <i className={`${localSettings.pms ? 'fa-solid fa-square-check text-blue-600' : 'fa-regular fa-square text-gray-400'} text-xl`}></i>
+        </div>
         <span className="text-sm text-gray-900 dark:text-gray-100">PMS予測を同期</span>
       </label>
       <div>
-        <label className="flex items-center gap-2">
-          <input 
-            type="checkbox" 
-            checked={localSettings.intercourse}
-            onChange={(e) => handleChange('intercourse', e.target.checked)}
-          />
+        <label className="flex items-center gap-2 cursor-pointer">
+          <div className="relative">
+            <input 
+              type="checkbox" 
+              checked={localSettings.intercourse}
+              onChange={(e) => handleChange('intercourse', e.target.checked)}
+              className="sr-only peer"
+            />
+            <i className={`${localSettings.intercourse ? 'fa-solid fa-square-check text-blue-600' : 'fa-regular fa-square text-gray-400'} text-xl`}></i>
+          </div>
           <span className="text-sm text-gray-900 dark:text-gray-100">SEXを同期</span>
           <button 
             type="button" 
             onClick={() => setShowIntercourseInfo(!showIntercourseInfo)} 
             className="w-5 h-5 rounded-full bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 flex items-center justify-center text-xs text-gray-900 dark:text-gray-100"
           >
-            ⓘ
+            <i className="fa-solid fa-circle-info text-blue-600"></i>
           </button>
         </label>
         {showIntercourseInfo && (
           <div className="mt-2 p-3 bg-blue-50 dark:bg-gray-800 rounded text-xs text-gray-700 dark:text-gray-300">
-            <p className="font-semibold mb-1">📅 カレンダーに表示される内容：</p>
-            <p className="mb-2">「●」などの記号のみ（カスタマイズ可能）</p>
-            <p className="font-semibold mb-1">🔒 同期されない情報：</p>
+            <p className="font-semibold mb-1">カレンダーに表示される内容：</p>
+            <p className="mb-2">「◯」などの記号のみ（カスタマイズ可能）</p>
+            <p className="font-semibold mb-1">同期されない情報：</p>
             <ul className="list-disc ml-4">
               <li>パートナー名</li>
               <li>避妊具使用状況</li>
@@ -1420,8 +1517,7 @@ return (
           </div>
         )}
       </div>
-    </div>
-      
+    </div>      
     {hasChanges && (
       <button
         onClick={handleSave}
@@ -1516,7 +1612,21 @@ const HelpSection = ({ setCurrentView }: {
             )}
           </div>
 
-          <div className="border-b pb-2">
+<div className="border-b pb-2">
+            <button onClick={() => toggleSection('irregular')} className="w-full text-left flex items-center justify-between py-2 hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-800 rounded px-2">
+              <span className="text-sm font-medium">不規則な周期でも使えますか？</span>
+              <span>{expandedSection === 'irregular' ? '−' : '+'}</span>
+            </button>
+            {expandedSection === 'irregular' && (
+              <div className="mt-2 p-3 bg-gray-50 dark:bg-gray-800 rounded text-sm text-gray-700 dark:text-gray-300">
+                <p className="mb-2"><strong>はい、使えます！</strong></p>
+                <p className="mb-2">このアプリは、生理不順の運営者自身が機種変更時にデータ移行できず、人気アプリでは「周期が不規則すぎる」と数年分のデータを保存できなかった経験から生まれました。</p>
+                <p className="mb-2">同じ悩みを持つ方でも安心して使えるよう、不規則な周期にも対応する設計になっています。</p>                <p>予測は過去のデータの平均から計算されるため、記録が2回以上あれば表示されます。データが増えると平均値がより安定します。</p>
+              </div>
+            )}
+          </div>
+
+<div className="border-b pb-2">
             <button onClick={() => toggleSection('irregular')} className="w-full text-left flex items-center justify-between py-2 hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-800 rounded px-2">
               <span className="text-sm font-medium">不規則な周期でも使えますか？</span>
               <span>{expandedSection === 'irregular' ? '−' : '+'}</span>
@@ -1531,9 +1641,31 @@ const HelpSection = ({ setCurrentView }: {
           </div>
 
           <div className="border-b pb-2">
-            <button onClick={() => toggleSection('edit')} className="w-full text-left flex items-center justify-between py-2 hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-800 rounded px-2">
-              <span className="text-sm font-medium">記録の修正・削除方法</span>
-              <span>{expandedSection === 'edit' ? '−' : '+'}</span>
+            <button onClick={() => toggleSection('multidevice')} className="w-full text-left flex items-center justify-between py-2 hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-800 rounded px-2">
+              <span className="text-sm font-medium flex items-center gap-2">
+                <i className="fa-solid fa-circle-info text-blue-600"></i>
+                複数端末で使用する場合の注意
+              </span>
+              <span>{expandedSection === 'multidevice' ? '−' : '+'}</span>
+            </button>
+            {expandedSection === 'multidevice' && (
+              <div className="mt-2 p-3 bg-blue-50 dark:bg-gray-800 rounded text-sm text-gray-700 dark:text-gray-300 border-2 border-blue-200 dark:border-blue-900">
+                <p className="mb-3 font-semibold text-blue-700 dark:text-blue-400">PCとスマホなど、複数端末でご使用の方へ</p>
+                <ul className="list-disc ml-4 space-y-1 mb-3">
+                  <li>他の端末で編集した場合は、画面を更新（リロード）してください</li>
+                  <li>同時編集すると、後から保存した方が優先されます</li>
+                  <li>可能ならば編集中は他の端末での操作をお控えください</li>
+                </ul>
+                <p className="mt-2 text-xs text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-900 p-2 rounded">
+                  <i className="fa-regular fa-lightbulb text-yellow-500 mr-1"></i>
+                  ヘッダー右上の<i className="fa-solid fa-rotate-right mx-1"></i>ボタンで最新データに更新できます
+                </p>
+              </div>
+            )}
+          </div>
+
+          <div className="border-b pb-2">
+            <button onClick={() => toggleSection('edit')} className="w-full text-left flex items-center justify-between py-2 hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-800 rounded px-2">              <span>{expandedSection === 'edit' ? '−' : '+'}</span>
             </button>
             {expandedSection === 'edit' && (
               <div className="mt-2 p-3 bg-gray-50 dark:bg-gray-800 rounded text-sm text-gray-700 dark:text-gray-300">
@@ -1608,39 +1740,40 @@ const HelpSection = ({ setCurrentView }: {
             )}
           </div>
 
-          <div className="border-b pb-2">
+<div className="border-b pb-2">
             <button onClick={() => toggleSection('calendarWarning')} className="w-full text-left flex items-center justify-between py-2 hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-800 rounded px-2">
               <span className="text-sm font-medium flex items-center gap-2">
-                <span className="text-red-600">⚠️</span>
+                <i className="fa-solid fa-triangle-exclamation text-yellow-500"></i>
                 Googleカレンダーで直接編集・削除しないでください
               </span>
               <span>{expandedSection === 'calendarWarning' ? '−' : '+'}</span>
             </button>
             {expandedSection === 'calendarWarning' && (
-              <div className="mt-2 p-3 bg-white dark:bg-gray-900 rounded text-sm text-gray-700 dark:text-gray-300 border-2 border-red-200">
-                <p className="mb-3 font-semibold text-red-700">Googleカレンダー側で変更しないでください</p>
+              <div className="mt-2 p-3 bg-white dark:bg-gray-900 rounded text-sm text-gray-700 dark:text-gray-300 border-2 border-red-200 dark:border-red-900">
+                <p className="mb-3 font-semibold text-red-700 dark:text-red-400">Googleカレンダー側で変更しないでください</p>
                 <p className="mb-2"><strong>理由：</strong></p>
                 <ul className="list-disc ml-4 space-y-1 mb-3">
                   <li>Googleカレンダー側で変更しても、TukiCaleには反映されません</li>
                   <li>TukiCaleで再同期すると、カレンダーの手動変更は上書きされます</li>
                   <li>データの整合性が保てなくなる可能性があります</li>
                 </ul>
-                <p className="font-semibold text-blue-700 mb-1">✅ 正しい使い方：</p>
+                <p className="font-semibold text-blue-700 dark:text-blue-400 mb-1 flex items-center gap-1">
+                  <i className="fa-regular fa-lightbulb text-yellow-500"></i>
+                  正しい使い方：
+                </p>
                 <p>すべての編集・削除は<strong>TukiCaleアプリ内</strong>で行ってください。</p>
-                <p className="mt-2 text-xs text-gray-600 dark:text-gray-300">Googleカレンダーは「表示用」として使用します。</p>
+                <p className="mt-2 text-xs text-gray-600 dark:text-gray-400">Googleカレンダーは「表示用」として使用します。</p>
               </div>
             )}
           </div>
-
           <div className="border rounded-lg mt-4">
             <button onClick={() => toggleSection('contact')} className="w-full text-left py-3 px-4 hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-800 rounded-t-lg border-b flex items-center justify-between">
               <span className="text-sm font-medium flex items-center gap-2">
-                <i className="fa-solid fa-envelope text-gray-600 dark:text-gray-300"></i> TikTokでご連絡ください
+                <i className="fa-brands fa-tiktok text-gray-900 dark:text-gray-100"></i> TikTokでご連絡ください
                 フィードバック・機能リクエスト
               </span>
               <span>{expandedSection === 'contact' ? '−' : '+'}</span>
-            </button>
-            {expandedSection === 'contact' && (
+            </button>            {expandedSection === 'contact' && (
               <div className="px-4 py-3 bg-gray-50 dark:bg-gray-800 border-b">
                 <div className="text-sm text-gray-700 dark:text-gray-300">
                   <p className="mb-2">バグ報告や機能リクエストをお待ちしています！</p>
@@ -1850,10 +1983,9 @@ const LoginScreen = ({ onLogin, isLoading }: { onLogin: () => void; isLoading: b
             { title: 'マルチデバイス対応', desc: '複数の端末で同時に使える' }
           ].map((item, i) => (
             <div key={i} className="flex items-start gap-2">
-              <div className="w-5 h-5 rounded-full bg-white dark:bg-gray-900 flex items-center justify-center flex-shrink-0 mt-0.5">
-                <span className="text-green-500 text-xs font-bold">✓</span>
-              </div>
-              <div>
+<div className="w-5 h-5 rounded-full bg-white dark:bg-gray-900 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <i className="fa-solid fa-check text-blue-400"></i>
+              </div>              <div>
                 <p className="text-sm font-medium text-gray-800 dark:text-gray-100">{item.title}</p>
                 <p className="text-xs text-gray-600 dark:text-gray-300">{item.desc}</p>
               </div>
@@ -2625,51 +2757,61 @@ const InitialSyncModal = ({ onSave }: {
         
         <div className="flex-1 overflow-y-auto px-6 py-4">
           <div className="space-y-3">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input 
-                type="checkbox" 
-                checked={settings.period}
-                onChange={(e) => setSettings({...settings, period: e.target.checked})}
-                className="accent-blue-600"
-              />
+<label className="flex items-center gap-2 cursor-pointer">
+              <div className="relative">
+                <input 
+                  type="checkbox" 
+                  checked={settings.period}
+                  onChange={(e) => setSettings({...settings, period: e.target.checked})}
+                  className="sr-only peer"
+                />
+                <i className={`${settings.period ? 'fa-solid fa-square-check text-blue-600' : 'fa-regular fa-square text-gray-400'} text-xl`}></i>
+              </div>
               <span className="text-sm text-gray-900 dark:text-gray-100">生理期間を同期</span>
             </label>
             <label className="flex items-center gap-2 cursor-pointer">
-              <input 
-                type="checkbox" 
-                checked={settings.fertile}
-                onChange={(e) => setSettings({...settings, fertile: e.target.checked})}
-                className="accent-blue-600"
-              />
+              <div className="relative">
+                <input 
+                  type="checkbox" 
+                  checked={settings.fertile}
+                  onChange={(e) => setSettings({...settings, fertile: e.target.checked})}
+                  className="sr-only peer"
+                />
+                <i className={`${settings.fertile ? 'fa-solid fa-square-check text-blue-600' : 'fa-regular fa-square text-gray-400'} text-xl`}></i>
+              </div>
               <span className="text-sm text-gray-900 dark:text-gray-100">妊娠可能日を同期</span>
             </label>
             <label className="flex items-center gap-2 cursor-pointer">
-              <input 
-                type="checkbox" 
-                checked={settings.pms}
-                onChange={(e) => setSettings({...settings, pms: e.target.checked})}
-                className="accent-blue-600"
-              />
-              <span className="text-sm text-gray-900 dark:text-gray-100">PMS予測を同期</span>
-            </label>
-            <div>
-              <label className="flex items-center gap-2 cursor-pointer">
+              <div className="relative">
                 <input 
                   type="checkbox" 
-                  checked={settings.intercourse}
-                  onChange={(e) => setSettings({...settings, intercourse: e.target.checked})}
-                  className="accent-blue-600"
+                  checked={settings.pms}
+                  onChange={(e) => setSettings({...settings, pms: e.target.checked})}
+                  className="sr-only peer"
                 />
+                <i className={`${settings.pms ? 'fa-solid fa-square-check text-blue-600' : 'fa-regular fa-square text-gray-400'} text-xl`}></i>
+              </div>
+              <span className="text-sm text-gray-900 dark:text-gray-100">PMS予測を同期</span>
+            </label>            <div>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <div className="relative">
+                  <input 
+                    type="checkbox" 
+                    checked={settings.intercourse}
+                    onChange={(e) => setSettings({...settings, intercourse: e.target.checked})}
+                    className="sr-only peer"
+                  />
+                  <i className={`${settings.intercourse ? 'fa-solid fa-square-check text-blue-600' : 'fa-regular fa-square text-gray-400'} text-xl`}></i>
+                </div>
                 <span className="text-sm text-gray-900 dark:text-gray-100">SEXを同期</span>
                 <button 
                   type="button" 
                   onClick={() => setShowIntercourseInfo(!showIntercourseInfo)} 
                   className="w-5 h-5 rounded-full bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 flex items-center justify-center text-xs text-gray-900 dark:text-gray-100"
                 >
-                  ⓘ
+                  <i className="fa-solid fa-circle-info text-blue-600"></i>
                 </button>
-              </label>
-              {showIntercourseInfo && (
+              </label>              {showIntercourseInfo && (
                 <div className="mt-2 p-3 bg-blue-50 dark:bg-gray-700 rounded text-xs text-gray-700 dark:text-gray-300">
                   <p className="font-semibold mb-1">カレンダーに表示される内容：</p>
                   <p className="mb-2">「●」などの記号のみ（カスタマイズ可能）</p>
