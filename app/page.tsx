@@ -1111,7 +1111,7 @@ return (
 {currentView === 'stats' && (
         <StatsView records={records} getAverageCycle={getAverageCycle} getAveragePeriodLength={getAveragePeriodLength} setShowIntercourseList={setShowIntercourseList} />
       )}
-      
+
 {currentView === 'settings' && (
   <SettingsView 
     isGoogleAuthed={isGoogleAuthed}
@@ -1274,17 +1274,17 @@ const StatsView = ({ records, getAverageCycle, getAveragePeriodLength, setShowIn
   <div className="space-y-4">
     <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-gray-100">マイデータ</h2>
     
-<div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+<div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg">
       <div className="text-sm text-gray-600 dark:text-gray-300">平均周期</div>
       <div className="text-2xl font-bold text-gray-900 dark:text-gray-100 text-gray-900 dark:text-gray-100">{getAverageCycle()}日</div>
     </div>
 
-    <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+    <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg">
       <div className="text-sm text-gray-600 dark:text-gray-300">平均生理期間</div>
       <div className="text-2xl font-bold text-gray-900 dark:text-gray-100 text-gray-900 dark:text-gray-100">{getAveragePeriodLength()}日</div>
     </div>
     
-    <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+    <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg">
       <div className="text-sm text-gray-600 dark:text-gray-300">次回生理予定</div>      <div className="text-2xl font-bold text-gray-900 dark:text-gray-100 text-gray-900 dark:text-gray-100">
         {records.periods.length > 0 ? 
           (() => {
@@ -1300,13 +1300,13 @@ const StatsView = ({ records, getAverageCycle, getAveragePeriodLength, setShowIn
       </div>
     </div>
     
-    <div className="bg-blue-50 dark:bg-gray-800 p-4 rounded-lg">
+    <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg">
       <div className="text-sm text-gray-600 dark:text-gray-300">記録された生理回数</div>
       <div className="text-2xl font-bold text-gray-900 dark:text-gray-100 text-gray-900 dark:text-gray-100">{records.periods.length}回</div>
     </div>
 
     {records.intercourse.length > 0 && (
-      <div className="bg-green-50 dark:bg-gray-800 p-4 rounded-lg">
+      <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg">
         <div className="text-sm text-gray-600 dark:text-gray-300">SEX記録</div>
         <button 
           onClick={() => setShowIntercourseList(true)}
