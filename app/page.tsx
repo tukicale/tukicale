@@ -2110,23 +2110,31 @@ const DatePicker = ({ selectedDate, onSelect, onClose }: {
 return (
     <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center p-4 z-50">
       <div className="bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg p-4 w-80 max-w-full">      
-      <div className="flex items-center justify-between mb-3">
+<div className="flex items-center justify-between mb-3">
         <button type="button" onClick={() => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() - 1))} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-gray-900 dark:text-gray-100">←</button>
         <div className="flex items-center gap-2">
           <select 
             value={viewDate.getFullYear()} 
             onChange={(e) => setViewDate(new Date(parseInt(e.target.value), viewDate.getMonth(), 1))}
-            className="border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-sm font-semibold bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+            className="border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-base font-semibold bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
           >
             {Array.from({length: 11}, (_, i) => currentYear - 10 + i).map(year => (
               <option key={year} value={year}>{year}年</option>
             ))}
           </select>
-          <span className="font-semibold">{viewDate.getMonth() + 1}月</span>
+          <select 
+            value={viewDate.getMonth()} 
+            onChange={(e) => setViewDate(new Date(viewDate.getFullYear(), parseInt(e.target.value), 1))}
+            className="border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-base font-semibold bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+          >
+            {Array.from({length: 12}, (_, i) => i).map(month => (
+              <option key={month} value={month}>{month + 1}月</option>
+            ))}
+          </select>
         </div>
         <button type="button" onClick={() => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() + 1))} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-gray-900 dark:text-gray-100">→</button>
       </div>
-      
+            
       <div className="grid grid-cols-7 gap-1 mb-2">
         {['日', '月', '火', '水', '木', '金', '土'].map(day => (
           <div key={day} className="text-center text-sm text-gray-500 dark:text-gray-400 h-8 flex items-center justify-center">{day}</div>
