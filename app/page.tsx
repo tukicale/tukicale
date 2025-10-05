@@ -227,18 +227,26 @@ const syncToCalendar = async (
       colorId: string;
     }> = [];
     
-    if (settings.period) {
-      records.periods.forEach(period => {
-        events.push({
-          summary: '生理',
-          start: { date: period.startDate },
-          end: { date: getNextDay(period.endDate) },
-          colorId: '11'
-        });
+if (settings.period) {
+  records.periods.forEach(period => {
+    events.push({ summary: '生理', ... });
+  });
+  
+    const nextPeriodDays = getNextPeriodDays();
+  if (nextPeriodDays.length > 0) {
+    const groupedNext = groupConsecutiveDates(nextPeriodDays);
+    groupedNext.forEach(group => {
+      events.push({
+        summary: '次回生理予測',
+        start: { date: group.start },
+        end: { date: getNextDay(group.end) },
+        colorId: '4'
       });
-    }
+    });
+  }
+}
     
-    // ★★★ ここにログ追加 ★★★★
+    // ★★★ ここにログ追加 ★★★
     console.log('作成するイベント数:', events.length);
     console.log('イベント詳細:', events);
     
@@ -275,22 +283,7 @@ if (settings.pms) {
     });
   }
 }
-    
-if (settings.period) {
-  const nextPeriodDays = getNextPeriodDays();
-  if (nextPeriodDays.length > 0) {
-    const groupedNext = groupConsecutiveDates(nextPeriodDays);
-    groupedNext.forEach(group => {
-      events.push({
-        summary: '次回生理予測',
-        start: { date: group.start },
-        end: { date: getNextDay(group.end) },
-        colorId: '4'
-      });
-    });
-  }
-}
-    
+      
     if (settings.intercourse) {
       records.intercourse.forEach(record => {
         events.push({
@@ -453,21 +446,32 @@ const isToday = (day: number): boolean => {
          currentDate.getFullYear() === today.getFullYear();
 };
 
-  const getRecordForDate = (day: number) => {
-    const dateStr = formatDate(new Date(currentDate.getFullYear(), currentDate.getMonth(), day));
-    
-    const period = records.periods.find(p => 
-      dateStr >= p.startDate && dateStr <= p.endDate
-    );
-    
-    const intercourse = records.intercourse.find(i => i.date === dateStr);
-    
-    const fertile = getFertileDays().includes(dateStr);
-    const pms = getPMSDays().includes(dateStr);
-    const nextPeriod = getNextPeriodDays().includes(dateStr);
-    
-    return { period, intercourse, fertile, pms, nextPeriod };
-  };
+const getFertileDays = () => {
+  if (records.periods.length === 0) return [];
+  
+  const lastPeriod = [...records.periods].sort((a, b) => 
+    new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
+  )[0];
+  
+  // 最新の生理終了日
+  const lastPeriodEnd = new Date(lastPeriod.endDate);
+  
+  const avgCycle = getAverageCycle();
+  const ovulationDay = new Date(lastPeriod.startDate);
+  ovulationDay.setDate(ovulationDay.getDate() + avgCycle - 14);
+  
+  const fertileDays = [];
+  for (let i = -3; i <= 3; i++) {
+    const day = new Date(ovulationDay);
+    day.setDate(day.getDate() + i);
+    // 最新の生理終了日より後のみ追加
+    if (day > lastPeriodEnd) {
+      fertileDays.push(formatDate(day));
+    }
+  }
+  
+  return fertileDays;
+};
 
   const getAverageCycle = (): number => {
     if (records.periods.length < 2) return 28;
@@ -508,26 +512,32 @@ const isToday = (day: number): boolean => {
     return fertileDays;
   };
 
-  const getPMSDays = () => {
-    if (records.periods.length === 0) return [];
-    
-    const lastPeriod = [...records.periods].sort((a, b) => 
-      new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
-    )[0];
-    
-    const avgCycle = getAverageCycle();
-    const nextPeriod = new Date(lastPeriod.startDate);
-    nextPeriod.setDate(nextPeriod.getDate() + avgCycle);
-    
-    const pmsDays = [];
-    for (let i = -10; i <= -3; i++) {
-      const day = new Date(nextPeriod);
-      day.setDate(day.getDate() + i);
+const getPMSDays = () => {
+  if (records.periods.length === 0) return [];
+  
+  const lastPeriod = [...records.periods].sort((a, b) => 
+    new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
+  )[0];
+  
+  // 最新の生理終了日
+  const lastPeriodEnd = new Date(lastPeriod.endDate);
+  
+  const avgCycle = getAverageCycle();
+  const nextPeriod = new Date(lastPeriod.startDate);
+  nextPeriod.setDate(nextPeriod.getDate() + avgCycle);
+  
+  const pmsDays = [];
+  for (let i = -10; i <= -3; i++) {
+    const day = new Date(nextPeriod);
+    day.setDate(day.getDate() + i);
+    // 最新の生理終了日より後のみ追加
+    if (day > lastPeriodEnd) {
       pmsDays.push(formatDate(day));
     }
-    
-    return pmsDays;
-  };
+  }
+  
+  return pmsDays;
+};
 
 const getNextPeriodDays = () => { 
   if (records.periods.length === 0) {
@@ -538,6 +548,9 @@ const getNextPeriodDays = () => {
     new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
   )[0];
 
+  // 最新の生理終了日
+  const lastPeriodEnd = new Date(lastPeriod.endDate);
+
   const avgCycle = getAverageCycle();
  
   const avgPeriodLength = records.periods.length > 0 
@@ -547,6 +560,11 @@ const getNextPeriodDays = () => {
   const nextPeriodStart = new Date(lastPeriod.startDate);
   nextPeriodStart.setDate(nextPeriodStart.getDate() + avgCycle);
  
+  // 次回生理開始日が最新の生理終了日より前の場合は空配列を返す
+  if (nextPeriodStart <= lastPeriodEnd) {
+    return [];
+  }
+
   const nextPeriodDays = [];
   for (let i = 0; i < avgPeriodLength; i++) {
     const day = new Date(nextPeriodStart);
@@ -818,21 +836,25 @@ const handleDeleteData = async () => {
     }
   };
 
-  const updateBulkRecord = (id: number, field: 'startDate' | 'endDate', value: string) => {
-    setBulkRecords(bulkRecords.map(r => {
-      if (r.id === id) {
-        const updated = { ...r, [field]: value };
-        if (field === 'startDate' && value && !r.endDate) {
-          const startDateObj = new Date(value);
+const updateBulkRecord = (id: number, field: 'startDate' | 'endDate', value: string) => {
+  setBulkRecords(bulkRecords.map(r => {
+    if (r.id === id) {
+      const updated = { ...r, [field]: value };
+      if (field === 'startDate' && value) {
+        const startDateObj = new Date(value);
+        
+        // 終了日が未設定、または開始日より前の場合のみ自動設定
+        if (!r.endDate || new Date(r.endDate) < startDateObj) {
           const endDateObj = new Date(startDateObj);
           endDateObj.setDate(startDateObj.getDate() + 6);
           updated.endDate = formatDate(endDateObj);
         }
-        return updated;
       }
-      return r;
-    }));
-  };
+      return updated;
+    }
+    return r;
+  }));
+};
 
 const submitBulkRecords = () => {
     const validRecords = bulkRecords.filter(r => r.startDate && r.endDate);
@@ -1982,18 +2004,26 @@ const DatePicker = ({ selectedDate, onSelect, onClose }: {
     <div className="bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg p-4 w-80">
       <div className="flex items-center justify-between mb-3">
         <button type="button" onClick={() => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() - 1))} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-gray-900 dark:text-gray-100">←</button>
-        <div className="flex items-center gap-2">
-          <select 
-            value={viewDate.getFullYear()} 
-            onChange={(e) => setViewDate(new Date(parseInt(e.target.value), viewDate.getMonth(), 1))}
-            className="border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-sm font-semibold bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-          >
-            {Array.from({length: 11}, (_, i) => currentYear - 10 + i).map(year => (
-              <option key={year} value={year}>{year}年</option>
-            ))}
-          </select>
-          <span className="font-semibold">{viewDate.getMonth() + 1}月</span>
-        </div>
+<div className="flex items-center gap-2">
+  <select 
+    value={viewDate.getFullYear()} 
+    onChange={(e) => setViewDate(new Date(parseInt(e.target.value), viewDate.getMonth(), 1))}
+    className="border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-sm font-semibold bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+  >
+    {Array.from({length: 11}, (_, i) => currentYear - 10 + i).map(year => (
+      <option key={year} value={year}>{year}年</option>
+    ))}
+  </select>
+  <select 
+    value={viewDate.getMonth()} 
+    onChange={(e) => setViewDate(new Date(viewDate.getFullYear(), parseInt(e.target.value), 1))}
+    className="border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-sm font-semibold bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+  >
+    {Array.from({length: 12}, (_, i) => i).map(month => (
+      <option key={month} value={month}>{month + 1}月</option>
+    ))}
+  </select>
+</div>
         <button type="button" onClick={() => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() + 1))} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-gray-900 dark:text-gray-100">→</button>
       </div>
       
