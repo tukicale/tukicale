@@ -1668,7 +1668,7 @@ const HelpSection = ({ setCurrentView }: {
 
 <div className="border-b pb-2">
             <button onClick={() => toggleSection('edit')} className="w-full text-left flex items-center justify-between py-2 hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-800 rounded px-2">
-              <span className="text-sm font-medium">登録済み記録の編集</span>
+              <span className="text-sm font-medium">記録の修正・削除方法</span>
               <span>{expandedSection === 'edit' ? '−' : '+'}</span>
             </button>
             {expandedSection === 'edit' && (
