@@ -536,7 +536,7 @@ const isToday = (day: number): boolean => {
     return { period, intercourse, fertile, pms, nextPeriod };
   };
 
-  const getAverageCycle = (): number => {
+const getAverageCycle = (): number => {
     if (records.periods.length < 2) return 28;
     
     const sortedPeriods = [...records.periods].sort((a, b) => 
@@ -552,6 +552,16 @@ const isToday = (day: number): boolean => {
     }
     
     return Math.round(totalDays / (sortedPeriods.length - 1)) || 28;
+  };
+
+  const getAveragePeriodLength = (): number => {
+    if (records.periods.length === 0) return 5;
+    
+    const avgLength = Math.round(
+      records.periods.reduce((sum, p) => sum + p.days, 0) / records.periods.length
+    );
+    
+    return avgLength || 5;
   };
 
   const getFertileDays = () => {
@@ -889,10 +899,11 @@ const handleDeleteData = async () => {
     setBulkRecords(bulkRecords.map(r => {
       if (r.id === id) {
         const updated = { ...r, [field]: value };
-        if (field === 'startDate' && value && !r.endDate) {
+if (field === 'startDate' && value && !r.endDate) {
           const startDateObj = new Date(value);
           const endDateObj = new Date(startDateObj);
-          endDateObj.setDate(startDateObj.getDate() + 6);
+          const avgLength = getAveragePeriodLength();
+          endDateObj.setDate(startDateObj.getDate() + avgLength - 1);
           updated.endDate = formatDate(endDateObj);
         }
         return updated;
@@ -1128,6 +1139,7 @@ return (
           addIntercourseRecord={addIntercourseRecord}
           setShowAddModal={setShowAddModal}
           currentDate={currentDate}
+          getAveragePeriodLength={getAveragePeriodLength}
         />
       )}
 
@@ -1261,14 +1273,18 @@ const StatsView = ({ records, getAverageCycle, setShowIntercourseList }: {
   <div className="space-y-4">
     <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-gray-100">マイデータ</h2>
     
-    <div className="bg-pink-50 dark:bg-gray-800 p-4 rounded-lg">
+<div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
       <div className="text-sm text-gray-600 dark:text-gray-300">平均周期</div>
       <div className="text-2xl font-bold text-gray-900 dark:text-gray-100 text-gray-900 dark:text-gray-100">{getAverageCycle()}日</div>
     </div>
+
+    <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+      <div className="text-sm text-gray-600 dark:text-gray-300">平均生理期間</div>
+      <div className="text-2xl font-bold text-gray-900 dark:text-gray-100 text-gray-900 dark:text-gray-100">{getAveragePeriodLength()}日</div>
+    </div>
     
-    <div className="bg-purple-50 dark:bg-gray-800 p-4 rounded-lg">
-      <div className="text-sm text-gray-600 dark:text-gray-300">次回生理予定</div>
-      <div className="text-2xl font-bold text-gray-900 dark:text-gray-100 text-gray-900 dark:text-gray-100">
+    <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+      <div className="text-sm text-gray-600 dark:text-gray-300">次回生理予定</div>      <div className="text-2xl font-bold text-gray-900 dark:text-gray-100 text-gray-900 dark:text-gray-100">
         {records.periods.length > 0 ? 
           (() => {
             const lastPeriod = [...records.periods].sort((a, b) => 
@@ -2127,12 +2143,13 @@ const DatePicker = ({ selectedDate, onSelect, onClose }: {
   );
 };
 
-const PeriodForm = ({ selectedDate, onSubmit, onCancel }: {
+const PeriodForm = ({ selectedDate, onSubmit, onCancel, getAveragePeriodLength }: {
   selectedDate: Date | null;
   onSubmit: (startDate: string, endDate: string) => void;
   onCancel: () => void;
+  getAveragePeriodLength: () => number;
 }) => {
-  const formatLocalDate = (date: Date | null): string => {
+    const formatLocalDate = (date: Date | null): string => {
     if (!date) return '';
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -2140,11 +2157,17 @@ const PeriodForm = ({ selectedDate, onSubmit, onCancel }: {
     return `${year}-${month}-${day}`;
   };
 
-  const [startDate, setStartDate] = useState(formatLocalDate(selectedDate));
-  const [endDate, setEndDate] = useState(formatLocalDate(selectedDate));
+const [startDate, setStartDate] = useState(formatLocalDate(selectedDate));
+  const [endDate, setEndDate] = useState(() => {
+    if (!selectedDate) return '';
+    const avgLength = getAveragePeriodLength();
+    const endDateObj = new Date(selectedDate);
+    endDateObj.setDate(endDateObj.getDate() + avgLength - 1);
+    return formatLocalDate(endDateObj);
+  });
+
   const [showStartPicker, setShowStartPicker] = useState(false);
   const [showEndPicker, setShowEndPicker] = useState(false);
-
   const formatBulkDisplayDate = (dateStr: string): string => {
     if (!dateStr) return '日付を選択';
     const d = new Date(dateStr);
@@ -2287,7 +2310,7 @@ const IntercourseForm = ({ selectedDate, onSubmit, onCancel }: {
   );
 };
 
-const AddModal = ({ selectedDate, modalType, setModalType, addPeriodRecord, addIntercourseRecord, setShowAddModal, currentDate }: {
+const AddModal = ({ selectedDate, modalType, setModalType, addPeriodRecord, addIntercourseRecord, setShowAddModal, currentDate, getAveragePeriodLength }: {
   selectedDate: Date | null;
   modalType: string;
   setModalType: (type: string) => void;
@@ -2295,6 +2318,7 @@ const AddModal = ({ selectedDate, modalType, setModalType, addPeriodRecord, addI
   addIntercourseRecord: (date: string, contraception: string, partner: string, memo: string) => void;
   setShowAddModal: (show: boolean) => void;
   currentDate: Date;
+  getAveragePeriodLength: () => number;
 }) => (
   <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 overflow-y-auto">
     <div className="bg-white dark:bg-gray-900 rounded-lg p-6 max-w-md w-full my-4">
@@ -2317,11 +2341,12 @@ const AddModal = ({ selectedDate, modalType, setModalType, addPeriodRecord, addI
         </button>
       </div>
 
-      {modalType === 'period' ? (
+{modalType === 'period' ? (
         <PeriodForm 
           selectedDate={selectedDate}
           onSubmit={addPeriodRecord}
           onCancel={() => setShowAddModal(false)}
+          getAveragePeriodLength={getAveragePeriodLength}
         />
       ) : (
         <IntercourseForm
