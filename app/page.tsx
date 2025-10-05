@@ -1108,10 +1108,10 @@ return (
         </>
       )}
 
-      {currentView === 'stats' && (
-        <StatsView records={records} getAverageCycle={getAverageCycle} setShowIntercourseList={setShowIntercourseList} />
+{currentView === 'stats' && (
+        <StatsView records={records} getAverageCycle={getAverageCycle} getAveragePeriodLength={getAveragePeriodLength} setShowIntercourseList={setShowIntercourseList} />
       )}
-
+      
 {currentView === 'settings' && (
   <SettingsView 
     isGoogleAuthed={isGoogleAuthed}
@@ -1265,9 +1265,10 @@ return (
   );
 };
 
-const StatsView = ({ records, getAverageCycle, setShowIntercourseList }: {
+const StatsView = ({ records, getAverageCycle, getAveragePeriodLength, setShowIntercourseList }: {
   records: Records;
   getAverageCycle: () => number;
+  getAveragePeriodLength: () => number;
   setShowIntercourseList: (show: boolean) => void;
 }) => (
   <div className="space-y-4">
