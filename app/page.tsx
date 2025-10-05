@@ -229,10 +229,16 @@ const syncToCalendar = async (
     
 if (settings.period) {
   records.periods.forEach(period => {
-    events.push({ summary: '生理', ... });
+    events.push({
+      summary: '生理',
+      start: { date: period.startDate },
+      end: { date: getNextDay(period.endDate) },
+      colorId: '11'
+    });
   });
   
-    const nextPeriodDays = getNextPeriodDays();
+  // 次回生理予測（生理設定がONの場合のみ）
+  const nextPeriodDays = getNextPeriodDays();
   if (nextPeriodDays.length > 0) {
     const groupedNext = groupConsecutiveDates(nextPeriodDays);
     groupedNext.forEach(group => {
