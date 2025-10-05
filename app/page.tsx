@@ -1773,7 +1773,6 @@ const HelpSection = ({ setCurrentView }: {
           <div className="border rounded-lg mt-4">
             <button onClick={() => toggleSection('contact')} className="w-full text-left py-3 px-4 hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-800 rounded-t-lg border-b flex items-center justify-between">
               <span className="text-sm font-medium flex items-center gap-2">
-                <i className="fa-brands fa-tiktok text-gray-900 dark:text-gray-100"></i> TikTokでご連絡ください
                 フィードバック・機能リクエスト
               </span>
               <span>{expandedSection === 'contact' ? '−' : '+'}</span>
@@ -1781,7 +1780,7 @@ const HelpSection = ({ setCurrentView }: {
               <div className="px-4 py-3 bg-gray-50 dark:bg-gray-800 border-b">
                 <div className="text-sm text-gray-700 dark:text-gray-300">
                   <p className="mb-2">バグ報告や機能リクエストをお待ちしています！</p>
-                  <p className="mb-2"><strong>TikTokでご連絡ください：</strong></p>
+                  <p className="mb-2"><i className="fa-brands fa-tiktok text-gray-900 dark:text-gray-100"></i><strong>TikTokでご連絡ください：</strong></p>
                   <p className="mb-2">
                     <a 
                       href="https://www.tiktok.com/@tukicale_app" 
@@ -1789,7 +1788,7 @@ const HelpSection = ({ setCurrentView }: {
                       rel="noopener noreferrer"
                       className="text-blue-600 hover:underline"
                     >
-                      @tukicale_app
+                      <i className="fa-brands fa-tiktok text-gray-900 dark:text-gray-100"></i>@tukicale_app
                     </a>
                     の固定動画のコメント欄にお願いします
                   </p>
