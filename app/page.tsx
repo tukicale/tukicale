@@ -564,7 +564,7 @@ const getAverageCycle = (): number => {
     return avgLength || 5;
   };
 
-  const getFertileDays = () => {
+const getFertileDays = () => {
     if (records.periods.length === 0) return [];
     
     const lastPeriod = [...records.periods].sort((a, b) => 
@@ -575,17 +575,23 @@ const getAverageCycle = (): number => {
     const ovulationDay = new Date(lastPeriod.startDate);
     ovulationDay.setDate(ovulationDay.getDate() + avgCycle - 14);
     
+    // 最新の生理終了日より後の日付のみ予測を表示
+    const lastPeriodEnd = new Date(lastPeriod.endDate);
+    
     const fertileDays = [];
     for (let i = -3; i <= 3; i++) {
       const day = new Date(ovulationDay);
       day.setDate(day.getDate() + i);
-      fertileDays.push(formatDate(day));
+      // 最新生理の終了日より後の日付のみ追加
+      if (day > lastPeriodEnd) {
+        fertileDays.push(formatDate(day));
+      }
     }
     
     return fertileDays;
   };
 
-  const getPMSDays = () => {
+const getPMSDays = () => {
     if (records.periods.length === 0) return [];
     
     const lastPeriod = [...records.periods].sort((a, b) => 
@@ -596,11 +602,17 @@ const getAverageCycle = (): number => {
     const nextPeriod = new Date(lastPeriod.startDate);
     nextPeriod.setDate(nextPeriod.getDate() + avgCycle);
     
+    // 最新の生理終了日より後の日付のみ予測を表示
+    const lastPeriodEnd = new Date(lastPeriod.endDate);
+    
     const pmsDays = [];
     for (let i = -10; i <= -3; i++) {
       const day = new Date(nextPeriod);
       day.setDate(day.getDate() + i);
-      pmsDays.push(formatDate(day));
+      // 最新生理の終了日より後の日付のみ追加
+      if (day > lastPeriodEnd) {
+        pmsDays.push(formatDate(day));
+      }
     }
     
     return pmsDays;
@@ -623,12 +635,18 @@ const getNextPeriodDays = () => {
  
   const nextPeriodStart = new Date(lastPeriod.startDate);
   nextPeriodStart.setDate(nextPeriodStart.getDate() + avgCycle);
+  
+  // 最新の生理終了日より後の日付のみ予測を表示
+  const lastPeriodEnd = new Date(lastPeriod.endDate);
  
   const nextPeriodDays = [];
   for (let i = 0; i < avgPeriodLength; i++) {
     const day = new Date(nextPeriodStart);
     day.setDate(day.getDate() + i);
-    nextPeriodDays.push(formatDate(day));
+    // 最新生理の終了日より後の日付のみ追加
+    if (day > lastPeriodEnd) {
+      nextPeriodDays.push(formatDate(day));
+    }
   }
   
   return nextPeriodDays;
@@ -2055,9 +2073,13 @@ const DatePicker = ({ selectedDate, onSelect, onClose }: {
 }) => {
   const today = new Date();
   const currentYear = today.getFullYear();
-  const [viewDate, setViewDate] = useState<Date>(
-    selectedDate ? new Date(selectedDate) : today
-  );
+  const [viewDate, setViewDate] = useState<Date>(() => {
+    if (selectedDate) {
+      const date = new Date(selectedDate);
+      return new Date(date.getFullYear(), date.getMonth(), 1);
+    }
+    return today;
+  });
   
   const getDaysInMonth = (date: Date) => {
     const year = date.getFullYear();
@@ -2134,7 +2156,7 @@ return (
         </div>
         <button type="button" onClick={() => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() + 1))} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-gray-900 dark:text-gray-100">→</button>
       </div>
-            
+
       <div className="grid grid-cols-7 gap-1 mb-2">
         {['日', '月', '火', '水', '木', '金', '土'].map(day => (
           <div key={day} className="text-center text-sm text-gray-500 dark:text-gray-400 h-8 flex items-center justify-center">{day}</div>
