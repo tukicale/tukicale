@@ -779,18 +779,16 @@ const addIntercourseRecord = (date: string, contraception: string, partner: stri
     const { daysInMonth, startingDayOfWeek } = getDaysInMonth(currentDate);
     const days = [];
     
-    for (let i = 0; i < startingDayOfWeek; i++) {
-      days.push(<div key={`empty-${i}`} className="h-20 border border-gray-100 dark:border-gray-700"></div>);
-    }
-    
+for (let i = 0; i < startingDayOfWeek; i++) {
+      days.push(<div key={`empty-${i}`} className="h-20 border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800"></div>);
+    }    
     for (let day = 1; day <= daysInMonth; day++) {
       const { period, intercourse, fertile, pms, nextPeriod } = getRecordForDate(day);
       
-      days.push(
-        <div
+<div
           key={day}
           onClick={() => handleDayClick(day)}
-          className={`h-20 border border-gray-100 dark:border-gray-700 p-1 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-800 dark:bg-gray-800 relative
+          className={`h-20 border border-gray-200 dark:border-gray-700 p-1 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 dark:bg-gray-800 dark:bg-gray-800 relative
             ${isToday(day) ? 'bg-blue-50 border-blue-300' : ''}`}
         >
           <div className="text-sm font-medium">{day}</div>
@@ -1097,15 +1095,15 @@ return (
             </div>
           </div>
 
-          <div className="grid grid-cols-7 gap-0 mb-4">
+<div className="grid grid-cols-7 gap-0 mb-4">
             {['日', '月', '火', '水', '木', '金', '土'].map(day => (
-              <div key={day} className="text-center font-semibold p-2 bg-gray-50 dark:bg-gray-800">
+              <div key={day} className="text-center font-semibold p-2 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
                 {day}
               </div>
             ))}
             {renderCalendar()}
           </div>
-        </>
+          </>
       )}
 
 {currentView === 'stats' && (
