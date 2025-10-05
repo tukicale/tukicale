@@ -1284,7 +1284,7 @@ const StatsView = ({ records, getAverageCycle, getAveragePeriodLength, setShowIn
       <div className="text-2xl font-bold text-gray-900 dark:text-gray-100 text-gray-900 dark:text-gray-100">{getAveragePeriodLength()}日</div>
     </div>
     
-    <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg">
+<div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg">
       <div className="text-sm text-gray-600 dark:text-gray-300">次回生理予定</div>      <div className="text-2xl font-bold text-gray-900 dark:text-gray-100 text-gray-900 dark:text-gray-100">
         {records.periods.length > 0 ? 
           (() => {
@@ -1298,11 +1298,6 @@ const StatsView = ({ records, getAverageCycle, getAveragePeriodLength, setShowIn
           : '---'
         }
       </div>
-    </div>
-    
-    <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg">
-      <div className="text-sm text-gray-600 dark:text-gray-300">記録された生理回数</div>
-      <div className="text-2xl font-bold text-gray-900 dark:text-gray-100 text-gray-900 dark:text-gray-100">{records.periods.length}回</div>
     </div>
 
     {records.intercourse.length > 0 && (
@@ -2711,7 +2706,7 @@ const IntercourseList = ({ records, onClose, onEdit, onDelete }: {
                     {recordsByYear[year].map(record => {
                       const date = new Date(record.date);
                       return (
-                        <div key={record.id} className="border rounded p-3 bg-gray-50 dark:bg-gray-800">
+<div key={record.id} className="border rounded p-3 bg-gray-50 dark:bg-gray-800">
                           <div className="flex items-start justify-between gap-3">
                             <div className="flex-1">
                               <p className="text-sm font-medium mb-1">{date.getMonth() + 1}月{date.getDate()}日</p>
@@ -2722,16 +2717,16 @@ const IntercourseList = ({ records, onClose, onEdit, onDelete }: {
                               </div>
                             </div>
                             <div className="flex gap-2">
-                              <button onClick={() => onEdit(record)} className="text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 p-1 rounded" title="修正">
+                              <button onClick={() => onEdit(record)} className="text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 p-1 rounded" title="修正">
                                 <i className="fa-solid fa-pen-to-square"></i>
                               </button>
-                              <button onClick={() => onDelete(record.id)} className="text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 p-1 rounded" title="削除">
+                              <button onClick={() => onDelete(record.id)} className="text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 p-1 rounded" title="削除">
                                 <i className="fa-solid fa-trash"></i>
                               </button>
                             </div>
                           </div>
                         </div>
-                      );
+                        );
                     })}
                   </div>
                 </div>
