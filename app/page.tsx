@@ -968,8 +968,9 @@ const handleSaveSyncSettings = (newSettings: SyncSettings) => {
     return <LoginScreen onLogin={handleGoogleLogin} isLoading={isLoading} />;
   }
 
-  return (
-<div className="flex items-center justify-between mb-6">
+return (
+    <div className="max-w-4xl mx-auto p-4 bg-white dark:bg-gray-900 dark:bg-gray-900 min-h-screen">
+      <div className="flex items-center justify-between mb-6">
         <h1 
           className="text-lg font-semibold text-gray-600 dark:text-gray-300 dark:text-gray-300 flex items-center gap-2 cursor-pointer hover:opacity-70"
           onClick={() => setCurrentView('calendar')}
