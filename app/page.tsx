@@ -996,7 +996,8 @@ const handleSaveSyncSettings = (newSettings: SyncSettings) => {
             title="カレンダー"
           >
             <i className="fa-regular fa-calendar-days text-gray-600 dark:text-gray-300"></i>
-          </button>          <button
+          </button>
+          <button
             onClick={() => setCurrentView('stats')}
             className={`p-2 rounded ${currentView === 'stats' ? 'border-2 border-gray-600' : 'hover:border hover:border-gray-300 dark:border-gray-600'}`}
             title="マイデータ"
