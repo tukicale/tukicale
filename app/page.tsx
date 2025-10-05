@@ -2107,8 +2107,9 @@ const DatePicker = ({ selectedDate, onSelect, onClose }: {
     return days;
   };
 
-  return (
-    <div className="bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg p-4 w-80">
+return (
+    <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center p-4 z-50">
+      <div className="bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg p-4 w-80 max-w-full">      
       <div className="flex items-center justify-between mb-3">
         <button type="button" onClick={() => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() - 1))} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-gray-900 dark:text-gray-100">←</button>
         <div className="flex items-center gap-2">
@@ -2135,6 +2136,7 @@ const DatePicker = ({ selectedDate, onSelect, onClose }: {
       <div className="grid grid-cols-7 gap-1">{renderCalendar()}</div>
       
       <button type="button" onClick={onClose} className="w-full mt-3 py-2 text-sm text-gray-900 dark:text-gray-100 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded">閉じる</button>
+      </div>
     </div>
   );
 };
