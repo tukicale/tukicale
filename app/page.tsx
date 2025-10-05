@@ -1614,21 +1614,7 @@ const HelpSection = ({ setCurrentView }: {
             )}
           </div>
 
-<div className="border-b pb-2">
-            <button onClick={() => toggleSection('irregular')} className="w-full text-left flex items-center justify-between py-2 hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-800 rounded px-2">
-              <span className="text-sm font-medium">不規則な周期でも使えますか？</span>
-              <span>{expandedSection === 'irregular' ? '−' : '+'}</span>
-            </button>
-            {expandedSection === 'irregular' && (
-              <div className="mt-2 p-3 bg-gray-50 dark:bg-gray-800 rounded text-sm text-gray-700 dark:text-gray-300">
-                <p className="mb-2"><strong>はい、使えます！</strong></p>
-                <p className="mb-2">このアプリは、生理不順の運営者自身が機種変更時にデータ移行できず、人気アプリでは「周期が不規則すぎる」と数年分のデータを保存できなかった経験から生まれました。</p>
-                <p className="mb-2">同じ悩みを持つ方でも安心して使えるよう、不規則な周期にも対応する設計になっています。</p>                <p>予測は過去のデータの平均から計算されるため、記録が2回以上あれば表示されます。データが増えると平均値がより安定します。</p>
-              </div>
-            )}
-          </div>
-
-<div className="border-b pb-2">
+          <div className="border-b pb-2">
             <button onClick={() => toggleSection('irregular')} className="w-full text-left flex items-center justify-between py-2 hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-800 rounded px-2">
               <span className="text-sm font-medium">不規則な周期でも使えますか？</span>
               <span>{expandedSection === 'irregular' ? '−' : '+'}</span>
@@ -1680,7 +1666,7 @@ const HelpSection = ({ setCurrentView }: {
                       setCurrentView('settings');
                       setExpandedSection(null);
                     }}
-                    className="inline-flex items-center px-1 py-0.5 rounded hover:bg-gray-200"
+                    className="inline-flex items-center px-1 py-0.5 rounded hover:bg-gray-200 dark:hover:bg-gray-600"
                     title="設定を開く"
                   >
                     <i className="fa-solid fa-gear text-gray-600 dark:text-gray-300"></i>
@@ -2636,16 +2622,16 @@ const RecordsList = ({ records, onClose, onEdit, onDelete }: {
                               </p>
                             </div>
                             <div className="flex gap-2">
-                              <button onClick={() => onEdit(period)} className="text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 p-1 rounded" title="修正">
+                              <button onClick={() => onEdit(period)} className="text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 p-1 rounded" title="修正">
                                 <i className="fa-solid fa-pen-to-square"></i>
                               </button>
-                              <button onClick={() => onDelete(period.id)} className="text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 p-1 rounded" title="削除">
+                              <button onClick={() => onDelete(period.id)} className="text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 p-1 rounded" title="削除">
                                 <i className="fa-solid fa-trash"></i>
                               </button>
                             </div>
                           </div>
                         </div>
-                      );
+                               );
                     })}
                   </div>
                 </div>
