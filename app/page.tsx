@@ -2337,24 +2337,9 @@ const IntercourseForm = ({ selectedDate, onSubmit, onCancel }: {
           <div className="mt-2"><DatePicker selectedDate={date} onSelect={(newDate) => { setDate(newDate); setShowDatePicker(false); }} onClose={() => setShowDatePicker(false)} /></div>
         )}
       </div>
-      <div>
+<div>
         <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-100">避妊具使用</label>
         <div className="space-y-2">
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input 
-              type="radio" 
-              name="contraception" 
-              value="不明" 
-              checked={contraception === '不明'}
-              onChange={(e) => setContraception(e.target.value)}
-              className="sr-only"
-            />
-            <i className={`${contraception === '不明' ? 'fa-solid fa-circle-dot' : 'fa-regular fa-circle'} text-xl`} style={contraception === '不明' ? {color: '#B68DA2'} : {color: '#9CA3AF'}}></i>
-            <span className="text-sm flex items-center gap-2">
-              <i className="fa-solid fa-question text-gray-500"></i>
-              不明
-            </span>
-          </label>
           <label className="flex items-center gap-2 cursor-pointer">
             <input 
               type="radio" 
@@ -2364,7 +2349,7 @@ const IntercourseForm = ({ selectedDate, onSubmit, onCancel }: {
               onChange={(e) => setContraception(e.target.value)}
               className="sr-only"
             />
-            <i className={`${contraception === '使用' ? 'fa-solid fa-circle-dot' : 'fa-regular fa-circle'} text-xl`} style={contraception === '使用' ? {color: '#B68DA2'} : {color: '#9CA3AF'}}></i>
+            <i className={`${contraception === '使用' ? 'fa-solid fa-circle-dot' : 'fa-regular fa-circle'} text-xl`} style={contraception === '使用' ? {color: '#737373'} : {color: '#9CA3AF'}}></i>
             <span className="text-sm flex items-center gap-2">
               <i className="fa-solid fa-check text-green-500"></i>
               使用
@@ -2379,10 +2364,25 @@ const IntercourseForm = ({ selectedDate, onSubmit, onCancel }: {
               onChange={(e) => setContraception(e.target.value)}
               className="sr-only"
             />
-            <i className={`${contraception === '不使用' ? 'fa-solid fa-circle-dot' : 'fa-regular fa-circle'} text-xl`} style={contraception === '不使用' ? {color: '#B68DA2'} : {color: '#9CA3AF'}}></i>
+            <i className={`${contraception === '不使用' ? 'fa-solid fa-circle-dot' : 'fa-regular fa-circle'} text-xl`} style={contraception === '不使用' ? {color: '#737373'} : {color: '#9CA3AF'}}></i>
             <span className="text-sm flex items-center gap-2">
               <i className="fa-solid fa-xmark text-red-500"></i>
               不使用
+            </span>
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input 
+              type="radio" 
+              name="contraception" 
+              value="不明" 
+              checked={contraception === '不明'}
+              onChange={(e) => setContraception(e.target.value)}
+              className="sr-only"
+            />
+            <i className={`${contraception === '不明' ? 'fa-solid fa-circle-dot' : 'fa-regular fa-circle'} text-xl`} style={contraception === '不明' ? {color: '#737373'} : {color: '#9CA3AF'}}></i>
+            <span className="text-sm flex items-center gap-2">
+              <i className="fa-solid fa-question text-gray-500"></i>
+              不明
             </span>
           </label>
         </div>
@@ -2985,7 +2985,7 @@ const NotificationModal = ({ message, type, onClose }: {
 <div className="bg-white dark:bg-gray-900 rounded-lg p-6 max-w-sm w-full shadow-xl">
         <div className="flex flex-col items-center justify-center gap-3 min-h-[60px]">
           {type === 'success' && (
-            <i className="fas fa-check-circle text-4xl text-green-400"></i>
+            <i className="fas fa-check-circle text-4xl" style={{color: '#8DB68D'}}></i>
           )}
           <p className="text-center whitespace-pre-line">{message}</p>
         </div>
