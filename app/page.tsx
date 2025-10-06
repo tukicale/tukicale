@@ -1083,7 +1083,7 @@ return (
             {renderCalendar()}
           </div>
 
-          <div className="flex flex-wrap gap-4 mb-4 text-sm text-gray-500 dark:text-gray-400">
+          <div className="flex flex-wrap gap-4 gap-y-1 mb-4 text-sm text-gray-500 dark:text-gray-400">
             <div className="flex items-center gap-1">
               <div className="w-3 h-3 rounded-full bg-red-300"></div>
               <span>生理</span>
