@@ -190,6 +190,8 @@ const syncToCalendar = async (
 ) => {
   console.log('=== syncToCalendar 開始 ===');
   console.log('settings:', settings);
+  console.log('生理データ件数:', records.periods.length);
+  console.log('生理データ:', records.periods);
   
   const token = await getAccessToken();
   console.log('token:', token ? 'あり' : 'なし');
@@ -200,25 +202,36 @@ const syncToCalendar = async (
   if (!calendarId) return false;
   
   try {
+    const timeMin = new Date();
+    timeMin.setFullYear(timeMin.getFullYear() - 1);
+    const timeMax = new Date();
+    timeMax.setFullYear(timeMax.getFullYear() + 1);
+    
     const eventsResponse = await fetch(
-      `https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events?timeMin=${new Date(new Date().getFullYear() - 1, 0, 1).toISOString()}`,
+      `https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events?timeMin=${timeMin.toISOString()}&timeMax=${timeMax.toISOString()}&maxResults=2500`,
       { headers: { Authorization: `Bearer ${token}` } }
     );
     
+    console.log('既存イベント取得開始');
     if (eventsResponse.ok) {
       const eventsData = await eventsResponse.json() as { items?: Array<{ id: string }> };
+      console.log('既存イベント数:', eventsData.items?.length || 0);
+      
       for (const event of eventsData.items || []) {
-        await fetch(
+        console.log('削除中のイベントID:', event.id);
+        const deleteResponse = await fetch(
           `https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events/${event.id}`,
           {
             method: 'DELETE',
             headers: { Authorization: `Bearer ${token}` }
           }
         );
+        console.log('削除結果:', deleteResponse.ok ? '成功' : `失敗(${deleteResponse.status})`);
       }
+      console.log('全イベント削除完了');
+    } else {
+      console.error('既存イベント取得失敗:', eventsResponse.status);
     }
-    
-    // ... 既存のイベント削除処理 ...
     
     const events: Array<{
       summary: string;
@@ -238,54 +251,53 @@ const syncToCalendar = async (
       });
     }
     
-    // ★★★ ここにログ追加 ★★★★
     console.log('作成するイベント数:', events.length);
     console.log('イベント詳細:', events);
     
-if (settings.fertile) {
-  const fertileDays = getFertileDays();
-  if (fertileDays.length > 0) {
-    const groupedFertile = groupConsecutiveDates(fertileDays);
-    groupedFertile.forEach(group => {
-      events.push({
-        summary: '妊娠可能日',
-        start: { date: group.start },
-        end: { date: getNextDay(group.end) },
-        colorId: '10'
-      });
-    });
-  }
-}
+    if (settings.fertile) {
+      const fertileDays = getFertileDays();
+      if (fertileDays.length > 0) {
+        const groupedFertile = groupConsecutiveDates(fertileDays);
+        groupedFertile.forEach(group => {
+          events.push({
+            summary: '妊娠可能日',
+            start: { date: group.start },
+            end: { date: getNextDay(group.end) },
+            colorId: '10'
+          });
+        });
+      }
+    }
 
-if (settings.pms) {
-  const pmsDays = getPMSDays();
-  if (pmsDays.length > 0) {
-    const groupedPMS = groupConsecutiveDates(pmsDays);
-    groupedPMS.forEach(group => {
-      events.push({
-        summary: 'PMS予測',
-        start: { date: group.start },
-        end: { date: getNextDay(group.end) },
-        colorId: '5'
-      });
-    });
-  }
-}
+    if (settings.pms) {
+      const pmsDays = getPMSDays();
+      if (pmsDays.length > 0) {
+        const groupedPMS = groupConsecutiveDates(pmsDays);
+        groupedPMS.forEach(group => {
+          events.push({
+            summary: 'PMS予測',
+            start: { date: group.start },
+            end: { date: getNextDay(group.end) },
+            colorId: '5'
+          });
+        });
+      }
+    }
     
-if (settings.period) {
-  const nextPeriodDays = getNextPeriodDays();
-  if (nextPeriodDays.length > 0) {
-    const groupedNext = groupConsecutiveDates(nextPeriodDays);
-    groupedNext.forEach(group => {
-      events.push({
-        summary: '次回生理予測',
-        start: { date: group.start },
-        end: { date: getNextDay(group.end) },
-        colorId: '4'
-      });
-    });
-  }
-}
+    if (settings.period) {
+      const nextPeriodDays = getNextPeriodDays();
+      if (nextPeriodDays.length > 0) {
+        const groupedNext = groupConsecutiveDates(nextPeriodDays);
+        groupedNext.forEach(group => {
+          events.push({
+            summary: '次回生理予測',
+            start: { date: group.start },
+            end: { date: getNextDay(group.end) },
+            colorId: '4'
+          });
+        });
+      }
+    }
     
     if (settings.intercourse) {
       records.intercourse.forEach(record => {
@@ -299,7 +311,7 @@ if (settings.period) {
     }
     
     for (const event of events) {
-      await fetch(
+      const createResponse = await fetch(
         `https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events`,
         {
           method: 'POST',
@@ -310,9 +322,15 @@ if (settings.period) {
           body: JSON.stringify(event)
         }
       );
+      
+      if (!createResponse.ok) {
+        console.error('イベント作成失敗:', event.summary, createResponse.status);
+      }
     }
     
+    console.log('全イベント作成完了');
     return true;
+    
   } catch (error) {
     console.error('Sync to calendar error:', error);
     return false;
@@ -409,7 +427,14 @@ const [editingIntercourse, setEditingIntercourse] = useState<IntercourseRecord |
         localStorage.setItem('myflow_data', JSON.stringify(driveData));
         
         // Googleカレンダーも同期
-        await syncToCalendar(driveData, syncSettings, getAverageCycle, getFertileDays, getPMSDays, getNextPeriodDays);
+        await syncToCalendar(
+          driveData, 
+          syncSettings, 
+          () => getAverageCycle(driveData), 
+          () => getFertileDays(driveData), 
+          () => getPMSDays(driveData), 
+          () => getNextPeriodDays(driveData)
+        );
         
         setNotification({
           message: '最新データに更新しました',
@@ -536,10 +561,10 @@ const isToday = (day: number): boolean => {
     return { period, intercourse, fertile, pms, nextPeriod };
   };
 
-const getAverageCycle = (): number => {
-    if (records.periods.length < 2) return 28;
+const getAverageCycle = (targetRecords = records): number => {
+    if (targetRecords.periods.length < 2) return 28;
     
-    const sortedPeriods = [...records.periods].sort((a, b) => 
+    const sortedPeriods = [...targetRecords.periods].sort((a, b) => 
       new Date(a.startDate).getTime() - new Date(b.startDate).getTime()
     );
     
@@ -564,14 +589,14 @@ const getAverageCycle = (): number => {
     return avgLength || 5;
   };
 
-const getFertileDays = () => {
-    if (records.periods.length === 0) return [];
+const getFertileDays = (targetRecords = records) => {
+    if (targetRecords.periods.length === 0) return [];
     
-    const lastPeriod = [...records.periods].sort((a, b) => 
+    const lastPeriod = [...targetRecords.periods].sort((a, b) => 
       new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
     )[0];
     
-    const avgCycle = getAverageCycle();
+    const avgCycle = getAverageCycle(targetRecords);
     const ovulationDay = new Date(lastPeriod.startDate);
     ovulationDay.setDate(ovulationDay.getDate() + avgCycle - 14);
     
@@ -591,14 +616,14 @@ const getFertileDays = () => {
     return fertileDays;
   };
 
-const getPMSDays = () => {
-    if (records.periods.length === 0) return [];
+const getPMSDays = (targetRecords = records) => {
+    if (targetRecords.periods.length === 0) return [];
     
-    const lastPeriod = [...records.periods].sort((a, b) => 
+    const lastPeriod = [...targetRecords.periods].sort((a, b) => 
       new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
     )[0];
     
-    const avgCycle = getAverageCycle();
+    const avgCycle = getAverageCycle(targetRecords);
     const nextPeriod = new Date(lastPeriod.startDate);
     nextPeriod.setDate(nextPeriod.getDate() + avgCycle);
     
@@ -618,19 +643,19 @@ const getPMSDays = () => {
     return pmsDays;
   };
 
-const getNextPeriodDays = () => { 
-  if (records.periods.length === 0) {
+const getNextPeriodDays = (targetRecords = records) => { 
+  if (targetRecords.periods.length === 0) {
     return [];
   }
   
-  const lastPeriod = [...records.periods].sort((a, b) => 
+  const lastPeriod = [...targetRecords.periods].sort((a, b) => 
     new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
   )[0];
 
-  const avgCycle = getAverageCycle();
+  const avgCycle = getAverageCycle(targetRecords);
  
-  const avgPeriodLength = records.periods.length > 0 
-    ? Math.round(records.periods.reduce((sum, p) => sum + p.days, 0) / records.periods.length)
+  const avgPeriodLength = targetRecords.periods.length > 0 
+    ? Math.round(targetRecords.periods.reduce((sum, p) => sum + p.days, 0) / targetRecords.periods.length)
     : 5;
  
   const nextPeriodStart = new Date(lastPeriod.startDate);
@@ -678,7 +703,7 @@ const getNextPeriodDays = () => {
     }
   };
 
-const addPeriodRecord = (startDate: string, endDate: string) => {
+const addPeriodRecord = async (startDate: string, endDate: string) => {
     const start = new Date(startDate);
     const end = new Date(endDate);
     const days = Math.floor((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
@@ -696,13 +721,20 @@ const addPeriodRecord = (startDate: string, endDate: string) => {
     };
     
     setRecords(newRecords);
-    saveToDrive(newRecords);
-    syncToCalendar(newRecords, syncSettings, getAverageCycle, getFertileDays, getPMSDays, getNextPeriodDays);
+    await saveToDrive(newRecords);
+    await syncToCalendar(
+      newRecords, 
+      syncSettings, 
+      () => getAverageCycle(newRecords), 
+      () => getFertileDays(newRecords), 
+      () => getPMSDays(newRecords), 
+      () => getNextPeriodDays(newRecords)
+    );
   
     setShowAddModal(false);
   };
 
-const updatePeriod = (id: number, startDate: string, endDate: string) => {
+const updatePeriod = async (id: number, startDate: string, endDate: string) => {
     const start = new Date(startDate);
     const end = new Date(endDate);
     const days = Math.floor((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
@@ -713,8 +745,15 @@ const updatePeriod = (id: number, startDate: string, endDate: string) => {
     };
     
     setRecords(newRecords);
-    saveToDrive(newRecords);
-    syncToCalendar(newRecords, syncSettings, getAverageCycle, getFertileDays, getPMSDays, getNextPeriodDays);
+    await saveToDrive(newRecords);
+    await syncToCalendar(
+      newRecords, 
+      syncSettings, 
+      () => getAverageCycle(newRecords), 
+      () => getFertileDays(newRecords), 
+      () => getPMSDays(newRecords), 
+      () => getNextPeriodDays(newRecords)
+    );
     setEditingPeriod(null);
     setNotification({
       message: '生理記録を更新しました',
@@ -730,7 +769,14 @@ const deletePeriod = async (id: number) => {
   
   setRecords(newRecords);
   await saveToDrive(newRecords);
-  await syncToCalendar(newRecords, syncSettings, getAverageCycle, getFertileDays, getPMSDays, getNextPeriodDays);
+  await syncToCalendar(
+      newRecords, 
+      syncSettings, 
+      () => getAverageCycle(newRecords), 
+      () => getFertileDays(newRecords), 
+      () => getPMSDays(newRecords), 
+      () => getNextPeriodDays(newRecords)
+    );
   setDeletingPeriodId(null);
   setNotification({
     message: '生理記録を削除しました',
@@ -746,7 +792,14 @@ const deleteIntercourse = async (id: number) => {
   
   setRecords(newRecords);
   await saveToDrive(newRecords);
-  await syncToCalendar(newRecords, syncSettings, getAverageCycle, getFertileDays, getPMSDays, getNextPeriodDays);
+  await syncToCalendar(
+      newRecords, 
+      syncSettings, 
+      () => getAverageCycle(newRecords), 
+      () => getFertileDays(newRecords), 
+      () => getPMSDays(newRecords), 
+      () => getNextPeriodDays(newRecords)
+    );
   setDeletingIntercourseId(null);
   setNotification({
     message: 'SEX記録を削除しました',
@@ -764,7 +817,14 @@ const updateIntercourse = async (id: number, date: string, contraception: string
   
   setRecords(newRecords);
   await saveToDrive(newRecords);
-  await syncToCalendar(newRecords, syncSettings, getAverageCycle, getFertileDays, getPMSDays, getNextPeriodDays);
+  await syncToCalendar(
+      newRecords, 
+      syncSettings, 
+      () => getAverageCycle(newRecords), 
+      () => getFertileDays(newRecords), 
+      () => getPMSDays(newRecords), 
+      () => getNextPeriodDays(newRecords)
+    );
   setEditingIntercourse(null);
   setNotification({
     message: 'SEX記録を更新しました',
@@ -772,7 +832,7 @@ const updateIntercourse = async (id: number, date: string, contraception: string
   });
 };
 
-const addIntercourseRecord = (date: string, contraception: string, partner: string, memo: string) => {
+const addIntercourseRecord = async (date: string, contraception: string, partner: string, memo: string) => {
     const newRecord = {
       id: Date.now(),
       date,
@@ -787,8 +847,15 @@ const addIntercourseRecord = (date: string, contraception: string, partner: stri
     };
     
     setRecords(newRecords);
-    saveToDrive(newRecords);
-    syncToCalendar(newRecords, syncSettings, getAverageCycle, getFertileDays, getPMSDays, getNextPeriodDays);
+    await saveToDrive(newRecords);
+    await syncToCalendar(
+      newRecords, 
+      syncSettings, 
+      () => getAverageCycle(newRecords), 
+      () => getFertileDays(newRecords), 
+      () => getPMSDays(newRecords), 
+      () => getNextPeriodDays(newRecords)
+    );
     
     setShowAddModal(false);
   };
@@ -812,7 +879,7 @@ for (let day = 1; day <= daysInMonth; day++) {
         >
           <div className={`text-sm font-medium ${isToday(day) ? 'text-gray-900' : ''}`}>{day}</div>
           <div className="flex flex-wrap gap-0.5 mt-1">
-            {period && <div className="w-2 h-2 rounded-full bg-red-300" title="生理"></div>}
+            {period && <div className="w-2 h-2 rounded-full bg-red-400" title="生理"></div>}
             {nextPeriod && !period && <div className="w-2 h-2 rounded-full bg-red-200" title="次回生理予測"></div>}
             {fertile && <div className="w-2 h-2 rounded-full bg-green-300" title="妊娠可能日"></div>}
             {pms && <div className="w-2 h-2 rounded-full bg-yellow-300" title="PMS予測"></div>}
@@ -884,7 +951,14 @@ const handleDeleteData = async () => {
   
   if (deleteCalendar) {
     // Googleカレンダーのイベントも削除
-    await syncToCalendar(newRecords, syncSettings, getAverageCycle, getFertileDays, getPMSDays, getNextPeriodDays);
+    await syncToCalendar(
+      newRecords, 
+      syncSettings, 
+      () => getAverageCycle(newRecords), 
+      () => getFertileDays(newRecords), 
+      () => getPMSDays(newRecords), 
+      () => getNextPeriodDays(newRecords)
+    );
     setNotification({
       message: 'アプリ内のデータとGoogleカレンダーのイベントを削除しました',
       type: 'success'
@@ -929,7 +1003,7 @@ if (field === 'startDate' && value && !r.endDate) {
     }));
   };
 
-const submitBulkRecords = () => {
+const submitBulkRecords = async () => {
     const validRecords = bulkRecords.filter(r => r.startDate && r.endDate);
     
     if (validRecords.length === 0) {
@@ -956,8 +1030,15 @@ const submitBulkRecords = () => {
     };
 
     setRecords(newRecords);
-    saveToDrive(newRecords);
-    syncToCalendar(newRecords, syncSettings, getAverageCycle, getFertileDays, getPMSDays, getNextPeriodDays);
+    await saveToDrive(newRecords);
+    await syncToCalendar(
+      newRecords, 
+      syncSettings, 
+      () => getAverageCycle(newRecords), 
+      () => getFertileDays(newRecords), 
+      () => getPMSDays(newRecords), 
+      () => getNextPeriodDays(newRecords)
+    );
 
     setNotification({
       message: `${validRecords.length}件の生理期間を登録しました`,
@@ -1055,7 +1136,7 @@ return (
                 onChange={handleYearChange}
                 className="border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-lg font-semibold bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
               >
-                {Array.from({length: 11}, (_, i) => new Date().getFullYear() - 10 + i).map(year => (
+                {Array.from({length: 21}, (_, i) => new Date().getFullYear() - 10 + i).map(year => (
                   <option key={year} value={year}>{year}年</option>
                 ))}
               </select>
@@ -1085,7 +1166,7 @@ return (
 
           <div className="flex flex-wrap gap-4 gap-y-1 mb-4 text-sm text-gray-500 dark:text-gray-400">
             <div className="flex items-center gap-1">
-              <div className="w-3 h-3 rounded-full bg-red-300"></div>
+              <div className="w-3 h-3 rounded-full bg-red-400"></div>
               <span>生理</span>
             </div>
             <div className="flex items-center gap-1">
@@ -1484,7 +1565,14 @@ const SyncSettings = ({
     localStorage.setItem('tukicale_sync_settings', JSON.stringify(localSettings));
     setSyncSettings(localSettings);
     
-    await syncToCalendar(records, localSettings, getAverageCycle, getFertileDays, getPMSDays, getNextPeriodDays);
+    await syncToCalendar(
+      records, 
+      localSettings, 
+      () => getAverageCycle(records), 
+      () => getFertileDays(records), 
+      () => getPMSDays(records), 
+      () => getNextPeriodDays(records)
+    );
     
     setHasChanges(false);
     setIsSaving(false);
@@ -2158,9 +2246,9 @@ return (
             onChange={(e) => setViewDate(new Date(parseInt(e.target.value), viewDate.getMonth(), 1))}
             className="border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-base font-semibold bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
           >
-            {Array.from({length: 11}, (_, i) => currentYear - 10 + i).map(year => (
-              <option key={year} value={year}>{year}年</option>
-            ))}
+            {Array.from({length: 21}, (_, i) => currentYear - 10 + i).map(year => (
+                  <option key={year} value={year}>{year}年</option>
+                ))}
           </select>
           <select 
             value={viewDate.getMonth()} 
