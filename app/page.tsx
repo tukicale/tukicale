@@ -808,7 +808,8 @@ for (let day = 1; day <= daysInMonth; day++) {
           key={day}
           onClick={() => handleDayClick(day)}
           className={`h-14 border border-gray-200 dark:border-gray-700 p-1 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 dark:bg-gray-800 dark:bg-gray-800 relative
-            ${isToday(day) ? 'bg-blue-50 border-blue-300' : ''}`}
+           ${isToday(day) ? 'border-2' : ''}`}
+          style={isToday(day) ? {backgroundColor: '#C2D2DA', borderColor: '#91AEBD'} : {}}
         >
 
           <div className="text-sm font-medium">{day}</div>
@@ -1110,7 +1111,7 @@ return (
           <div className="flex gap-2 mb-4">
             <button 
               onClick={() => setShowBulkAddModal(true)}
-              className="flex-1 px-3 py-2 rounded text-sm flex items-center justify-center gap-2 text-gray-700 dark:text-gray-300"
+              className="flex-1 px-3 py-2 rounded text-sm flex items-center justify-center gap-2 text-gray-700 dark:text-gray-900"
               style={{backgroundColor: '#C2D2DA'}}
               onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#91AEBD'}
               onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#C2D2DA'}
@@ -1120,7 +1121,7 @@ return (
             </button>
             <button 
               onClick={() => setCurrentView('settings')}
-              className="flex-1 px-3 py-2 rounded text-sm flex items-center justify-center gap-2 text-gray-700 dark:text-gray-300"
+              className="flex-1 px-3 py-2 rounded text-sm flex items-center justify-center gap-2 text-gray-700 dark:text-gray-900"
               style={{backgroundColor: '#C2D2DA'}}
               onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#91AEBD'}
               onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#C2D2DA'}
@@ -1381,10 +1382,10 @@ const SettingsView = ({
       {isGoogleAuthed && (
 <button 
           onClick={handleLogout}
-          className="w-full text-gray-700 dark:text-gray-100 px-4 py-2 rounded"
-          style={{backgroundColor: '#CBA9BA'}}
-          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#B68DA2'}
-          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#CBA9BA'}
+          className="w-full text-gray-700 dark:text-gray-900 px-4 py-2 rounded"
+          style={{backgroundColor: '#E3D0DA'}}
+          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#CBA9BA'}
+          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#E3D0DA'}
         >
           ログアウト
         </button>
@@ -1414,7 +1415,7 @@ const SettingsView = ({
       <div className="space-y-2">
 <button 
           onClick={() => setShowBulkAddModal(true)}
-          className="w-full text-gray-700 dark:text-gray-100 px-4 py-2 rounded"
+          className="w-full text-gray-700 dark:text-gray-900 px-4 py-2 rounded"
           style={{backgroundColor: '#C2D2DA'}}
           onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#91AEBD'}
           onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#C2D2DA'}
@@ -1436,10 +1437,10 @@ const SettingsView = ({
       <div className="space-y-2">
 <button 
           onClick={() => setShowDeleteConfirm(true)}
-          className="w-full text-gray-700 dark:text-gray-100 px-4 py-2 rounded"
-          style={{backgroundColor: '#CBA9BA'}}
-          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#B68DA2'}
-          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#CBA9BA'}
+          className="w-full text-gray-700 dark:text-gray-900 px-4 py-2 rounded"
+          style={{backgroundColor: '#E3D0DA'}}
+          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#CBA9BA'}
+          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#E3D0DA'}
         >
           すべてのデータを削除
         </button>
@@ -1503,7 +1504,7 @@ return (
             onChange={(e) => handleChange('period', e.target.checked)}
             className="sr-only peer"
           />
-          <i className={`${localSettings.period ? 'fa-solid fa-square-check text-blue-600' : 'fa-regular fa-square text-gray-400'} text-xl`}></i>
+          <i className={`${localSettings.period ? 'fa-solid fa-square-check text-xl' : 'fa-regular fa-square text-gray-400 text-xl'}`} style={localSettings.period ? {color: '#91AEBD'} : {}}></i>
         </div>
         <span className="text-sm text-gray-900 dark:text-gray-100">生理期間を同期</span>
       </label>
@@ -1515,7 +1516,7 @@ return (
             onChange={(e) => handleChange('fertile', e.target.checked)}
             className="sr-only peer"
           />
-          <i className={`${localSettings.fertile ? 'fa-solid fa-square-check text-blue-600' : 'fa-regular fa-square text-gray-400'} text-xl`}></i>
+          <i className={`${localSettings.fertile ? 'fa-solid fa-square-check text-xl' : 'fa-regular fa-square text-gray-400 text-xl'}`} style={localSettings.fertile ? {color: '#91AEBD'} : {}}></i>
         </div>
         <span className="text-sm text-gray-900 dark:text-gray-100">妊娠可能日を同期</span>
       </label>
@@ -1527,7 +1528,7 @@ return (
             onChange={(e) => handleChange('pms', e.target.checked)}
             className="sr-only peer"
           />
-          <i className={`${localSettings.pms ? 'fa-solid fa-square-check text-blue-600' : 'fa-regular fa-square text-gray-400'} text-xl`}></i>
+          <i className={`${localSettings.pms ? 'fa-solid fa-square-check text-xl' : 'fa-regular fa-square text-gray-400 text-xl'}`} style={localSettings.pms ? {color: '#91AEBD'} : {}}></i>
         </div>
         <span className="text-sm text-gray-900 dark:text-gray-100">PMS予測を同期</span>
       </label>
@@ -1540,7 +1541,7 @@ return (
               onChange={(e) => handleChange('intercourse', e.target.checked)}
               className="sr-only peer"
             />
-            <i className={`${localSettings.intercourse ? 'fa-solid fa-square-check text-blue-600' : 'fa-regular fa-square text-gray-400'} text-xl`}></i>
+            <i className={`${localSettings.intercourse ? 'fa-solid fa-square-check text-xl' : 'fa-regular fa-square text-gray-400 text-xl'}`} style={localSettings.intercourse ? {color: '#91AEBD'} : {}}></i>
           </div>
           <span className="text-sm text-gray-900 dark:text-gray-100">SEXを同期</span>
           <button 
@@ -1570,14 +1571,14 @@ return (
 <button
         onClick={handleSave}
         disabled={isSaving}
-        className="w-full text-white px-4 py-2 rounded disabled:opacity-50 flex items-center justify-center gap-2 mt-3"
+        className="w-full text-gray-700 dark:text-gray-900 px-4 py-2 rounded disabled:opacity-50 flex items-center justify-center gap-2 mt-3"
         style={{backgroundColor: '#C2D2DA'}}
         onMouseEnter={(e) => !isSaving && (e.currentTarget.style.backgroundColor = '#91AEBD')}
         onMouseLeave={(e) => !isSaving && (e.currentTarget.style.backgroundColor = '#C2D2DA')}
   >
         {isSaving ? (
       <>
-            <div className="w-4 h-4 border-2 text-gray-700 dark:text-gray-100 border-t-transparent rounded-full animate-spin"></div>
+            <div className="w-4 h-4 border-2 text-gray-700 dark:text-gray-900 border-t-transparent rounded-full animate-spin"></div>
             保存中...
           </>
         ) : '変更を保存してGoogleカレンダーに反映'}
@@ -2287,7 +2288,16 @@ const EditPeriodForm = ({ period, onSubmit, onCancel }: {
       </div>
       <div className="flex gap-2">
         <button type="button" onClick={onCancel} className="flex-1 border px-4 py-2 rounded">キャンセル</button>
-        <button type="button" onClick={() => onSubmit(startDate, endDate)} className="flex-1 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">更新</button>
+        <button 
+          type="button" 
+          onClick={() => onSubmit(startDate, endDate)} 
+          className="flex-1 px-4 py-2 rounded text-gray-700 dark:text-gray-900"
+          style={{backgroundColor: '#C2D2DA'}}
+          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#91AEBD'}
+          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#C2D2DA'}
+        >
+          更新
+        </button>
       </div>
     </div>
   );
@@ -2577,7 +2587,7 @@ const BulkAddModal = ({ bulkRecords, setBulkRecords, bulkPickerState, setBulkPic
 <button 
           type="button"
           onClick={submitBulkRecords}
-          className="flex-1 text-white px-4 py-2 rounded"
+          className="flex-1 text-gray-700 dark:text-gray-900 px-4 py-2 rounded"
           style={{backgroundColor: '#C2D2DA'}}
           onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#91AEBD'}
           onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#C2D2DA'}
@@ -2830,7 +2840,7 @@ const InitialSyncModal = ({ onSave }: {
                   onChange={(e) => setSettings({...settings, period: e.target.checked})}
                   className="sr-only peer"
                 />
-                <i className={`${settings.period ? 'fa-solid fa-square-check text-blue-600' : 'fa-regular fa-square text-gray-400'} text-xl`}></i>
+                <i className={`${settings.period ? 'fa-solid fa-square-check text-xl' : 'fa-regular fa-square text-gray-400 text-xl'}`} style={settings.period ? {color: '#91AEBD'} : {}}></i>
               </div>
               <span className="text-sm text-gray-900 dark:text-gray-100">生理期間を同期</span>
             </label>
@@ -2842,7 +2852,7 @@ const InitialSyncModal = ({ onSave }: {
                   onChange={(e) => setSettings({...settings, fertile: e.target.checked})}
                   className="sr-only peer"
                 />
-                <i className={`${settings.fertile ? 'fa-solid fa-square-check text-blue-600' : 'fa-regular fa-square text-gray-400'} text-xl`}></i>
+                <i className={`${settings.fertile ? 'fa-solid fa-square-check text-xl' : 'fa-regular fa-square text-gray-400 text-xl'}`} style={settings.fertile ? {color: '#91AEBD'} : {}}></i>
               </div>
               <span className="text-sm text-gray-900 dark:text-gray-100">妊娠可能日を同期</span>
             </label>
@@ -2854,7 +2864,7 @@ const InitialSyncModal = ({ onSave }: {
                   onChange={(e) => setSettings({...settings, pms: e.target.checked})}
                   className="sr-only peer"
                 />
-                <i className={`${settings.pms ? 'fa-solid fa-square-check text-blue-600' : 'fa-regular fa-square text-gray-400'} text-xl`}></i>
+                <i className={`${settings.pms ? 'fa-solid fa-square-check text-xl' : 'fa-regular fa-square text-gray-400 text-xl'}`} style={settings.pms ? {color: '#91AEBD'} : {}}></i>
               </div>
               <span className="text-sm text-gray-900 dark:text-gray-100">PMS予測を同期</span>
             </label>            <div>
@@ -2866,7 +2876,7 @@ const InitialSyncModal = ({ onSave }: {
                     onChange={(e) => setSettings({...settings, intercourse: e.target.checked})}
                     className="sr-only peer"
                   />
-                  <i className={`${settings.intercourse ? 'fa-solid fa-square-check text-blue-600' : 'fa-regular fa-square text-gray-400'} text-xl`}></i>
+                  <i className={`${settings.intercourse ? 'fa-solid fa-square-check text-xl' : 'fa-regular fa-square text-gray-400 text-xl'}`} style={settings.intercourse ? {color: '#91AEBD'} : {}}></i>
                 </div>
                 <span className="text-sm text-gray-900 dark:text-gray-100">SEXを同期</span>
                 <button 
@@ -2896,7 +2906,7 @@ const InitialSyncModal = ({ onSave }: {
         <div className="p-6 border-t border-gray-200 dark:border-gray-700">
 <button 
             onClick={() => onSave(settings)}
-            className="w-full text-white px-4 py-3 rounded-lg font-medium"
+            className="w-full text-gray-700 dark:text-gray-900 px-4 py-3 rounded-lg font-medium"
             style={{backgroundColor: '#C2D2DA'}}
             onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#91AEBD'}
             onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#C2D2DA'}
@@ -2931,9 +2941,13 @@ const NotificationModal = ({ message, type, onClose }: {
           )}
           <p className="text-center whitespace-pre-line">{message}</p>
         </div>
-        {type === 'error' && (          <button 
+        {type === 'error' && (
+          <button 
             onClick={onClose}
-            className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 font-medium mt-4"
+            className="w-full px-4 py-2 rounded-lg font-medium mt-4 text-gray-700 dark:text-gray-900"
+            style={{backgroundColor: '#E3D0DA'}}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#CBA9BA'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#E3D0DA'}
           >
             OK
           </button>
@@ -3025,7 +3039,13 @@ const DayDetailModal = ({ date, periods, intercourse, onClose, onEditPeriod, onD
         </div>
 
         <div className="p-6 border-t space-y-2">
-          <button onClick={onAddNew} className="w-full bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+          <button 
+            onClick={onAddNew} 
+            className="w-full px-4 py-2 rounded text-gray-700 dark:text-gray-900"
+            style={{backgroundColor: '#C2D2DA'}}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#91AEBD'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#C2D2DA'}
+          >
             この日に新しい記録を追加
           </button>
           <button onClick={onClose} className="w-full border px-4 py-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-800">
@@ -3084,10 +3104,18 @@ const EditIntercourseModal = ({ record, updateIntercourse, setEditingIntercourse
             <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-100">メモ（任意）</label>
             <textarea value={memo} onChange={(e) => setMemo(e.target.value)} placeholder="体調, その他" className="w-full border rounded px-2 py-1 text-sm bg-white dark:bg-gray-900" rows={2} />
           </div>
-          <div className="flex gap-2">
-            <button type="button" onClick={() => setEditingIntercourse(null)} className="flex-1 border px-4 py-2 rounded">キャンセル</button>
-            <button type="button" onClick={() => updateIntercourse(record.id, date, contraception, partner, memo)} className="flex-1 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">更新</button>
-          </div>
+<button 
+            onClick={onAddNew} 
+            className="w-full px-4 py-2 rounded text-gray-700 dark:text-gray-900"
+            style={{backgroundColor: '#C2D2DA'}}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#91AEBD'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#C2D2DA'}
+          >
+            この日に新しい記録を追加
+          </button>
+          <button onClick={onClose} className="w-full border px-4 py-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-800">
+            閉じる
+          </button>
         </div>
       </div>
     </div>
