@@ -181,13 +181,10 @@ const groupConsecutiveDates = (dates: string[]): { start: string; end: string }[
 };
 
 const syncToCalendar = async (
-  records: Records, 
-  settings: SyncSettings, 
-  getAverageCycle: () => number, 
-  getFertileDays: () => string[], 
-  getPMSDays: () => string[], 
-  getNextPeriodDays: () => string[]
+  records: Records,
+  settings: SyncSettings
 ) => {
+
   console.log('=== syncToCalendar 開始 ===');
   console.log('settings:', settings);
   console.log('生理データ件数:', records.periods.length);
@@ -255,7 +252,7 @@ const syncToCalendar = async (
     console.log('イベント詳細:', events);
     
     if (settings.fertile) {
-      const fertileDays = getFertileDays();
+      const fertileDays = getFertileDays(records);
       if (fertileDays.length > 0) {
         const groupedFertile = groupConsecutiveDates(fertileDays);
         groupedFertile.forEach(group => {
@@ -270,7 +267,7 @@ const syncToCalendar = async (
     }
 
     if (settings.pms) {
-      const pmsDays = getPMSDays();
+      const pmsDays = getPMSDays(records);
       if (pmsDays.length > 0) {
         const groupedPMS = groupConsecutiveDates(pmsDays);
         groupedPMS.forEach(group => {
@@ -285,7 +282,7 @@ const syncToCalendar = async (
     }
     
     if (settings.period) {
-      const nextPeriodDays = getNextPeriodDays();
+      const nextPeriodDays = getNextPeriodDays(records);
       if (nextPeriodDays.length > 0) {
         const groupedNext = groupConsecutiveDates(nextPeriodDays);
         groupedNext.forEach(group => {
@@ -427,14 +424,7 @@ const [editingIntercourse, setEditingIntercourse] = useState<IntercourseRecord |
         localStorage.setItem('myflow_data', JSON.stringify(driveData));
         
         // Googleカレンダーも同期
-        await syncToCalendar(
-          driveData, 
-          syncSettings, 
-          () => getAverageCycle(driveData), 
-          () => getFertileDays(driveData), 
-          () => getPMSDays(driveData), 
-          () => getNextPeriodDays(driveData)
-        );
+        await syncToCalendar(newRecords, syncSettings);
         
         setNotification({
           message: '最新データに更新しました',
@@ -722,14 +712,7 @@ const addPeriodRecord = async (startDate: string, endDate: string) => {
     
     setRecords(newRecords);
     await saveToDrive(newRecords);
-    await syncToCalendar(
-      newRecords, 
-      syncSettings, 
-      () => getAverageCycle(newRecords), 
-      () => getFertileDays(newRecords), 
-      () => getPMSDays(newRecords), 
-      () => getNextPeriodDays(newRecords)
-    );
+    await syncToCalendar(newRecords, syncSettings);
   
     setShowAddModal(false);
   };
@@ -746,14 +729,7 @@ const updatePeriod = async (id: number, startDate: string, endDate: string) => {
     
     setRecords(newRecords);
     await saveToDrive(newRecords);
-    await syncToCalendar(
-      newRecords, 
-      syncSettings, 
-      () => getAverageCycle(newRecords), 
-      () => getFertileDays(newRecords), 
-      () => getPMSDays(newRecords), 
-      () => getNextPeriodDays(newRecords)
-    );
+    await syncToCalendar(newRecords, syncSettings);
     setEditingPeriod(null);
     setNotification({
       message: '生理記録を更新しました',
@@ -769,14 +745,7 @@ const deletePeriod = async (id: number) => {
   
   setRecords(newRecords);
   await saveToDrive(newRecords);
-  await syncToCalendar(
-      newRecords, 
-      syncSettings, 
-      () => getAverageCycle(newRecords), 
-      () => getFertileDays(newRecords), 
-      () => getPMSDays(newRecords), 
-      () => getNextPeriodDays(newRecords)
-    );
+  await syncToCalendar(newRecords, syncSettings);
   setDeletingPeriodId(null);
   setNotification({
     message: '生理記録を削除しました',
@@ -792,14 +761,7 @@ const deleteIntercourse = async (id: number) => {
   
   setRecords(newRecords);
   await saveToDrive(newRecords);
-  await syncToCalendar(
-      newRecords, 
-      syncSettings, 
-      () => getAverageCycle(newRecords), 
-      () => getFertileDays(newRecords), 
-      () => getPMSDays(newRecords), 
-      () => getNextPeriodDays(newRecords)
-    );
+  await syncToCalendar(newRecords, syncSettings);
   setDeletingIntercourseId(null);
   setNotification({
     message: 'SEX記録を削除しました',
@@ -817,14 +779,7 @@ const updateIntercourse = async (id: number, date: string, contraception: string
   
   setRecords(newRecords);
   await saveToDrive(newRecords);
-  await syncToCalendar(
-      newRecords, 
-      syncSettings, 
-      () => getAverageCycle(newRecords), 
-      () => getFertileDays(newRecords), 
-      () => getPMSDays(newRecords), 
-      () => getNextPeriodDays(newRecords)
-    );
+  await syncToCalendar(newRecords, syncSettings);
   setEditingIntercourse(null);
   setNotification({
     message: 'SEX記録を更新しました',
@@ -848,14 +803,7 @@ const addIntercourseRecord = async (date: string, contraception: string, partner
     
     setRecords(newRecords);
     await saveToDrive(newRecords);
-    await syncToCalendar(
-      newRecords, 
-      syncSettings, 
-      () => getAverageCycle(newRecords), 
-      () => getFertileDays(newRecords), 
-      () => getPMSDays(newRecords), 
-      () => getNextPeriodDays(newRecords)
-    );
+    await syncToCalendar(newRecords, syncSettings);
     
     setShowAddModal(false);
   };
@@ -951,14 +899,7 @@ const handleDeleteData = async () => {
   
   if (deleteCalendar) {
     // Googleカレンダーのイベントも削除
-    await syncToCalendar(
-      newRecords, 
-      syncSettings, 
-      () => getAverageCycle(newRecords), 
-      () => getFertileDays(newRecords), 
-      () => getPMSDays(newRecords), 
-      () => getNextPeriodDays(newRecords)
-    );
+    await syncToCalendar(newRecords, syncSettings);
     setNotification({
       message: 'アプリ内のデータとGoogleカレンダーのイベントを削除しました',
       type: 'success'
@@ -1031,14 +972,7 @@ const submitBulkRecords = async () => {
 
     setRecords(newRecords);
     await saveToDrive(newRecords);
-    await syncToCalendar(
-      newRecords, 
-      syncSettings, 
-      () => getAverageCycle(newRecords), 
-      () => getFertileDays(newRecords), 
-      () => getPMSDays(newRecords), 
-      () => getNextPeriodDays(newRecords)
-    );
+    await syncToCalendar(newRecords, syncSettings);
 
     setNotification({
       message: `${validRecords.length}件の生理期間を登録しました`,
@@ -1165,12 +1099,14 @@ return (
                     ? { backgroundColor: '#BB5B67', color: '#FFFFFF' }
                     : index === 6 
                     ? { backgroundColor: '#6B8BAF', color: '#FFFFFF' }
-                    : {}
+                    : { backgroundColor: '#f3f4f6' }
                 }
               >
-                <span className={index === 0 || index === 6 ? '' : 'bg-gray-100 dark:bg-gray-800'}>{day}</span>
+                {day}
               </div>
             ))}
+            {renderCalendar()}
+          </div>
 
           <div className="flex flex-wrap gap-4 gap-y-1 mb-4 text-sm text-gray-500 dark:text-gray-400">
             <div className="flex items-center gap-1">
@@ -1573,14 +1509,7 @@ const SyncSettings = ({
     localStorage.setItem('tukicale_sync_settings', JSON.stringify(localSettings));
     setSyncSettings(localSettings);
     
-    await syncToCalendar(
-      records, 
-      localSettings, 
-      () => getAverageCycle(records), 
-      () => getFertileDays(records), 
-      () => getPMSDays(records), 
-      () => getNextPeriodDays(records)
-    );
+    await syncToCalendar(newRecords, syncSettings);
     
     setHasChanges(false);
     setIsSaving(false);
