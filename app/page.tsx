@@ -2649,7 +2649,10 @@ const DeletePeriodModal = ({ deletePeriod, deletingPeriodId, setDeletingPeriodId
           <button 
             onClick={handleDelete}
             disabled={isDeleting}
-            className="flex-1 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 disabled:opacity-50 flex items-center justify-center gap-2"
+            className="flex-1 text-gray-700 dark:text-gray-900 px-4 py-2 rounded disabled:opacity-50 flex items-center justify-center gap-2"
+            style={{backgroundColor: '#E3D0DA'}}
+            onMouseEnter={(e) => !isDeleting && (e.currentTarget.style.backgroundColor = '#CBA9BA')}
+            onMouseLeave={(e) => !isDeleting && (e.currentTarget.style.backgroundColor = '#E3D0DA')}
           >
             {isDeleting ? (
               <>
@@ -3156,7 +3159,10 @@ const DeleteIntercourseModal = ({ deleteIntercourse, deletingIntercourseId, setD
           <button 
             onClick={handleDelete}
             disabled={isDeleting}
-            className="flex-1 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 disabled:opacity-50 flex items-center justify-center gap-2"
+            className="flex-1 text-gray-700 dark:text-gray-900 px-4 py-2 rounded disabled:opacity-50 flex items-center justify-center gap-2"
+            style={{backgroundColor: '#E3D0DA'}}
+            onMouseEnter={(e) => !isDeleting && (e.currentTarget.style.backgroundColor = '#CBA9BA')}
+            onMouseLeave={(e) => !isDeleting && (e.currentTarget.style.backgroundColor = '#E3D0DA')}
           >
             {isDeleting ? (
               <>
