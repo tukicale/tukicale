@@ -424,7 +424,7 @@ const [editingIntercourse, setEditingIntercourse] = useState<IntercourseRecord |
         localStorage.setItem('myflow_data', JSON.stringify(driveData));
         
         // Googleカレンダーも同期
-        await syncToCalendar(newRecords, syncSettings);
+        await syncToCalendar(driveData, syncSettings);
         
         setNotification({
           message: '最新データに更新しました',
@@ -2200,8 +2200,22 @@ return (
         <button type="button" onClick={() => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() + 1))} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-gray-900 dark:text-gray-100">→</button>
       </div>
 
-            </div>
-
+      <div className="grid grid-cols-7 gap-1 mb-2">
+        {['日', '月', '火', '水', '木', '金', '土'].map((day, index) => (
+          <div 
+            key={day} 
+            className="text-center text-sm h-8 flex items-center justify-center rounded"
+            style={
+              index === 0 
+                ? { backgroundColor: '#BB5B67', color: '#FFFFFF' }
+                : index === 6 
+                ? { backgroundColor: '#6B8BAF', color: '#FFFFFF' }
+                : {}
+            }
+          >
+            <span className={index === 0 || index === 6 ? '' : 'text-gray-500 dark:text-gray-400'}>{day}</span>
+          </div>
+        ))}
       </div>
       
       <div className="grid grid-cols-7 gap-1">{renderCalendar()}</div>
