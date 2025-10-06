@@ -2447,7 +2447,8 @@ const DeleteConfirmModal = ({ deleteCalendar, setDeleteCalendar, handleDeleteDat
               type="checkbox"
               checked={deleteCalendar}
               onChange={(e) => setDeleteCalendar(e.target.checked)}
-              className="mt-1 accent-pink-300"
+              className="mt-1"
+              style={{accentColor: '#B68DA2'}}
             />
             <div>
               <p className="text-sm font-medium">Googleカレンダー</p>
