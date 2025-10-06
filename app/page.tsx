@@ -1110,14 +1110,20 @@ return (
           <div className="flex gap-2 mb-4">
             <button 
               onClick={() => setShowBulkAddModal(true)}
-              className="flex-1 bg-blue-50 text-blue-700 px-3 py-2 rounded text-sm hover:bg-blue-100 flex items-center justify-center gap-2"
+              className="flex-1 px-3 py-2 rounded text-sm flex items-center justify-center gap-2 text-gray-700 dark:text-gray-300"
+              style={{backgroundColor: '#91AEBD'}}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#6D96A9'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#91AEBD'}
             >
               <i className="fa-solid fa-calendar-plus"></i>
               <span>過去データ一括登録</span>
             </button>
             <button 
               onClick={() => setCurrentView('settings')}
-              className="flex-1 bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-3 py-2 rounded text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center gap-2"
+              className="flex-1 px-3 py-2 rounded text-sm flex items-center justify-center gap-2 text-gray-700 dark:text-gray-300"
+              style={{backgroundColor: '#91AEBD'}}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#6D96A9'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#91AEBD'}
             >
               <i className="fa-solid fa-arrows-rotate"></i>
               <span>同期設定</span>
@@ -1373,9 +1379,12 @@ const SettingsView = ({
         {isGoogleAuthed ? '連携済み' : '未連携'}
       </p>
       {isGoogleAuthed && (
-        <button 
+<button 
           onClick={handleLogout}
-          className="w-full border border-red-300 text-red-600 px-4 py-2 rounded hover:bg-red-50"
+          className="w-full text-gray-700 dark:text-gray-100 px-4 py-2 rounded"
+          style={{backgroundColor: '#CBA9BA'}}
+          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#B68DA2'}
+          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#CBA9BA'}
         >
           ログアウト
         </button>
@@ -1403,12 +1412,16 @@ const SettingsView = ({
         ※1度に20件登録できます
       </p>
       <div className="space-y-2">
-        <button 
+<button 
           onClick={() => setShowBulkAddModal(true)}
-          className="w-full bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+          className="w-full text-white px-4 py-2 rounded"
+          style={{backgroundColor: '#91AEBD'}}
+          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#6D96A9'}
+          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#91AEBD'}
         >
           過去の生理記録を登録
         </button>
+
         <button 
           onClick={() => setShowRecordsList(true)}
           className="w-full border border-gray-300 dark:border-gray-600 px-4 py-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-800"
@@ -1421,9 +1434,12 @@ const SettingsView = ({
     <div className="border rounded-lg p-4">
       <h3 className="font-semibold mb-2 text-gray-900 dark:text-gray-100">データ管理</h3>
       <div className="space-y-2">
-        <button 
+<button 
           onClick={() => setShowDeleteConfirm(true)}
-          className="w-full border border-red-300 text-red-600 px-4 py-2 rounded hover:bg-red-50"
+          className="w-full text-gray-700 dark:text-gray-100 px-4 py-2 rounded"
+          style={{backgroundColor: '#CBA9BA'}}
+          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#B68DA2'}
+          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#CBA9BA'}
         >
           すべてのデータを削除
         </button>
@@ -1551,10 +1567,13 @@ return (
       </div>
     </div>      
     {hasChanges && (
-      <button
+<button
         onClick={handleSave}
         disabled={isSaving}
-        className="w-full bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:opacity-50 flex items-center justify-center gap-2 mt-3"
+        className="w-full text-white px-4 py-2 rounded disabled:opacity-50 flex items-center justify-center gap-2 mt-3"
+        style={{backgroundColor: '#91AEBD'}}
+        onMouseEnter={(e) => !isSaving && (e.currentTarget.style.backgroundColor = '#6D96A9')}
+        onMouseLeave={(e) => !isSaving && (e.currentTarget.style.backgroundColor = '#91AEBD')}
   >
         {isSaving ? (
       <>
@@ -2555,13 +2574,17 @@ const BulkAddModal = ({ bulkRecords, setBulkRecords, bulkPickerState, setBulkPic
         >
           キャンセル
         </button>
-        <button 
+<button 
           type="button"
           onClick={submitBulkRecords}
-          className="flex-1 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          className="flex-1 text-white px-4 py-2 rounded"
+          style={{backgroundColor: '#91AEBD'}}
+          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#6D96A9'}
+          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#91AEBD'}
         >
           一括登録（{bulkRecords.filter(r => r.startDate && r.endDate).length}件）
         </button>
+
       </div>
     </div>
   </div>
@@ -2871,9 +2894,12 @@ const InitialSyncModal = ({ onSave }: {
         </div>
 
         <div className="p-6 border-t border-gray-200 dark:border-gray-700">
-          <button 
+<button 
             onClick={() => onSave(settings)}
-            className="w-full bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 font-medium"
+            className="w-full text-white px-4 py-3 rounded-lg font-medium"
+            style={{backgroundColor: '#91AEBD'}}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#6D96A9'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#91AEBD'}
           >
             設定を保存して始める
           </button>
