@@ -1115,7 +1115,7 @@ return (
               onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#C2D2DA'}
             >
               <i className="fa-solid fa-calendar-plus"></i>
-              <span>過去データ一括登録</span>
+              <span>データ一括登録</span>
             </button>
             <button 
               onClick={() => setCurrentView('settings')}
@@ -1403,7 +1403,7 @@ const SettingsView = ({
     <HelpSection setCurrentView={setCurrentView} />
 
     <div className="border rounded-lg p-4">
-      <h3 className="font-semibold mb-2 text-gray-900 dark:text-gray-100">過去データ一括登録</h3>
+      <h3 className="font-semibold mb-2 text-gray-900 dark:text-gray-100">データ一括登録</h3>
       <p className="text-sm text-gray-600 dark:text-gray-300 mb-1">
         手帳やメモの記録を登録・編集・削除できます
       </p>
@@ -2339,11 +2339,53 @@ const IntercourseForm = ({ selectedDate, onSubmit, onCancel }: {
       </div>
       <div>
         <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-100">避妊具使用</label>
-        <select value={contraception} onChange={(e) => setContraception(e.target.value)} className="w-full border border-gray-300 dark:border-gray-600 rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100">
-          <option value="不明" className="text-gray-900 dark:text-gray-100">❓ 不明</option>
-          <option value="使用" className="text-gray-900 dark:text-gray-100">✅ 使用</option>
-          <option value="不使用" className="text-gray-900 dark:text-gray-100">❌ 不使用</option>
-        </select>
+        <div className="space-y-2">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input 
+              type="radio" 
+              name="contraception" 
+              value="不明" 
+              checked={contraception === '不明'}
+              onChange={(e) => setContraception(e.target.value)}
+              className="sr-only"
+            />
+            <i className={`${contraception === '不明' ? 'fa-solid fa-circle-dot' : 'fa-regular fa-circle'} text-xl`} style={contraception === '不明' ? {color: '#B68DA2'} : {color: '#9CA3AF'}}></i>
+            <span className="text-sm flex items-center gap-2">
+              <i className="fa-solid fa-question text-gray-500"></i>
+              不明
+            </span>
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input 
+              type="radio" 
+              name="contraception" 
+              value="使用" 
+              checked={contraception === '使用'}
+              onChange={(e) => setContraception(e.target.value)}
+              className="sr-only"
+            />
+            <i className={`${contraception === '使用' ? 'fa-solid fa-circle-dot' : 'fa-regular fa-circle'} text-xl`} style={contraception === '使用' ? {color: '#B68DA2'} : {color: '#9CA3AF'}}></i>
+            <span className="text-sm flex items-center gap-2">
+              <i className="fa-solid fa-check text-green-500"></i>
+              使用
+            </span>
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input 
+              type="radio" 
+              name="contraception" 
+              value="不使用" 
+              checked={contraception === '不使用'}
+              onChange={(e) => setContraception(e.target.value)}
+              className="sr-only"
+            />
+            <i className={`${contraception === '不使用' ? 'fa-solid fa-circle-dot' : 'fa-regular fa-circle'} text-xl`} style={contraception === '不使用' ? {color: '#B68DA2'} : {color: '#9CA3AF'}}></i>
+            <span className="text-sm flex items-center gap-2">
+              <i className="fa-solid fa-xmark text-red-500"></i>
+              不使用
+            </span>
+          </label>
+        </div>
       </div>
       <div>
         <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-100">パートナー（任意）</label>
