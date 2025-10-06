@@ -2968,6 +2968,7 @@ const DayDetailModal = ({ date, periods, intercourse, onClose, onEditPeriod, onD
   onDeleteIntercourse: (id: number) => void;
   onAddNew: () => void;
 }) => {
+  
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4" style={{zIndex: 9999}}>
       <div className="bg-white dark:bg-gray-900 rounded-lg w-full max-w-md max-h-[90vh] flex flex-col">
