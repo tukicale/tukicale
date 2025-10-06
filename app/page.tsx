@@ -2242,7 +2242,7 @@ const [startDate, setStartDate] = useState(formatLocalDate(selectedDate));
       </div>
       <div className="flex gap-2">
         <button type="button" onClick={onCancel} className="flex-1 border px-4 py-2 rounded">キャンセル</button>
-        <button type="button" onClick={(e) => { e.preventDefault(); onSubmit(startDate, endDate); }} className="flex-1 text-white px-4 py-2 rounded" style={{backgroundColor: '#E3D0DA'}} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#CBA9BA'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#E3D0DA'}>保存</button>
+        <button type="button" onClick={(e) => { e.preventDefault(); onSubmit(startDate, endDate); }} className="flex-1 text-gray-700 dark:text-gray-900 px-4 py-2 rounded" style={{backgroundColor: '#E3D0DA'}} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#CBA9BA'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#E3D0DA'}>保存</button>
       </div>
     </div>
   );
@@ -2384,7 +2384,8 @@ const AddModal = ({ selectedDate, modalType, setModalType, addPeriodRecord, addI
       <div className="flex gap-2 mb-4">
         <button
           onClick={() => setModalType('period')}
-          className={`flex-1 py-2 rounded ${modalType === 'period' ? 'bg-red-500 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100'}`}
+          className={`flex-1 py-2 rounded ${modalType === 'period' ? 'text-gray-700 dark:text-gray-900' : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100'}`}
+          style={modalType === 'period' ? {backgroundColor: '#E3D0DA'} : {}}
         >
           生理
         </button>
@@ -2470,9 +2471,9 @@ const DeleteConfirmModal = ({ deleteCalendar, setDeleteCalendar, handleDeleteDat
         >
           キャンセル
         </button>
-        <button 
+<button 
           onClick={handleDeleteData}
-          className="flex-1 text-white px-4 py-2 rounded"
+          className="flex-1 text-gray-700 dark:text-gray-900 px-4 py-2 rounded"
           style={{backgroundColor: '#E3D0DA'}}
           onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#CBA9BA'}
           onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#E3D0DA'}
