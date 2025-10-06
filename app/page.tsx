@@ -812,7 +812,7 @@ for (let day = 1; day <= daysInMonth; day++) {
         >
           <div className={`text-sm font-medium ${isToday(day) ? 'text-gray-900' : ''}`}>{day}</div>
           <div className="flex flex-wrap gap-0.5 mt-1">
-            {period && <div className="w-2 h-2 rounded-full bg-red-300" title="生理"></div>}
+            {period && <div className="w-2 h-2 rounded-full bg-red-400" title="生理"></div>}
             {nextPeriod && !period && <div className="w-2 h-2 rounded-full bg-red-200" title="次回生理予測"></div>}
             {fertile && <div className="w-2 h-2 rounded-full bg-green-300" title="妊娠可能日"></div>}
             {pms && <div className="w-2 h-2 rounded-full bg-yellow-300" title="PMS予測"></div>}
@@ -1085,7 +1085,7 @@ return (
 
           <div className="flex flex-wrap gap-4 gap-y-1 mb-4 text-sm text-gray-500 dark:text-gray-400">
             <div className="flex items-center gap-1">
-              <div className="w-3 h-3 rounded-full bg-red-300"></div>
+              <div className="w-3 h-3 rounded-full bg-red-400"></div>
               <span>生理</span>
             </div>
             <div className="flex items-center gap-1">
