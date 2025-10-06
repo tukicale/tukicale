@@ -1414,7 +1414,7 @@ const SettingsView = ({
       <div className="space-y-2">
 <button 
           onClick={() => setShowBulkAddModal(true)}
-          className="w-full text-white px-4 py-2 rounded"
+          className="w-full text-gray-700 dark:text-gray-100 px-4 py-2 rounded"
           style={{backgroundColor: '#C2D2DA'}}
           onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#91AEBD'}
           onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#C2D2DA'}
@@ -1577,7 +1577,7 @@ return (
   >
         {isSaving ? (
       <>
-            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+            <div className="w-4 h-4 border-2 text-gray-700 dark:text-gray-100 border-t-transparent rounded-full animate-spin"></div>
             保存中...
           </>
         ) : '変更を保存してGoogleカレンダーに反映'}
@@ -1902,11 +1902,11 @@ const TermsModal = ({ onClose }: { onClose: () => void }) => (
             rel="noopener noreferrer"
             className="text-blue-600 hover:underline"
           >
-            @tukicale_app
+            <i className="fa-brands fa-tiktok text-gray-900 dark:text-gray-100"></i>@tukicale_app
           </a>）のコメント欄よりお願いいたします。
         </p>
 
-        <p className="text-gray-600 dark:text-gray-300 mt-6">最終更新日：2025年1月1日</p>
+        <p className="text-gray-600 dark:text-gray-300 mt-6">最終更新日：2025年10月6日</p>
       </div>
       <div className="p-6 border-t">
         <button onClick={onClose} className="w-full border px-4 py-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-800">閉じる</button>
@@ -1977,7 +1977,7 @@ const PrivacyModal = ({ onClose }: { onClose: () => void }) => (
         <h4 className="font-semibold mb-2 text-gray-900 dark:text-gray-100">10. プライバシーポリシーの変更</h4>
         <p className="mb-4">当チームは、本ポリシーを予告なく変更することがあります。変更後のポリシーは、本アプリ上に掲載した時点で効力を生じるものとします。</p>
 
-        <p className="text-gray-600 dark:text-gray-300 mt-6">最終更新日：2025年1月1日</p>
+        <p className="text-gray-600 dark:text-gray-300 mt-6">最終更新日：2025年10月6日</p>
       </div>
       <div className="p-6 border-t">
         <button onClick={onClose} className="w-full border px-4 py-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-800">閉じる</button>
