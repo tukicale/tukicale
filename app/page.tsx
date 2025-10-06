@@ -561,7 +561,7 @@ const isToday = (day: number): boolean => {
     return { period, intercourse, fertile, pms, nextPeriod };
   };
 
-const getAverageCycle = (targetRecords = records): number => {
+const getAverageCycle = (targetRecords: Records = records): number => {
     if (targetRecords.periods.length < 2) return 28;
     
     const sortedPeriods = [...targetRecords.periods].sort((a, b) => 
@@ -589,7 +589,7 @@ const getAverageCycle = (targetRecords = records): number => {
     return avgLength || 5;
   };
 
-const getFertileDays = (targetRecords = records) => {
+const getFertileDays = (targetRecords: Records = records) => {
     if (targetRecords.periods.length === 0) return [];
     
     const lastPeriod = [...targetRecords.periods].sort((a, b) => 
@@ -616,7 +616,7 @@ const getFertileDays = (targetRecords = records) => {
     return fertileDays;
   };
 
-const getPMSDays = (targetRecords = records) => {
+const getPMSDays = (targetRecords: Records = records) => {
     if (targetRecords.periods.length === 0) return [];
     
     const lastPeriod = [...targetRecords.periods].sort((a, b) => 
@@ -643,7 +643,7 @@ const getPMSDays = (targetRecords = records) => {
     return pmsDays;
   };
 
-const getNextPeriodDays = (targetRecords = records) => { 
+const getNextPeriodDays = (targetRecords: Records = records) => { 
   if (targetRecords.periods.length === 0) {
     return [];
   }
@@ -1156,13 +1156,21 @@ return (
           </div>
 
           <div className="grid grid-cols-7 gap-0 mb-4">
-            {['日', '月', '火', '水', '木', '金', '土'].map(day => (
-              <div key={day} className="text-center font-semibold p-2 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
-                {day}
+            {['日', '月', '火', '水', '木', '金', '土'].map((day, index) => (
+              <div 
+                key={day} 
+                className="text-center font-semibold p-2 border border-gray-200 dark:border-gray-700"
+                style={
+                  index === 0 
+                    ? { backgroundColor: '#BB5B67', color: '#FFFFFF' }
+                    : index === 6 
+                    ? { backgroundColor: '#6B8BAF', color: '#FFFFFF' }
+                    : {}
+                }
+              >
+                <span className={index === 0 || index === 6 ? '' : 'bg-gray-100 dark:bg-gray-800'}>{day}</span>
               </div>
             ))}
-            {renderCalendar()}
-          </div>
 
           <div className="flex flex-wrap gap-4 gap-y-1 mb-4 text-sm text-gray-500 dark:text-gray-400">
             <div className="flex items-center gap-1">
@@ -2263,10 +2271,8 @@ return (
         <button type="button" onClick={() => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() + 1))} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-gray-900 dark:text-gray-100">→</button>
       </div>
 
-      <div className="grid grid-cols-7 gap-1 mb-2">
-        {['日', '月', '火', '水', '木', '金', '土'].map(day => (
-          <div key={day} className="text-center text-sm text-gray-500 dark:text-gray-400 h-8 flex items-center justify-center">{day}</div>
-        ))}
+            </div>
+
       </div>
       
       <div className="grid grid-cols-7 gap-1">{renderCalendar()}</div>
