@@ -2242,7 +2242,7 @@ const [startDate, setStartDate] = useState(formatLocalDate(selectedDate));
       </div>
       <div className="flex gap-2">
         <button type="button" onClick={onCancel} className="flex-1 border px-4 py-2 rounded">キャンセル</button>
-        <button type="button" onClick={(e) => { e.preventDefault(); onSubmit(startDate, endDate); }} className="flex-1 bg-red-400 text-white px-4 py-2 rounded hover:bg-red-500">保存</button>
+        <button type="button" onClick={(e) => { e.preventDefault(); onSubmit(startDate, endDate); }} className="flex-1 text-white px-4 py-2 rounded" style={{backgroundColor: '#E3D0DA'}} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#CBA9BA'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#E3D0DA'}>保存</button>
       </div>
     </div>
   );
@@ -2472,7 +2472,10 @@ const DeleteConfirmModal = ({ deleteCalendar, setDeleteCalendar, handleDeleteDat
         </button>
         <button 
           onClick={handleDeleteData}
-          className="flex-1 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+          className="flex-1 text-white px-4 py-2 rounded"
+          style={{backgroundColor: '#E3D0DA'}}
+          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#CBA9BA'}
+          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#E3D0DA'}
         >
           削除する
         </button>
