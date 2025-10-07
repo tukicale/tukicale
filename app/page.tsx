@@ -1,6 +1,8 @@
 "use client"
 
 import React, { useState, useEffect } from 'react';
+import { BannerAd, AgeBasedAdCard } from '../src/app/components/ads';
+import { TikTokCard } from '../src/app/components/TikTokCard';
 
 type Period = {
   id: number;
@@ -1284,6 +1286,15 @@ return (
           onClose={() => setNotification(null)}
         />
       )}
+
+      {/* フッター：コピーライト */}
+      <footer className="mt-8 border-t border-gray-200 dark:border-gray-700 pt-4 pb-4">
+        <div className="text-center">
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            ©TukiCale 2025
+          </p>
+        </div>
+      </footer>
     </div>
   );
 };
@@ -1297,43 +1308,56 @@ const StatsView = ({ records, getAverageCycle, getAveragePeriodLength, setShowIn
   <div className="space-y-4">
     <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-gray-100">マイデータ</h2>
     
-<div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg">
-      <div className="text-sm text-gray-600 dark:text-gray-300">平均周期</div>
-      <div className="text-2xl font-bold text-gray-900 dark:text-gray-100 text-gray-900 dark:text-gray-100">{getAverageCycle()}日</div>
+    {/* 統計情報を1つの枠にまとめる */}
+    <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg space-y-2">
+      <div className="flex justify-between items-center">
+        <span className="text-sm text-gray-600 dark:text-gray-300">平均周期</span>
+        <span className="text-xl font-bold text-gray-900 dark:text-gray-100">{getAverageCycle()}日</span>
+      </div>
+      
+      <div className="flex justify-between items-center">
+        <span className="text-sm text-gray-600 dark:text-gray-300">平均生理期間</span>
+        <span className="text-xl font-bold text-gray-900 dark:text-gray-100">{getAveragePeriodLength()}日</span>
+      </div>
+
+      <div className="flex justify-between items-center">
+        <span className="text-sm text-gray-600 dark:text-gray-300">次回生理予定</span>
+        <span className="text-xl font-bold text-gray-900 dark:text-gray-100">
+          {records.periods.length > 0 ? 
+            (() => {
+              const lastPeriod = [...records.periods].sort((a, b) => 
+                new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
+              )[0];
+              const nextDate = new Date(lastPeriod.startDate);
+              nextDate.setDate(nextDate.getDate() + getAverageCycle());
+              return `${nextDate.getMonth() + 1}/${nextDate.getDate()}`;
+            })()
+            : '---'
+          }
+        </span>
+      </div>
+
+      {records.intercourse.length > 0 && (
+        <div className="flex justify-between items-center">
+          <span className="text-sm text-gray-600 dark:text-gray-300">SEX記録</span>
+          <button 
+            onClick={() => setShowIntercourseList(true)}
+            className="text-sm text-blue-600 hover:underline"
+          >
+            詳細を確認
+          </button>
+        </div>
+      )}
     </div>
 
-    <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg">
-      <div className="text-sm text-gray-600 dark:text-gray-300">平均生理期間</div>
-      <div className="text-2xl font-bold text-gray-900 dark:text-gray-100 text-gray-900 dark:text-gray-100">{getAveragePeriodLength()}日</div>
-    </div>
-    
-<div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg">
-      <div className="text-sm text-gray-600 dark:text-gray-300">次回生理予定</div>      <div className="text-2xl font-bold text-gray-900 dark:text-gray-100 text-gray-900 dark:text-gray-100">
-        {records.periods.length > 0 ? 
-          (() => {
-            const lastPeriod = [...records.periods].sort((a, b) => 
-              new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
-            )[0];
-            const nextDate = new Date(lastPeriod.startDate);
-            nextDate.setDate(nextDate.getDate() + getAverageCycle());
-            return `${nextDate.getMonth() + 1}/${nextDate.getDate()}`;
-          })()
-          : '---'
-        }
-      </div>
-    </div>
+    {/* バナー広告 */}
+    <BannerAd />
 
-    {records.intercourse.length > 0 && (
-      <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg">
-        <div className="text-sm text-gray-600 dark:text-gray-300">SEX記録</div>
-        <button 
-          onClick={() => setShowIntercourseList(true)}
-          className="mt-2 text-sm text-blue-600 hover:underline"
-        >
-          詳細を確認
-        </button>
-      </div>
-    )}
+    {/* TikTokカード */}
+    <TikTokCard />
+
+    {/* 年齢別広告 */}
+    <AgeBasedAdCard />
   </div>
 );
 
