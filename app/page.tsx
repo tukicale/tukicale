@@ -2901,7 +2901,6 @@ const InitialSyncModal = ({ onSave }: {
   });
   const [ageGroup, setAgeGroup] = useState<string>('');
   const [showIntercourseInfo, setShowIntercourseInfo] = useState(false);
-  const [showIntercourseInfo, setShowIntercourseInfo] = useState(false);
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4" style={{zIndex: 10004}}>
