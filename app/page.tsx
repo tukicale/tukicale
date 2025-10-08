@@ -326,8 +326,11 @@ const StatsView = ({ records, getAverageCycle, getAveragePeriodLength, setShowIn
   getAverageCycle: () => number;
   getAveragePeriodLength: () => number;
   setShowIntercourseList: (show: boolean) => void;
-}) => (
-  <div className="space-y-4">
+}) => {
+  const [showAdInfo, setShowAdInfo] = useState(false);
+
+  return (
+    <div className="space-y-4">
     <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-gray-100">マイデータ</h2>
     
     {/* 統計情報を1つの枠にまとめる */}
@@ -380,8 +383,26 @@ const StatsView = ({ records, getAverageCycle, getAveragePeriodLength, setShowIn
 
     {/* 年齢別広告カード */}
     <AgeBasedAdCard />
+
+    {/* 広告について（展開型） */}
+    <div className="bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden">
+      <button 
+        onClick={() => setShowAdInfo(!showAdInfo)} 
+        className="w-full text-left p-4 flex items-center justify-between hover:bg-gray-200 dark:hover:bg-gray-700"
+      >
+        <span className="text-sm font-medium text-gray-800 dark:text-gray-100">広告について</span>
+        <span className="text-gray-600 dark:text-gray-300">{showAdInfo ? '−' : '+'}</span>
+      </button>
+      {showAdInfo && (
+        <div className="p-4 pt-0 text-xs text-gray-700 dark:text-gray-300 space-y-2">
+          <p>TukiCaleは無料でご利用いただけるよう、広告を掲載しています。</p>
+          <p>掲載されている商品やサービスは、年齢層や生理周期管理に関連するものを選定しています。広告収益はアプリの運営・改善に使用されます。</p>
+        </div>
+      )}
+    </div>
   </div>
-);
+  );
+};
     
 
 const SettingsView = ({ 
