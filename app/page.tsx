@@ -1,7 +1,8 @@
 "use client"
 import React, { useState, useEffect } from 'react';
 import { TikTokCard } from './components/TikTokCard';
-import { AgeBasedAdCard, BannerAd, CalendarTextAd } from './components/ads';
+import { AgeBasedAdCard, BannerAd } from './components/ads/index';
+import { CalendarTextAd } from './components/ads';
 
 type Period = {
   id: number;

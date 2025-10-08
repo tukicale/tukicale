@@ -1,3 +1,6 @@
+'use client';
+
+import { useState, useEffect } from 'react';
 import { Ad10s } from './Ad10s';
 import { Ad20s } from './Ad20s';
 import { Ad30s } from './Ad30s';
@@ -7,9 +10,17 @@ import { Ad50sPlus } from './Ad50sPlus';
 import { AdDefault } from './AdDefault';
 
 export const AgeBasedAdCard = () => {
-  const ageGroup = typeof window !== 'undefined' 
-    ? localStorage.getItem('tukicale_age_group') || '' 
-    : '';
+  const [ageGroup, setAgeGroup] = useState<string | null>(null);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+    setAgeGroup(localStorage.getItem('tukicale_age_group'));
+  }, []);
+
+  if (!isMounted) {
+    return <AdDefault />;
+  }
   
   switch(ageGroup) {
     case '10代':
