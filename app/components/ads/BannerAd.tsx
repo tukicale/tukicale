@@ -1,20 +1,29 @@
 export const BannerAd = () => {
-  // ★★★ リンクを設定 ★★★
-  const adLink = "https://t.afi-b.com/visit.php?a=H14552a-c477632f&p=m939301A";
-  const adImageUrl = "https://t.afi-b.com/lead/H14552a/m939301A/c477632f"; // 画像URL
+  // ★★★ afbコード ★★★
   
   return (
-    <a 
-      href={adLink}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="block w-full hover:opacity-90 transition-opacity mb-4"
-    >
+    <div className="mb-4 flex justify-center">
+      <a 
+        href="https://t.afi-b.com/visit.php?a=H14552a-c477632f&p=m939301A" 
+        rel="nofollow"
+        target="_blank"
+      >
+        <img 
+          src="https://www.afi-b.com/upload_image/14552-1689150314-3.png" 
+          width="320" 
+          height="100" 
+          style={{ border: 'none' }} 
+          alt="フィシュル" 
+          className="hover:opacity-90 transition-opacity rounded-lg"
+        />
+      </a>
       <img 
-        src={adImageUrl} 
-        alt="広告バナー" 
-        className="w-full h-auto rounded-lg"
+        src="https://t.afi-b.com/lead/H14552a/m939301A/c477632f" 
+        width="1" 
+        height="1" 
+        style={{ border: 'none', display: 'none' }} 
+        alt=""
       />
-    </a>
+    </div>
   );
 };
