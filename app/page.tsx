@@ -2915,19 +2915,47 @@ const InitialSyncModal = ({ onSave }: {
     intercourse: false
   });
   const [showIntercourseInfo, setShowIntercourseInfo] = useState(false);
+  const [ageGroup, setAgeGroup] = useState<string>('');
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4" style={{zIndex: 10004}}>
-      <div className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full flex flex-col" style={{maxHeight: '90vh'}}>
-        <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-          <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-gray-100">同期設定</h3>
+      <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+          <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-gray-100">初期設定</h3>
           <p className="text-sm text-gray-600 dark:text-gray-300">
-            Googleカレンダーに同期する情報を選択してください。<br/>
+            より良い体験のために、いくつか教えてください。<br/>
             後から設定ページでも変更できます。
           </p>
         </div>
         
         <div className="flex-1 overflow-y-auto px-6 py-4">
+          {/* 年齢層選択 */}
+          <div className="mb-6 pb-6 border-b border-gray-200 dark:border-gray-700">
+            <h4 className="text-sm font-semibold mb-3 text-gray-900 dark:text-gray-100">年齢層（任意）</h4>
+            <p className="text-xs text-gray-600 dark:text-gray-300 mb-3">
+              あなたに合った情報をお届けするために教えてください
+            </p>
+            <div className="space-y-2">
+              {['10代', '20代', '30代', '40代', '50代以上', '回答しない'].map((age) => (
+                <label key={age} className="flex items-center gap-2 cursor-pointer">
+                  <div className="relative">
+                    <input 
+                      type="radio" 
+                      name="ageGroup" 
+                      value={age}
+                      checked={ageGroup === age}
+                      onChange={(e) => setAgeGroup(e.target.value)}
+                      className="sr-only peer"
+                    />
+                    <i className={`${ageGroup === age ? 'fa-solid fa-circle-dot' : 'fa-regular fa-circle'} text-xl`} style={ageGroup === age ? {color: '#91AEBD'} : {color: '#9CA3AF'}}></i>
+                  </div>
+                  <span className="text-sm text-gray-900 dark:text-gray-100">{age}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* 同期設定 */}
+          <h4 className="text-sm font-semibold mb-3 text-gray-900 dark:text-gray-100">Googleカレンダー同期</h4>
           <div className="space-y-3">
 <label className="flex items-center gap-2 cursor-pointer">
               <div className="relative">
@@ -3001,8 +3029,14 @@ const InitialSyncModal = ({ onSave }: {
         </div>
 
         <div className="p-6 border-t border-gray-200 dark:border-gray-700">
-<button 
-            onClick={() => onSave(settings)}
+          <button 
+            onClick={() => {
+              // 年齢層をlocalStorageに保存
+              if (ageGroup && ageGroup !== '回答しない') {
+                localStorage.setItem('tukicale_age_group', ageGroup);
+              }
+              onSave(settings);
+            }}
             className="w-full text-gray-700 dark:text-gray-900 px-4 py-3 rounded-lg font-medium"
             style={{backgroundColor: '#C2D2DA'}}
             onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#91AEBD'}
