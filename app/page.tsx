@@ -2550,7 +2550,7 @@ const EditHealthModal = ({ record, updateHealth, setEditingHealth }: {
   setEditingHealth: (record: HealthRecord | null) => void;
 }) => {
   const [date, setDate] = useState(record.date);
-  const [healthType, setHealthType] = useState(record.type);
+  const [healthType, setHealthType] = useState<'不正出血' | '頭痛' | '腹痛' | '吐き気' | 'その他'>(record.type);
   const [memo, setMemo] = useState(record.memo);
   const [showDatePicker, setShowDatePicker] = useState(false);
 
@@ -2580,13 +2580,13 @@ const EditHealthModal = ({ record, updateHealth, setEditingHealth }: {
               {['不正出血', '頭痛', '腹痛', '吐き気', 'その他'].map((type) => (
                 <label key={type} className="flex items-center gap-2 cursor-pointer">
                   <input 
-                    type="radio" 
-                    name="healthType" 
-                    value={type}
-                    checked={healthType === type}
-                    onChange={(e) => setHealthType(e.target.value)}
-                    className="sr-only"
-                  />
+                type="radio" 
+                name="healthType" 
+                value={type}
+                checked={healthType === type}
+                onChange={(e) => setHealthType(e.target.value as '不正出血' | '頭痛' | '腹痛' | '吐き気' | 'その他')}
+                className="sr-only"
+              />
                   <i className={`${healthType === type ? 'fa-solid fa-circle-dot' : 'fa-regular fa-circle'} text-xl`} style={healthType === type ? {color: '#FB923C'} : {color: '#9CA3AF'}}></i>
                   <span className="text-sm">{type}</span>
                 </label>
