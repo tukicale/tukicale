@@ -1364,6 +1364,11 @@ const AgeBasedAdCard = () => {
           title: '40代からの体の変化',
           description: '更年期に備えた健康管理。自分の体の変化を記録しましょう。'
         };
+        case '50代':
+        return {
+          title: '50代からの健康サポート',
+          description: '更年期の体調管理。健康的な生活をサポートします。'
+        };
       case '50代以上':
         return {
           title: '50代からの健康サポート',
@@ -3007,7 +3012,8 @@ const InitialSyncModal = ({ onSave }: {
               あなたに合った情報をお届けするために教えてください
             </p>
             <div className="space-y-2">
-              {['10代', '20代', '30代', '40代', '50代以上', '回答しない'].map((age) => (
+              <div className="space-y-2">
+              {['10代', '20代', '30代', '40代', '50代', '50代以上', '回答しない'].map((age) => (
                 <label key={age} className="flex items-center gap-2 cursor-pointer">
                   <div className="relative">
                     <input 
