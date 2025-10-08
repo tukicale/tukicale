@@ -26,8 +26,7 @@ export const AdBase = ({ title, description, items }: AdBaseProps) => {
         <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2">おすすめアイテム</p>
         <ul className="space-y-1">
           {items.map((item, index) => (
-            <li key={index} className="text-xs text-gray-600 dark:text-gray-400 flex items-start gap-1">
-              <span>•</span>
+            <li key={index} className="text-sm text-gray-600 dark:text-gray-400">
               <a href={item.link}
                 target="_blank"
                 rel="noopener noreferrer"
