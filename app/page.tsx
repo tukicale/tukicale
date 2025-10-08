@@ -1803,15 +1803,16 @@ const BulkAddModal = ({ bulkRecords, setBulkRecords, bulkPickerState, setBulkPic
         >
           キャンセル
         </button>
-<button 
+        <button 
           type="button"
           onClick={submitBulkRecords}
-          className="flex-1 text-gray-700 dark:text-gray-900 px-4 py-2 rounded"
+          className="flex-1 text-gray-700 dark:text-gray-900 px-4 py-2 rounded flex flex-col items-center"
           style={{backgroundColor: '#C2D2DA'}}
           onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#91AEBD'}
           onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#C2D2DA'}
         >
-          一括登録（{bulkRecords.filter(r => r.startDate && r.endDate).length}件）
+          <span>一括登録</span>
+          <span className="text-sm">（{bulkRecords.filter(r => r.startDate && r.endDate).length}件）</span>
         </button>
 
       </div>

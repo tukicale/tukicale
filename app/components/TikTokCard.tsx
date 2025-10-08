@@ -1,11 +1,11 @@
 export const TikTokCard = () => {
   return (
     <div className="p-4 rounded-lg" style={{backgroundColor: '#C2D2DA'}}>
-      <div className="text-sm text-gray-800 dark:text-gray-100 mb-2 flex items-center gap-2">
-        <i className="fa-brands fa-tiktok text-gray-900 dark:text-gray-100"></i>
+      <div className="text-sm text-gray-900 mb-2 flex items-center gap-2">
+        <i className="fa-brands fa-tiktok text-gray-900"></i>
         コミュニティに参加
       </div>
-      <p className="text-xs text-gray-800 dark:text-gray-100 mb-3">
+      <p className="text-xs text-gray-900 mb-3">
         TukiCaleユーザーと交流して、使い方のヒントや体験談をシェアしよう！
       </p>
       <a
