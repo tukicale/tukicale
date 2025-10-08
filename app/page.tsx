@@ -312,7 +312,7 @@ if (settings.period) {
     }
     
     if (settings.health) {
-      records.health?.forEach(record => {
+      (records.health || []).forEach(record => {
         events.push({
           summary: `体調: ${record.type}`,
           start: { date: record.date },
@@ -321,8 +321,6 @@ if (settings.period) {
         });
       });
     }
-    
-    for (const event of events) {
     
     for (const event of events) {
       await fetch(
