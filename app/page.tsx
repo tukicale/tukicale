@@ -2009,33 +2009,6 @@ const InitialSyncModal = ({ onSave }: {
         </div>
         
         <div className="flex-1 overflow-y-auto px-6 py-4">
-          {/* 年齢層選択 */}
-          <div className="mb-6 pb-6 border-b border-gray-200 dark:border-gray-700">
-            <h4 className="text-sm font-semibold mb-3 text-gray-900 dark:text-gray-100">年齢層（任意）</h4>
-            <p className="text-xs text-gray-600 dark:text-gray-300 mb-3">
-              あなたに合った情報をお届けするために教えてください
-            </p>
-            <div className="space-y-2">
-              <div className="space-y-2">
-              {['10代', '20代', '30代', '40代', '50代', '50代以上', '回答しない'].map((age) => (
-                <label key={age} className="flex items-center gap-2 cursor-pointer">
-                  <div className="relative">
-                    <input 
-                      type="radio" 
-                      name="ageGroup" 
-                      value={age}
-                      checked={ageGroup === age}
-                      onChange={(e) => setAgeGroup(e.target.value)}
-                      className="sr-only peer"
-                    />
-                    <i className={`${ageGroup === age ? 'fa-solid fa-circle-dot' : 'fa-regular fa-circle'} text-xl`} style={ageGroup === age ? {color: '#91AEBD'} : {color: '#9CA3AF'}}></i>
-                  </div>
-                  <span className="text-sm text-gray-900 dark:text-gray-100">{age}</span>
-                </label>
-              ))}
-            </div>
-          </div>
-         </div>
           {/* 同期設定 */}
           <h4 className="text-sm font-semibold mb-3 text-gray-900 dark:text-gray-100">Googleカレンダー同期</h4>
           <div className="space-y-3">
@@ -2106,6 +2079,32 @@ const InitialSyncModal = ({ onSave }: {
                   <p className="mt-2 text-gray-600 dark:text-gray-300">詳細情報はアプリ内にのみ保存されます。</p>
                 </div>
               )}
+            </div>
+          </div>
+          
+          {/* 年齢層選択 */}
+          <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+            <h4 className="text-sm font-semibold mb-3 text-gray-900 dark:text-gray-100">年齢層（任意）</h4>
+            <p className="text-xs text-gray-600 dark:text-gray-300 mb-3">
+              あなたに合った情報をお届けするために教えてください
+            </p>
+            <div className="grid grid-cols-4 gap-2">
+              {['10代', '20代', '30代', '40代', '50代', '50代以上', '回答しない'].map((age) => (
+                <label key={age} className="flex items-center gap-1 cursor-pointer">
+                  <div className="relative">
+                    <input 
+                      type="radio" 
+                      name="ageGroup" 
+                      value={age}
+                      checked={ageGroup === age}
+                      onChange={(e) => setAgeGroup(e.target.value)}
+                      className="sr-only peer"
+                    />
+                    <i className={`${ageGroup === age ? 'fa-solid fa-circle-dot' : 'fa-regular fa-circle'} text-lg`} style={ageGroup === age ? {color: '#91AEBD'} : {color: '#9CA3AF'}}></i>
+                  </div>
+                  <span className="text-xs text-gray-900 dark:text-gray-100">{age}</span>
+                </label>
+              ))}
             </div>
           </div>
         </div>
