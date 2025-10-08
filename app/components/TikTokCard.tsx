@@ -8,7 +8,7 @@ export const TikTokCard = () => {
       <p className="text-xs text-gray-700 dark:text-gray-300 mb-3">
         TukiCaleユーザーと交流して、使い方のヒントや体験談をシェアしよう！
       </p>
-      
+      <a
         href="https://www.tiktok.com/@tukicale_app"
         target="_blank"
         rel="noopener noreferrer"
