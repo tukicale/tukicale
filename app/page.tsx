@@ -346,6 +346,7 @@ const PeriodTrackerApp = () => {
   const [deletingPeriodId, setDeletingPeriodId] = useState<number | null>(null);
   const [showIntercourseList, setShowIntercourseList] = useState(false);
   const [showInitialSyncModal, setShowInitialSyncModal] = useState(false);
+  const [showAgeVerification, setShowAgeVerification] = useState(false);
   const [syncSettings, setSyncSettings] = useState<SyncSettings>({
     period: true,
     fertile: true,
@@ -449,6 +450,7 @@ const [editingIntercourse, setEditingIntercourse] = useState<IntercourseRecord |
     // 既存のトークンとセットアップ状態を確認
     const savedToken = localStorage.getItem('tukicale_access_token');
     const hasCompletedInitialSetup = localStorage.getItem('tukicale_initial_setup_completed');
+    const hasCompletedAgeVerification = localStorage.getItem('tukicale_age_verified');
     const savedData = localStorage.getItem('myflow_data');
     const savedSyncSettings = localStorage.getItem('tukicale_sync_settings');
 
@@ -456,7 +458,7 @@ const [editingIntercourse, setEditingIntercourse] = useState<IntercourseRecord |
     const hasData = savedData && JSON.parse(savedData).periods && JSON.parse(savedData).periods.length > 0;
 
     if (token) {
-      // 新規ログイン（OAuth リダイレクト後）
+      // 新規ログイン(OAuth リダイレクト後)
       localStorage.setItem('tukicale_access_token', token);
       if (refreshToken) {
         localStorage.setItem('tukicale_refresh_token', refreshToken);
@@ -464,20 +466,28 @@ const [editingIntercourse, setEditingIntercourse] = useState<IntercourseRecord |
       setIsGoogleAuthed(true);
       setShowLoginScreen(false);
 
+      // 年齢確認が未完了の場合、年齢確認を表示
+      if (!hasCompletedAgeVerification) {
+        setShowAgeVerification(true);
+      }
       // データがない場合かつ初期設定が未完了の場合のみ、初期設定モーダルを表示
-      if (!hasCompletedInitialSetup && !hasData) {
+      else if (!hasCompletedInitialSetup && !hasData) {
         setShowInitialSyncModal(true);
       } else if (hasData && !hasCompletedInitialSetup) {
         // データがある場合は、自動的に初期設定完了フラグを立てる
         localStorage.setItem('tukicale_initial_setup_completed', 'true');
       }
 } else if (savedToken) {
-      // 既存ログイン（トークンが保存されている）
+      // 既存ログイン(トークンが保存されている)
       setIsGoogleAuthed(true);
       setShowLoginScreen(false);
            
+      // 年齢確認が未完了の場合、年齢確認を表示
+      if (!hasCompletedAgeVerification) {
+        setShowAgeVerification(true);
+      }
       // データがあるのに初期設定フラグがない場合、フラグを立てる
-      if (hasData && !hasCompletedInitialSetup) {
+      else if (hasData && !hasCompletedInitialSetup) {
         localStorage.setItem('tukicale_initial_setup_completed', 'true');
       }
     } else {
@@ -492,13 +502,7 @@ const [editingIntercourse, setEditingIntercourse] = useState<IntercourseRecord |
     
     // データを読み込み
     if (savedData) {
-      const loadedRecords = JSON.parse(savedData);
-      setRecords(loadedRecords);
-      
-      // 年齢層をlocalStorageに復元
-      if (loadedRecords.ageGroup) {
-        localStorage.setItem('tukicale_age_group', loadedRecords.ageGroup);
-      }
+      setRecords(JSON.parse(savedData));
     }
 
     setCurrentDate(new Date());
@@ -1298,6 +1302,32 @@ return (
         />
       )}
 
+      {showAgeVerification && (
+        <AgeVerificationModal
+          onConfirm={() => {
+            localStorage.setItem('tukicale_age_verified', 'true');
+            setShowAgeVerification(false);
+            
+            // 年齢確認後、初期設定が未完了なら初期設定モーダルを表示
+            const hasCompletedInitialSetup = localStorage.getItem('tukicale_initial_setup_completed');
+            const savedData = localStorage.getItem('myflow_data');
+            const hasData = savedData && JSON.parse(savedData).periods && JSON.parse(savedData).periods.length > 0;
+            
+            if (!hasCompletedInitialSetup && !hasData) {
+              setShowInitialSyncModal(true);
+            }
+          }}
+          onCancel={() => {
+            // 年齢確認で「いいえ」を選択した場合、ログアウトして警告を表示
+            handleLogout();
+            setNotification({
+              message: 'このアプリは18歳以上の方のみご利用いただけます',
+              type: 'error'
+            });
+          }}
+        />
+      )}
+
       {showInitialSyncModal && (
         <InitialSyncModal
           onSave={handleSaveSyncSettings}
@@ -1311,15 +1341,6 @@ return (
           onClose={() => setNotification(null)}
         />
       )}
-
-      {/* フッター：コピーライト */}
-      <footer className="mt-8 border-t border-gray-200 dark:border-gray-700 pt-4 pb-4">
-        <div className="text-center">
-          <p className="text-xs text-gray-500 dark:text-gray-400">
-            ©TukiCale 2025
-          </p>
-        </div>
-      </footer>
     </div>
   );
 };
@@ -2904,6 +2925,38 @@ const IntercourseList = ({ records, onClose, onEdit, onDelete }: {
     </div>
   );
 };
+
+const AgeVerificationModal = ({ onConfirm, onCancel }: {
+  onConfirm: () => void;
+  onCancel: () => void;
+}) => (
+  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4" style={{zIndex: 10005}}>
+    <div className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full p-6">
+      <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">年齢確認</h3>
+      <p className="text-sm text-gray-600 dark:text-gray-300 mb-6">
+        このアプリは18歳以上の方を対象としています。<br/>
+        あなたは18歳以上ですか？
+      </p>
+      <div className="flex gap-2">
+        <button 
+          onClick={onCancel}
+          className="flex-1 border px-4 py-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700"
+        >
+          いいえ
+        </button>
+        <button 
+          onClick={onConfirm}
+          className="flex-1 text-gray-700 dark:text-gray-900 px-4 py-2 rounded"
+          style={{backgroundColor: '#C2D2DA'}}
+          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#91AEBD'}
+          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#C2D2DA'}
+        >
+          はい
+        </button>
+      </div>
+    </div>
+  </div>
+);
 
 const InitialSyncModal = ({ onSave }: {
   onSave: (settings: SyncSettings) => void;
