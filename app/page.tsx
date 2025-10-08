@@ -442,6 +442,39 @@ const SettingsView = ({
       )}
     </div>
 
+    <div className="border rounded-lg p-4">
+      <h3 className="font-semibold mb-2 text-gray-900 dark:text-gray-100">年齢層設定</h3>
+      <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
+        あなたに合った情報をお届けするために年齢層を設定できます
+      </p>
+      <div className="space-y-2">
+        {['10代', '20代', '30代', '40代', '50代', '50代以上', '回答しない'].map((age) => (
+          <label key={age} className="flex items-center gap-2 cursor-pointer">
+            <div className="relative">
+              <input 
+                type="radio" 
+                name="ageGroupSetting" 
+                value={age}
+                checked={records.ageGroup === age}
+                onChange={(e) => {
+                  const newRecords = {
+                    ...records,
+                    ageGroup: e.target.value
+                  };
+                  setRecords(newRecords);
+                  localStorage.setItem('tukicale_age_group', e.target.value);
+                  saveToDrive(newRecords);
+                }}
+                className="sr-only peer"
+              />
+              <i className={`${records.ageGroup === age ? 'fa-solid fa-circle-dot' : 'fa-regular fa-circle'} text-xl`} style={records.ageGroup === age ? {color: '#91AEBD'} : {color: '#9CA3AF'}}></i>
+            </div>
+            <span className="text-sm text-gray-900 dark:text-gray-100">{age}</span>
+          </label>
+        ))}
+      </div>
+    </div>
+
     <SyncSettings 
       records={records}
       syncSettings={syncSettings}
