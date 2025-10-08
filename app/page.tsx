@@ -3043,6 +3043,7 @@ return (
         </div>
       </div>
 
+
 {currentView === 'calendar' && (
         <>
           <div className="flex items-center justify-between mb-4 gap-2">
@@ -3288,6 +3289,13 @@ return (
           onClose={() => setNotification(null)}
         />
       )}
+     {currentView === 'calendar' && (
+        <>
+          {/* テキスト広告 */}
+          <CalendarTextAd />
+        </>
+      )}
+
 
       {/* フッター：コピーライト */}
       <footer className="mt-4 pt-4 pb-4">
