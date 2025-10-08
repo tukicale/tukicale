@@ -1662,7 +1662,7 @@ const HealthForm = ({ selectedDate, onSubmit, onCancel }: {
                 onChange={(e) => setHealthType(e.target.value)}
                 className="sr-only"
               />
-              <i className={`${healthType === type ? 'fa-solid fa-circle-dot' : 'fa-regular fa-circle'} text-xl`} style={healthType === type ? {color: '#FB923C'} : {color: '#9CA3AF'}}></i>
+              <i className={`${healthType === type ? 'fa-solid fa-circle-dot' : 'fa-regular fa-circle'} text-xl`} style={healthType === type ? {color: '#FDBA74'} : {color: '#9CA3AF'}}></i>
               <span className="text-sm">{type}</span>
             </label>
           ))}
@@ -1674,7 +1674,7 @@ const HealthForm = ({ selectedDate, onSubmit, onCancel }: {
       </div>
       <div className="flex gap-2">
         <button type="button" onClick={onCancel} className="flex-1 border px-4 py-2 rounded">キャンセル</button>
-        <button type="button" onClick={(e) => { e.preventDefault(); onSubmit(date, healthType, memo); }} className="flex-1 bg-orange-400 text-white px-4 py-2 rounded hover:bg-orange-500">
+        <button type="button" onClick={(e) => { e.preventDefault(); onSubmit(date, healthType, memo); }} className="flex-1 bg-orange-300 text-white px-4 py-2 rounded hover:bg-orange-500">
           保存
         </button>
       </div>
@@ -1709,7 +1709,7 @@ const AddModal = ({ selectedDate, modalType, setModalType, addPeriodRecord, addI
         </button>
         <button
           onClick={() => setModalType('health')}
-          className={`flex-1 py-2 rounded text-sm ${modalType === 'health' ? 'bg-orange-400 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100'}`}
+          className={`flex-1 py-2 rounded text-sm ${modalType === 'health' ? 'bg-orange-300 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100'}`}
         >
           体調
         </button>
@@ -2587,7 +2587,7 @@ const EditHealthModal = ({ record, updateHealth, setEditingHealth }: {
                 onChange={(e) => setHealthType(e.target.value as '不正出血' | '頭痛' | '腹痛' | '吐き気' | 'その他')}
                 className="sr-only"
               />
-                  <i className={`${healthType === type ? 'fa-solid fa-circle-dot' : 'fa-regular fa-circle'} text-xl`} style={healthType === type ? {color: '#FB923C'} : {color: '#9CA3AF'}}></i>
+                  <i className={`${healthType === type ? 'fa-solid fa-circle-dot' : 'fa-regular fa-circle'} text-xl`} style={healthType === type ? {color: '#FDBA74'} : {color: '#9CA3AF'}}></i>
                   <span className="text-sm">{type}</span>
                 </label>
               ))}
@@ -2602,7 +2602,7 @@ const EditHealthModal = ({ record, updateHealth, setEditingHealth }: {
             <button 
               type="button" 
               onClick={() => updateHealth(record.id, date, healthType, memo)} 
-              className="flex-1 bg-orange-400 text-white px-4 py-2 rounded hover:bg-orange-500"
+              className="flex-1 bg-orange-300 text-white px-4 py-2 rounded hover:bg-orange-500"
             >
               更新
             </button>
@@ -3275,7 +3275,7 @@ for (let day = 1; day <= daysInMonth; day++) {
             {nextPeriod && !period && <div className="w-2 h-2 rounded-full bg-red-200" title="次回生理予測"></div>}
             {fertile && <div className="w-2 h-2 rounded-full bg-green-300" title="妊娠可能日"></div>}
             {pms && <div className="w-2 h-2 rounded-full bg-yellow-300" title="PMS予測"></div>}
-            {health && <div className="w-2 h-2 rounded-full bg-orange-400" title="体調"></div>}
+            {health && <div className="w-2 h-2 rounded-full bg-orange-300" title="体調"></div>}
             {intercourse && <div className="w-2 h-2 rounded-full bg-gray-300" title="SEX"></div>}
           </div>
         </div>
@@ -3615,7 +3615,7 @@ return (
               <span>PMS予測</span>
             </div>
             <div className="flex items-center gap-1">
-              <div className="w-3 h-3 rounded-full bg-orange-400"></div>
+              <div className="w-3 h-3 rounded-full bg-orange-300"></div>
               <span>体調</span>
             </div>
             <div className="flex items-center gap-1">
