@@ -1,11 +1,15 @@
+type AdItem = {
+  text: string;
+  link: string;
+};
+
 type AdBaseProps = {
   title: string;
   description: string;
-  items: string[];
-  children?: React.ReactNode;
+  items: AdItem[];
 };
 
-export const AdBase = ({ title, description, items, children }: AdBaseProps) => {
+export const AdBase = ({ title, description, items }: AdBaseProps) => {
   return (
     <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg">
       <div className="text-sm font-semibold text-gray-800 dark:text-gray-100 mb-2">
@@ -20,20 +24,20 @@ export const AdBase = ({ title, description, items, children }: AdBaseProps) => 
           {items.map((item, index) => (
             <li key={index} className="text-xs text-gray-600 dark:text-gray-400 flex items-start gap-1">
               <span>•</span>
-              <span>{item}</span>
+              
+                href={item.link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-blue-600 dark:hover:text-blue-400 hover:underline"
+              >
+                {item.text}
+              </a>
             </li>
           ))}
         </ul>
-        {children || (
-          <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700 text-right">
-            <a 
-              href="/ad-info" 
-              className="text-xs text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:underline"
-            >
-              [AD]
-            </a>
-          </div>
-        )}
+        <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700 text-right">
+          <span className="text-xs text-gray-400 dark:text-gray-500">[AD]</span>
+        </div>
       </div>
     </div>
   );
