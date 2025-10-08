@@ -3,9 +3,9 @@ import { AdBase } from './AdBase';
 export const Ad50s = () => {
   // ★★★ 50代リンクを設定 ★★★
   const items = [
-    { text: '更年期ケア', link: 'https://example.com/menopause-care-50s-link' },
-    { text: '骨密度サポート', link: 'https://example.com/bone-density-50s-link' },
-    { text: '健康食品', link: 'https://example.com/health-food-50s-link' }
+    { text: '更年期サプリ・ベルタエクリズム', link: 'https://t.afi-b.com/visit.php?a=515507D-75039744&p=m939301A' },
+    { text: '95%の満足度！はじめてのエクオール', link: 'https://t.afi-b.com/visit.php?a=v8597u-y289437o&p=m939301A' },
+    { text: '芸能人、スポーツ選手も愛用中！酵素ドリンク', link: 'https://t.afi-b.com/visit.php?a=w5803m-X185955K&p=m939301A' }
   ];
   
   return (

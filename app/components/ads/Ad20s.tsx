@@ -3,9 +3,9 @@ import { AdBase } from './AdBase';
 export const Ad20s = () => {
   // ★★★ 20代リンクを設定 ★★★
   const items = [
-    { text: '葉酸サプリ', link: 'https://example.com/folic-acid-link' },
-    { text: '排卵検査薬', link: 'https://example.com/ovulation-test-link' },
-    { text: '月経カップ・吸水ショーツ', link: 'https://example.com/menstrual-cup-link' }
+    { text: 'PMSに悩んだら/めぐルナ', link: 'https://t.afi-b.com/visit.php?a=n7456d-y247580t&p=m939301Ank' },
+    { text: '女性用ニオイ除去専用石鹸「BANANA LEAF」', link: 'https://t.afi-b.com/visit.php?a=L12838c-Q427382r&p=m939301A' },
+    { text: '痛くないVIO脱毛体験', link: 'https://t.afi-b.com/visit.php?a=j10352y-u347826e&p=m939301A' }
   ];
   
   return (
