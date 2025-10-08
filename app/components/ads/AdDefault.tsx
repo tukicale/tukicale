@@ -6,9 +6,9 @@ export const AdDefault = () => {
       title="おすすめ情報"
       description="生理周期管理をもっと快適に"
       items={[
-        { text: '生理用品', url: '#' },
-        { text: 'サプリメント', url: '#' },
-        { text: 'ヘルスケアアイテム', url: '#' }
+        { text: '生理用品', link: '#' },
+        { text: 'サプリメント', link: '#' },
+        { text: 'ヘルスケアアイテム', link: '#' }
       ]}
     />
   );
