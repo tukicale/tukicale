@@ -376,12 +376,12 @@ const StatsView = ({ records, getAverageCycle, getAveragePeriodLength, setShowIn
       )}
     </div>
 
-{/* おすすめアイテムバナー */}
-    <BannerAd />
-
     {/* TikTokコミュニティカード */}
     <TikTokCard />
-
+    
+    {/* おすすめアイテムバナー */}
+    <BannerAd />
+    
     {/* 年齢別広告カード */}
     <AgeBasedAdCard />
   </div>
