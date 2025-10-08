@@ -10,7 +10,7 @@ export const CalendarTextAd = () => {
       href={adLink}
       target="_blank"
       rel="noopener noreferrer"
-      className="block mb-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-pointer"
+      className="block mb-4 p-3 hover:opacity-80 transition-opacity cursor-pointer"
     >
       <div className="flex items-start justify-between mb-2">
         <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">[AD]</span>

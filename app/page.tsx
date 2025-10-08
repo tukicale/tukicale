@@ -1124,6 +1124,11 @@ return (
             </div>
           </div>
 
+          </div>
+
+          {/* テキスト広告 */}
+          <CalendarTextAd />
+
           <div className="flex gap-2 mb-4">
             <button 
               onClick={() => setShowBulkAddModal(true)}
@@ -1146,9 +1151,6 @@ return (
               <span>同期設定</span>
             </button>
           </div>
-
-          {/* バナー広告 */}
-          <BannerAd />
           </>
       )}
 
@@ -1307,7 +1309,7 @@ return (
       )}
 
       {/* フッター：コピーライト */}
-      <footer className="mt-8 pt-4 pb-4">
+      <footer className="mt-4 pt-4 pb-4">
         <div className="text-center">
           <p className="text-xs text-gray-500 dark:text-gray-400">
             ©TukiCale 2025
