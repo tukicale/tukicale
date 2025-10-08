@@ -1334,10 +1334,10 @@ return (
                     key={month}
                     type="button"
                     onClick={() => {
-                      setCurrentDate(new Date(currentDate.getFullYear(), month, 1));
+                      setViewDate(new Date(viewDate.getFullYear(), month, 1));
                       setShowMonthPicker(false);
                     }}
-                    className={`block w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 whitespace-nowrap ${currentDate.getMonth() === month ? 'bg-gray-200 dark:bg-gray-600 font-bold' : ''}`}
+                    className={`block w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 whitespace-nowrap ${viewDate.getMonth() === month ? 'bg-gray-200 dark:bg-gray-600 font-bold' : ''}`}
                   >
                     {month + 1}月
                   </button>
