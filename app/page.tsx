@@ -1305,6 +1305,15 @@ return (
           onClose={() => setNotification(null)}
         />
       )}
+
+      {/* フッター：コピーライト */}
+      <footer className="mt-8 border-t border-gray-200 dark:border-gray-700 pt-4 pb-4">
+        <div className="text-center">
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            ©TukiCale 2025
+          </p>
+        </div>
+      </footer>
     </div>
   );
 };
