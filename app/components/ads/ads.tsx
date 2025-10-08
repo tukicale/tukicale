@@ -26,8 +26,14 @@ export const BannerAd = () => {
   return (
     <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-900 rounded-lg text-center">
       <p className="text-sm text-blue-900 dark:text-blue-100 font-medium">
-        バナー広告エリア
+        あなたにおすすめ
       </p>
+      <p className="text-base text-blue-900 dark:text-blue-100 font-semibold mt-1">
+        生理周期管理をもっと快適に
+      </p>
+      <div className="flex justify-end mt-2">
+        <span className="text-xs text-blue-700 dark:text-blue-300">[AD]</span>
+      </div>
     </div>
   );
 };

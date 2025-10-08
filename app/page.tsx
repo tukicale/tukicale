@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from 'react';
-import { CalendarTextAd, AgeBasedAdCard } from './components/ads';
+import { CalendarTextAd, BannerAd, AgeBasedAdCard } from './components/ads';
 import { TikTokCard } from './components/TikTokCard';
 
 type Period = {
@@ -1369,8 +1369,6 @@ const StatsView = ({ records, getAverageCycle, getAveragePeriodLength, setShowIn
       )}
     </div>
 
-    {/* バナー広告 */}
-    <BannerAd />
 
     {/* TikTokカード */}
     <TikTokCard />
