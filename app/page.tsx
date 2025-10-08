@@ -3223,22 +3223,22 @@ return (
                   {currentDate.getMonth() + 1}月
                 </button>
                 {showMonthPicker && (
-              <div className="absolute top-full mt-1 left-0 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded shadow-lg z-50 max-h-60 overflow-y-auto min-w-[80px]">
-                {Array.from({length: 12}, (_, i) => i).map(month => (
-                  <button
-                    key={month}
-                    type="button"
-                    onClick={() => {
-                      setViewDate(new Date(viewDate.getFullYear(), month, 1));
-                      setShowMonthPicker(false);
-                    }}
-                    className={`block w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 whitespace-nowrap ${viewDate.getMonth() === month ? 'bg-gray-200 dark:bg-gray-600 font-bold' : ''}`}
-                  >
-                    {month + 1}月
-                  </button>
-                ))}
-              </div>
-            )}
+                  <div className="absolute top-full mt-1 left-0 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded shadow-lg z-50 max-h-60 overflow-y-auto min-w-[80px]">
+                    {Array.from({length: 12}, (_, i) => i).map(month => (
+                      <button
+                        key={month}
+                        type="button"
+                        onClick={() => {
+                          setCurrentDate(new Date(currentDate.getFullYear(), month, 1));
+                          setShowMonthPicker(false);
+                        }}
+                        className={`block w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 whitespace-nowrap ${currentDate.getMonth() === month ? 'bg-gray-200 dark:bg-gray-600 font-bold' : ''}`}
+                      >
+                        {month + 1}月
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
             <button onClick={nextMonth} className="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-gray-900 dark:text-gray-100">
