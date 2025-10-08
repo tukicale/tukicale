@@ -3033,8 +3033,10 @@ const InitialSyncModal = ({ onSave }: {
           </button>
         </div>
       </div>
+    </div>
   );
 };
+
 const NotificationModal = ({ message, type, onClose }: {
   message: string;
   type: 'success' | 'error';
