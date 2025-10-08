@@ -1129,7 +1129,12 @@ return (
           </div>
 
            {/* テキスト広告 */}
-          <CalendarTextAd />
+          <div className="mb-4">
+            <div className="text-xs text-gray-500 dark:text-gray-400 text-right mb-1">[AD]</div>
+            <div className="text-sm text-gray-600 dark:text-gray-300 text-center">
+              生理周期を記録して、あなたの健康をサポート。TukiCaleで簡単管理を始めましょう。
+            </div>
+          </div>
 
           <div className="flex gap-2 mb-4">
             <button 
@@ -1321,6 +1326,15 @@ return (
     </div>
   );
 };
+
+const CalendarTextAd = () => (
+  <div className="mb-4">
+    <div className="text-xs text-gray-500 dark:text-gray-400 text-right mb-1">[AD]</div>
+    <div className="text-sm text-gray-600 dark:text-gray-300 text-center">
+      生理周期を記録して、あなたの健康をサポート。TukiCaleで簡単管理を始めましょう。
+    </div>
+  </div>
+);
 
 const TikTokCard = () => (
   <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-800 dark:to-gray-700 p-4 rounded-lg border border-blue-200 dark:border-gray-600">
