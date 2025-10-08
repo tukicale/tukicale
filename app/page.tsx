@@ -766,9 +766,9 @@ const HelpSection = ({ setCurrentView }: {
                 <p className="mb-2 font-semibold">完全にプライベートです：</p>
                 <ul className="list-disc ml-4 space-y-1">
                   <li>データはあなたのGoogleアカウントにのみ保存</li>
-                  <li>私たち（開発者）はデータを見ることができません</li>
+                  <li>私たち（開発者・運営者）はデータを見ることができません</li>
                   <li>第三者に共有されません</li>
-                  <li>性交日の詳細情報はGoogleカレンダーには表示されません。入力があれば、マイデータのみで表示されます</li>
+                  <li>性交日の詳細情報はGoogleカレンダーにはマーク以外表示されません。入力があれば、マイデータのみで後から確認できます</li>
                 </ul>
               </div>
             )}
