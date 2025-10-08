@@ -5,7 +5,11 @@ export const AdDefault = () => {
     <AdBase
       title="おすすめ情報"
       description="生理周期管理をもっと快適に"
-      items={['生理用品', 'サプリメント', 'ヘルスケアアイテム']}
+      items={[
+        { text: '生理用品', url: '#' },
+        { text: 'サプリメント', url: '#' },
+        { text: 'ヘルスケアアイテム', url: '#' }
+      ]}
     />
   );
 };
