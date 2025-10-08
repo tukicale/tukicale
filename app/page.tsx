@@ -1101,8 +1101,14 @@ return (
             {renderCalendar()}
           </div>
 
-          <div className="flex flex-wrap gap-4 gap-y-1 mb-4 text-sm text-gray-500 dark:text-gray-400">
-            <div className="flex items-center gap-1">
+          <div className="mb-4">
+            <div className="text-xs text-gray-500 dark:text-gray-400 text-right mb-1">[AD]</div>
+            <div className="text-sm text-gray-600 dark:text-gray-300 text-center">
+              生理周期を記録して、あなたの健康をサポート。TukiCaleで簡単管理を始めましょう。
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-4 gap-y-1 mb-4 text-sm text-gray-500 dark:text-gray-400">            <div className="flex items-center gap-1">
               <div className="w-3 h-3 rounded-full bg-red-400"></div>
               <span>生理</span>
             </div>
@@ -1318,6 +1324,40 @@ return (
   );
 };
 
+const TikTokCard = () => (
+  <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-800 dark:to-gray-700 p-4 rounded-lg border border-blue-200 dark:border-gray-600">
+    <div className="flex items-center gap-2 mb-2">
+      <i className="fa-brands fa-tiktok text-2xl text-gray-900 dark:text-gray-100"></i>
+      <h3 className="font-semibold text-gray-900 dark:text-gray-100">コミュニティに参加</h3>
+    </div>
+    <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
+      TukiCaleユーザーと交流して、使い方のヒントや体験談をシェアしよう！
+    </p>
+    <a 
+      href="https://www.tiktok.com/@tukicale_app" 
+      target="_blank" 
+      rel="noopener noreferrer"
+      className="block w-full bg-gray-800 dark:bg-gray-900 text-white text-center py-2 rounded-lg hover:bg-gray-700 dark:hover:bg-gray-600"
+    >
+      <i className="fa-brands fa-tiktok mr-2"></i>
+      @tukicale_app をフォロー
+    </a>
+  </div>
+);
+
+const AgeBasedAdCard = () => (
+  <div>
+    <div className="text-center mb-4">
+      <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">おすすめ情報</h3>
+      <p className="text-sm text-gray-600 dark:text-gray-300">生理周期管理をもっと快適に</p>
+    </div>
+    <div className="text-xs text-gray-500 dark:text-gray-400 text-right mb-1">[AD]</div>
+    <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg">
+      <p className="text-sm text-gray-600 dark:text-gray-300 mb-2 text-center">40代の体の変化に。更年期に備えた健康管理を。</p>
+    </div>
+  </div>
+);
+
 const StatsView = ({ records, getAverageCycle, getAveragePeriodLength, setShowIntercourseList }: {
   records: Records;
   getAverageCycle: () => number;
@@ -1373,8 +1413,12 @@ const StatsView = ({ records, getAverageCycle, getAveragePeriodLength, setShowIn
     {/* TikTokカード */}
     <TikTokCard />
 
-    {/* 年齢別広告 */}
+{/* 年齢別広告 */}
     <AgeBasedAdCard />
+
+    <div className="text-center text-xs text-gray-500 dark:text-gray-400 mt-8">
+      ©TukiCale 2025
+    </div>
   </div>
 );
 
