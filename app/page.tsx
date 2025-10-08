@@ -22,6 +22,7 @@ type IntercourseRecord = {
 type Records = {
   periods: Period[];
   intercourse: IntercourseRecord[];
+  ageGroup?: string;
 };
 
 type BulkRecord = {
@@ -410,6 +411,11 @@ const [editingIntercourse, setEditingIntercourse] = useState<IntercourseRecord |
         setRecords(driveData);
         localStorage.setItem('myflow_data', JSON.stringify(driveData));
         
+        // 年齢層をlocalStorageに復元
+        if (driveData.ageGroup) {
+          localStorage.setItem('tukicale_age_group', driveData.ageGroup);
+        }
+        
         // Googleカレンダーも同期
         await syncToCalendar(driveData, syncSettings, getAverageCycle, getFertileDays, getPMSDays, getNextPeriodDays);
         
@@ -486,7 +492,13 @@ const [editingIntercourse, setEditingIntercourse] = useState<IntercourseRecord |
     
     // データを読み込み
     if (savedData) {
-      setRecords(JSON.parse(savedData));
+      const loadedRecords = JSON.parse(savedData);
+      setRecords(loadedRecords);
+      
+      // 年齢層をlocalStorageに復元
+      if (loadedRecords.ageGroup) {
+        localStorage.setItem('tukicale_age_group', loadedRecords.ageGroup);
+      }
     }
 
     setCurrentDate(new Date());
@@ -979,7 +991,17 @@ const handleSaveSyncSettings = (newSettings: SyncSettings) => {
     setSyncSettings(newSettings);
     localStorage.setItem('tukicale_sync_settings', JSON.stringify(newSettings));
     localStorage.setItem('tukicale_initial_setup_completed', 'true');
-    syncToCalendar(records, newSettings, getAverageCycle, getFertileDays, getPMSDays, getNextPeriodDays);
+    
+    // 年齢層をRecordsに保存してGoogleドライブに同期
+    const ageGroup = localStorage.getItem('tukicale_age_group') || '';
+    const updatedRecords = {
+      ...records,
+      ageGroup
+    };
+    setRecords(updatedRecords);
+    saveToDrive(updatedRecords);
+    
+    syncToCalendar(updatedRecords, newSettings, getAverageCycle, getFertileDays, getPMSDays, getNextPeriodDays);
     setShowInitialSyncModal(false);
   };
 
@@ -1130,6 +1152,9 @@ return (
               <span>同期設定</span>
             </button>
           </div>
+
+          {/* バナー広告 */}
+          <BannerAd />
           </>
       )}
 
