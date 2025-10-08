@@ -397,6 +397,7 @@ const SettingsView = ({
   setShowDeleteConfirm, 
   setCurrentView,
   records,
+  setRecords,
   syncSettings,
   setSyncSettings,
   getAverageCycle,
@@ -411,6 +412,7 @@ const SettingsView = ({
   setShowDeleteConfirm: (show: boolean) => void;
   setCurrentView: (view: string) => void;
   records: Records;
+  setRecords: (records: Records) => void;
   syncSettings: SyncSettings;
   setSyncSettings: (settings: SyncSettings) => void;
   getAverageCycle: () => number;
@@ -3187,6 +3189,7 @@ return (
     setShowDeleteConfirm={setShowDeleteConfirm}
     setCurrentView={setCurrentView}
     records={records}
+    setRecords={setRecords}
     syncSettings={syncSettings}
     setSyncSettings={setSyncSettings}
     getAverageCycle={getAverageCycle}
