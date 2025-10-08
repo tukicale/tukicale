@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { Ad10s } from './Ad10s';
 import { Ad20s } from './Ad20s';
 import { Ad30s } from './Ad30s';
@@ -7,12 +8,12 @@ import { Ad50sPlus } from './Ad50sPlus';
 import { AdDefault } from './AdDefault';
 
 export const AgeBasedAdCard = () => {
-  // localStorageから年齢層を取得
-  const ageGroup = typeof window !== 'undefined' 
-    ? localStorage.getItem('tukicale_age_group') 
-    : null;
+  const [ageGroup, setAgeGroup] = useState<string | null>(null);
 
-  // 年齢層に応じた広告コンポーネントを返す
+  useEffect(() => {
+    setAgeGroup(localStorage.getItem('tukicale_age_group'));
+  }, []);
+
   switch (ageGroup) {
     case '10代':
       return <Ad10s />;

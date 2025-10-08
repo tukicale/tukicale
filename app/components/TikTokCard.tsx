@@ -5,7 +5,7 @@ export const TikTokCard = () => {
         <i className="fa-brands fa-tiktok text-gray-900 dark:text-gray-100"></i>
         コミュニティに参加
       </div>
-      <p className="text-xs text-gray-700 dark:text-gray-300 mb-3">
+      <p className="text-xs text-gray-800 dark:text-gray-100 mb-3">
         TukiCaleユーザーと交流して、使い方のヒントや体験談をシェアしよう！
       </p>
       <a
