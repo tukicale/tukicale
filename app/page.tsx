@@ -9,6 +9,7 @@ type Period = {
   startDate: string;
   endDate: string;
   days: number;
+  memo?: string;
 };
 
 type IntercourseRecord = {
@@ -19,9 +20,17 @@ type IntercourseRecord = {
   memo: string;
 };
 
+type HealthRecord = {
+  id: number;
+  date: string;
+  type: '不正出血' | '頭痛' | '腹痛' | '吐き気' | 'その他';
+  memo: string;
+};
+
 type Records = {
   periods: Period[];
   intercourse: IntercourseRecord[];
+  health: HealthRecord[];
   ageGroup?: string;
 };
 
@@ -36,6 +45,7 @@ type SyncSettings = {
   fertile: boolean;
   pms: boolean;
   intercourse: boolean;
+  health: boolean;
 };
 
 // ============ Google API連携関数 ============
@@ -300,6 +310,19 @@ if (settings.period) {
         });
       });
     }
+    
+    if (settings.health) {
+      records.health?.forEach(record => {
+        events.push({
+          summary: `体調: ${record.type}`,
+          start: { date: record.date },
+          end: { date: getNextDay(record.date) },
+          colorId: '6'
+        });
+      });
+    }
+    
+    for (const event of events) {
     
     for (const event of events) {
       await fetch(
@@ -673,6 +696,18 @@ return (
           </div>
         )}
       </div>
+      <label className="flex items-center gap-2 cursor-pointer">
+        <div className="relative">
+          <input 
+            type="checkbox" 
+            checked={localSettings.health}
+            onChange={(e) => handleChange('health', e.target.checked)}
+            className="sr-only peer"
+          />
+          <i className={`${localSettings.health ? 'fa-solid fa-square-check text-xl' : 'fa-regular fa-square text-gray-400 text-xl'}`} style={localSettings.health ? {color: '#91AEBD'} : {}}></i>
+        </div>
+        <span className="text-sm text-gray-900 dark:text-gray-100">体調記録を同期</span>
+      </label>
     </div>      
     {hasChanges && (
 <button
@@ -1581,12 +1616,81 @@ const IntercourseForm = ({ selectedDate, onSubmit, onCancel }: {
   );
 };
 
-const AddModal = ({ selectedDate, modalType, setModalType, addPeriodRecord, addIntercourseRecord, setShowAddModal, currentDate, getAveragePeriodLength }: {
+const HealthForm = ({ selectedDate, onSubmit, onCancel }: {
+  selectedDate: Date | null;
+  onSubmit: (date: string, type: string, memo: string) => void;
+  onCancel: () => void;
+}) => {
+  const formatLocalDate = (date: Date | null): string => {
+    if (!date) return '';
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const [date, setDate] = useState(formatLocalDate(selectedDate));
+  const [healthType, setHealthType] = useState('不正出血');
+  const [memo, setMemo] = useState('');
+  const [showDatePicker, setShowDatePicker] = useState(false);
+
+  const formatBulkDisplayDate = (dateStr: string): string => {
+    if (!dateStr) return '日付を選択';
+    const d = new Date(dateStr);
+    return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`;
+  };
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-100">日付</label>
+        <button type="button" onClick={() => setShowDatePicker(!showDatePicker)} className="w-full border border-gray-300 dark:border-gray-600 rounded px-3 py-2 bg-gray-50 dark:bg-gray-800 text-left">
+          {formatBulkDisplayDate(date)}
+        </button>
+        {showDatePicker && (
+          <div className="mt-2"><DatePicker selectedDate={date} onSelect={(newDate) => { setDate(newDate); setShowDatePicker(false); }} onClose={() => setShowDatePicker(false)} /></div>
+        )}
+      </div>
+      <div>
+        <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-100">体調の種類</label>
+        <div className="space-y-2">
+          {['不正出血', '頭痛', '腹痛', '吐き気', 'その他'].map((type) => (
+            <label key={type} className="flex items-center gap-2 cursor-pointer">
+              <input 
+                type="radio" 
+                name="healthType" 
+                value={type}
+                checked={healthType === type}
+                onChange={(e) => setHealthType(e.target.value)}
+                className="sr-only"
+              />
+              <i className={`${healthType === type ? 'fa-solid fa-circle-dot' : 'fa-regular fa-circle'} text-xl`} style={healthType === type ? {color: '#FB923C'} : {color: '#9CA3AF'}}></i>
+              <span className="text-sm">{type}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+      <div>
+        <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-100">メモ（任意）</label>
+        <textarea value={memo} onChange={(e) => setMemo(e.target.value)} placeholder="症状の詳細など" className="w-full border border-gray-300 dark:border-gray-600 rounded px-3 py-2 bg-gray-50 dark:bg-gray-800" rows={3} />
+      </div>
+      <div className="flex gap-2">
+        <button type="button" onClick={onCancel} className="flex-1 border px-4 py-2 rounded">キャンセル</button>
+        <button type="button" onClick={(e) => { e.preventDefault(); onSubmit(date, healthType, memo); }} className="flex-1 bg-orange-400 text-white px-4 py-2 rounded hover:bg-orange-500">
+          保存
+        </button>
+      </div>
+    </div>
+  );
+};
+
+const AddModal = ({ selectedDate, modalType, setModalType, addPeriodRecord, addIntercourseRecord, addHealthRecord, setShowAddModal, currentDate, getAveragePeriodLength }: {
   selectedDate: Date | null;
   modalType: string;
   setModalType: (type: string) => void;
   addPeriodRecord: (startDate: string, endDate: string) => void;
   addIntercourseRecord: (date: string, contraception: string, partner: string, memo: string) => void;
+  addHealthRecord: (date: string, type: string, memo: string) => void;
   setShowAddModal: (show: boolean) => void;
   currentDate: Date;
   getAveragePeriodLength: () => number;
@@ -1600,10 +1704,16 @@ const AddModal = ({ selectedDate, modalType, setModalType, addPeriodRecord, addI
       <div className="flex gap-2 mb-4">
         <button
           onClick={() => setModalType('period')}
-          className={`flex-1 py-2 rounded ${modalType === 'period' ? 'text-gray-700 dark:text-gray-900' : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100'}`}
+          className={`flex-1 py-2 rounded text-sm ${modalType === 'period' ? 'text-gray-700 dark:text-gray-900' : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100'}`}
           style={modalType === 'period' ? {backgroundColor: '#E3D0DA'} : {}}
         >
           生理
+        </button>
+        <button
+          onClick={() => setModalType('health')}
+          className={`flex-1 py-2 rounded text-sm ${modalType === 'health' ? 'bg-orange-400 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100'}`}
+        >
+          体調
         </button>
         <button
           onClick={() => setModalType('intercourse')}
@@ -1619,6 +1729,12 @@ const AddModal = ({ selectedDate, modalType, setModalType, addPeriodRecord, addI
           onSubmit={addPeriodRecord}
           onCancel={() => setShowAddModal(false)}
           getAveragePeriodLength={getAveragePeriodLength}
+        />
+      ) : modalType === 'health' ? (
+        <HealthForm
+          selectedDate={selectedDate}
+          onSubmit={addHealthRecord}
+          onCancel={() => setShowAddModal(false)}
         />
       ) : (
         <IntercourseForm
@@ -2038,7 +2154,8 @@ const InitialSyncModal = ({ onSave }: {
     period: true,
     fertile: true,
     pms: true,
-    intercourse: false
+    intercourse: false,
+    health: false
   });
   const [ageGroup, setAgeGroup] = useState<string>('');
   const [showIntercourseInfo, setShowIntercourseInfo] = useState(false);
@@ -2112,7 +2229,8 @@ const InitialSyncModal = ({ onSave }: {
                 >
                   <i className="fa-solid fa-circle-info text-blue-600"></i>
                 </button>
-              </label>              {showIntercourseInfo && (
+              </label>              
+              {showIntercourseInfo && (
                 <div className="mt-2 p-3 bg-blue-50 dark:bg-gray-700 rounded text-xs text-gray-700 dark:text-gray-300">
                   <p className="font-semibold mb-1">カレンダーに表示される内容：</p>
                   <p className="mb-2">「●」などの記号のみ（カスタマイズ可能）</p>
@@ -2126,6 +2244,18 @@ const InitialSyncModal = ({ onSave }: {
                 </div>
               )}
             </div>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <div className="relative">
+                <input 
+                  type="checkbox" 
+                  checked={settings.health}
+                  onChange={(e) => setSettings({...settings, health: e.target.checked})}
+                  className="sr-only peer"
+                />
+                <i className={`${settings.health ? 'fa-solid fa-square-check text-xl' : 'fa-regular fa-square text-gray-400 text-xl'}`} style={settings.health ? {color: '#91AEBD'} : {}}></i>
+              </div>
+              <span className="text-sm text-gray-900 dark:text-gray-100">体調記録を同期</span>
+            </label>
           </div>
           
           {/* 年齢層選択 */}
@@ -2216,15 +2346,18 @@ const NotificationModal = ({ message, type, onClose }: {
   );
 };
 
-const DayDetailModal = ({ date, periods, intercourse, onClose, onEditPeriod, onDeletePeriod, onEditIntercourse, onDeleteIntercourse, onAddNew }: {
+const DayDetailModal = ({ date, periods, intercourse, health, onClose, onEditPeriod, onDeletePeriod, onEditIntercourse, onDeleteIntercourse, onEditHealth, onDeleteHealth, onAddNew }: {
   date: Date;
   periods: Period[];
   intercourse: IntercourseRecord[];
+  health: HealthRecord[];
   onClose: () => void;
   onEditPeriod: (period: Period) => void;
   onDeletePeriod: (id: number) => void;
   onEditIntercourse: (record: IntercourseRecord) => void;
   onDeleteIntercourse: (id: number) => void;
+  onEditHealth: (record: HealthRecord) => void;
+  onDeleteHealth: (id: number) => void;
   onAddNew: () => void;
 }) => {
 
@@ -2264,6 +2397,36 @@ const DayDetailModal = ({ date, periods, intercourse, onClose, onEditPeriod, onD
                     </div>
                   );
                 })}
+              </div>
+            </div>
+          )}
+
+          {health.length > 0 && (
+            <div>
+              <h4 className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">体調記録 ({health.length}件)</h4>
+              <div className="space-y-2">
+                {health.map(record => (
+                  <div key={record.id} className="border rounded p-3 bg-orange-50 dark:bg-gray-800">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1">
+                        <p className="text-sm font-medium mb-1">{record.type}</p>
+                        {record.memo && (
+                          <div className="text-xs text-gray-600 dark:text-gray-300">
+                            <p>メモ：{record.memo}</p>
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex gap-2">
+                        <button onClick={() => onEditHealth(record)} className="text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 p-1 rounded" title="修正">
+                          <i className="fa-solid fa-pen-to-square"></i>
+                        </button>
+                        <button onClick={() => onDeleteHealth(record.id)} className="text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 p-1 rounded" title="削除">
+                          <i className="fa-solid fa-trash"></i>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           )}
@@ -2383,6 +2546,75 @@ const EditIntercourseModal = ({ record, updateIntercourse, setEditingIntercourse
   );
 };
 
+const EditHealthModal = ({ record, updateHealth, setEditingHealth }: {
+  record: HealthRecord;
+  updateHealth: (id: number, date: string, type: string, memo: string) => void;
+  setEditingHealth: (record: HealthRecord | null) => void;
+}) => {
+  const [date, setDate] = useState(record.date);
+  const [healthType, setHealthType] = useState(record.type);
+  const [memo, setMemo] = useState(record.memo);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+
+  const formatBulkDisplayDate = (dateStr: string): string => {
+    if (!dateStr) return '日付を選択';
+    const d = new Date(dateStr);
+    return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`;
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4" style={{zIndex: 10001}}>
+      <div className="bg-white dark:bg-gray-900 rounded-lg p-6 max-w-md w-full">
+        <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">体調記録を修正</h3>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-100">日付</label>
+            <button type="button" onClick={() => setShowDatePicker(!showDatePicker)} className="w-full border rounded px-2 py-1 text-sm text-left bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-800">
+              {formatBulkDisplayDate(date)}
+            </button>
+            {showDatePicker && (
+              <div className="mt-2"><DatePicker selectedDate={date} onSelect={(newDate) => { setDate(newDate); setShowDatePicker(false); }} onClose={() => setShowDatePicker(false)} /></div>
+            )}
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-100">体調の種類</label>
+            <div className="space-y-2">
+              {['不正出血', '頭痛', '腹痛', '吐き気', 'その他'].map((type) => (
+                <label key={type} className="flex items-center gap-2 cursor-pointer">
+                  <input 
+                    type="radio" 
+                    name="healthType" 
+                    value={type}
+                    checked={healthType === type}
+                    onChange={(e) => setHealthType(e.target.value)}
+                    className="sr-only"
+                  />
+                  <i className={`${healthType === type ? 'fa-solid fa-circle-dot' : 'fa-regular fa-circle'} text-xl`} style={healthType === type ? {color: '#FB923C'} : {color: '#9CA3AF'}}></i>
+                  <span className="text-sm">{type}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-100">メモ（任意）</label>
+            <textarea value={memo} onChange={(e) => setMemo(e.target.value)} placeholder="症状の詳細など" className="w-full border rounded px-2 py-1 text-sm bg-white dark:bg-gray-900" rows={3} />
+          </div>
+          <div className="flex gap-2">
+            <button type="button" onClick={() => setEditingHealth(null)} className="flex-1 border px-4 py-2 rounded">キャンセル</button>
+            <button 
+              type="button" 
+              onClick={() => updateHealth(record.id, date, healthType, memo)} 
+              className="flex-1 bg-orange-400 text-white px-4 py-2 rounded hover:bg-orange-500"
+            >
+              更新
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const DeleteIntercourseModal = ({ deleteIntercourse, deletingIntercourseId, setDeletingIntercourseId }: {
   deleteIntercourse: (id: number) => Promise<void>;
   deletingIntercourseId: number;
@@ -2430,6 +2662,52 @@ const DeleteIntercourseModal = ({ deleteIntercourse, deletingIntercourseId, setD
   );
 };
 
+const DeleteHealthModal = ({ deleteHealth, deletingHealthId, setDeletingHealthId }: {
+  deleteHealth: (id: number) => Promise<void>;
+  deletingHealthId: number;
+  setDeletingHealthId: (id: number | null) => void;
+}) => {
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleDelete = async () => {
+    setIsDeleting(true);
+    await deleteHealth(deletingHealthId);
+    setIsDeleting(false);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4" style={{zIndex: 10002}}>
+      <div className="bg-white dark:bg-gray-900 rounded-lg p-6 max-w-sm w-full">
+        <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100 text-red-600">体調記録を削除しますか?</h3>
+        <p className="text-sm text-gray-600 dark:text-gray-300 mb-6">この操作は取り消せません</p>
+        <div className="flex gap-2">
+          <button 
+            onClick={() => setDeletingHealthId(null)} 
+            disabled={isDeleting}
+            className="flex-1 border px-4 py-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-800 disabled:opacity-50"
+          >
+            キャンセル
+          </button>
+          <button 
+            onClick={handleDelete}
+            disabled={isDeleting}
+            className="flex-1 text-gray-700 dark:text-gray-900 px-4 py-2 rounded disabled:opacity-50 flex items-center justify-center gap-2"
+            style={{backgroundColor: '#E3D0DA'}}
+            onMouseEnter={(e) => !isDeleting && (e.currentTarget.style.backgroundColor = '#CBA9BA')}
+            onMouseLeave={(e) => !isDeleting && (e.currentTarget.style.backgroundColor = '#E3D0DA')}
+          >
+            {isDeleting ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                削除中...
+              </>
+            ) : '削除する'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const PeriodTrackerApp = () => {
   const [currentView, setCurrentView] = useState('calendar');
@@ -2438,8 +2716,9 @@ const PeriodTrackerApp = () => {
   const [showMonthPicker, setShowMonthPicker] = useState(false);
   const [records, setRecords] = useState<Records>({
     periods: [],
-    intercourse: []
-  });
+    intercourse: [],
+    health: []
+  });;
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [modalType, setModalType] = useState('period');
@@ -2461,7 +2740,8 @@ const PeriodTrackerApp = () => {
     period: true,
     fertile: true,
     pms: true,
-    intercourse: false
+    intercourse: false,
+    health: false
   });
   const [notification, setNotification] = useState<{
     message: string;
@@ -2472,9 +2752,12 @@ const PeriodTrackerApp = () => {
     date: Date;
     periods: Period[];
     intercourse: IntercourseRecord[];
+    health: HealthRecord[];
   } | null>(null);
   const [deletingIntercourseId, setDeletingIntercourseId] = useState<number | null>(null);
 const [editingIntercourse, setEditingIntercourse] = useState<IntercourseRecord | null>(null);
+  const [editingHealth, setEditingHealth] = useState<HealthRecord | null>(null);
+  const [deletingHealthId, setDeletingHealthId] = useState<number | null>(null);
   const [isReloading, setIsReloading] = useState(false);
 
   const loadFromDrive = async () => {
@@ -2647,12 +2930,13 @@ const isToday = (day: number): boolean => {
     );
     
     const intercourse = records.intercourse.find(i => i.date === dateStr);
+    const health = (records.health || []).find(h => h.date === dateStr);
     
     const fertile = getFertileDays().includes(dateStr);
     const pms = getPMSDays().includes(dateStr);
     const nextPeriod = getNextPeriodDays().includes(dateStr);
     
-    return { period, intercourse, fertile, pms, nextPeriod };
+    return { period, intercourse, health, fertile, pms, nextPeriod };
   };
 
 const getAverageCycle = (): number => {
@@ -2783,12 +3067,16 @@ const getNextPeriodDays = () => {
     // その日のSEX記録を取得
     const dayIntercourse = records.intercourse.filter(i => i.date === dateStr);
     
+    // その日の体調記録を取得
+    const dayHealth = (records.health || []).filter(h => h.date === dateStr);
+    
     // 記録がある場合は詳細モーダル、ない場合は追加モーダル
-    if (dayPeriods.length > 0 || dayIntercourse.length > 0) {
+    if (dayPeriods.length > 0 || dayIntercourse.length > 0 || dayHealth.length > 0) {
       setSelectedDayData({
         date,
         periods: dayPeriods,
-        intercourse: dayIntercourse
+        intercourse: dayIntercourse,
+        health: dayHealth
       });
       setShowDayDetailModal(true);
     } else {
@@ -2891,6 +3179,40 @@ const updateIntercourse = async (id: number, date: string, contraception: string
   });
 };
 
+const updateHealth = async (id: number, date: string, type: string, memo: string) => {
+  const newRecords = {
+    ...records,
+    health: (records.health || []).map(h => 
+      h.id === id ? { ...h, date, type: type as '不正出血' | '頭痛' | '腹痛' | '吐き気' | 'その他', memo } : h
+    )
+  };
+  
+  setRecords(newRecords);
+  await saveToDrive(newRecords);
+  await syncToCalendar(newRecords, syncSettings, getAverageCycle, getFertileDays, getPMSDays, getNextPeriodDays);
+  setEditingHealth(null);
+  setNotification({
+    message: '体調記録を更新しました',
+    type: 'success'
+  });
+};
+
+const deleteHealth = async (id: number) => {
+  const newRecords = {
+    ...records,
+    health: (records.health || []).filter(h => h.id !== id)
+  };
+  
+  setRecords(newRecords);
+  await saveToDrive(newRecords);
+  await syncToCalendar(newRecords, syncSettings, getAverageCycle, getFertileDays, getPMSDays, getNextPeriodDays);
+  setDeletingHealthId(null);
+  setNotification({
+    message: '体調記録を削除しました',
+    type: 'success'
+  });
+};
+
 const addIntercourseRecord = (date: string, contraception: string, partner: string, memo: string) => {
     const newRecord = {
       id: Date.now(),
@@ -2912,6 +3234,26 @@ const addIntercourseRecord = (date: string, contraception: string, partner: stri
     setShowAddModal(false);
   };
 
+  const addHealthRecord = (date: string, type: string, memo: string) => {
+    const newRecord = {
+      id: Date.now(),
+      date,
+      type: type as '不正出血' | '頭痛' | '腹痛' | '吐き気' | 'その他',
+      memo
+    };
+    
+    const newRecords = {
+      ...records,
+      health: [...(records.health || []), newRecord]
+    };
+    
+    setRecords(newRecords);
+    saveToDrive(newRecords);
+    syncToCalendar(newRecords, syncSettings, getAverageCycle, getFertileDays, getPMSDays, getNextPeriodDays);
+    
+    setShowAddModal(false);
+  };
+
   const renderCalendar = () => {
     const { daysInMonth, startingDayOfWeek } = getDaysInMonth(currentDate);
     const days = [];
@@ -2920,7 +3262,7 @@ for (let i = 0; i < startingDayOfWeek; i++) {
 days.push(<div key={`empty-${i}`} className="h-14 border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800"></div>);
 }    
 for (let day = 1; day <= daysInMonth; day++) {
-      const { period, intercourse, fertile, pms, nextPeriod } = getRecordForDate(day);
+      const { period, intercourse, health, fertile, pms, nextPeriod } = getRecordForDate(day);
       
       days.push(
 <div
@@ -2935,6 +3277,7 @@ for (let day = 1; day <= daysInMonth; day++) {
             {nextPeriod && !period && <div className="w-2 h-2 rounded-full bg-red-200" title="次回生理予測"></div>}
             {fertile && <div className="w-2 h-2 rounded-full bg-green-300" title="妊娠可能日"></div>}
             {pms && <div className="w-2 h-2 rounded-full bg-yellow-300" title="PMS予測"></div>}
+            {health && <div className="w-2 h-2 rounded-full bg-orange-400" title="体調"></div>}
             {intercourse && <div className="w-2 h-2 rounded-full bg-gray-300" title="SEX"></div>}
           </div>
         </div>
@@ -2992,7 +3335,8 @@ const handleLogout = () => {
 const handleDeleteData = async () => {
   const newRecords = {
     periods: [],
-    intercourse: []
+    intercourse: [],
+    health: []
   };
   
   setRecords(newRecords);
@@ -3273,6 +3617,10 @@ return (
               <span>PMS予測</span>
             </div>
             <div className="flex items-center gap-1">
+              <div className="w-3 h-3 rounded-full bg-orange-400"></div>
+              <span>体調</span>
+            </div>
+            <div className="flex items-center gap-1">
               <div className="w-3 h-3 rounded-full bg-gray-300"></div>
               <span>SEX</span>
             </div>
@@ -3338,6 +3686,7 @@ return (
           setModalType={setModalType}
           addPeriodRecord={addPeriodRecord}
           addIntercourseRecord={addIntercourseRecord}
+          addHealthRecord={addHealthRecord}
           setShowAddModal={setShowAddModal}
           currentDate={currentDate}
           getAveragePeriodLength={getAveragePeriodLength}
@@ -3408,6 +3757,7 @@ return (
           date={selectedDayData.date}
           periods={selectedDayData.periods}
           intercourse={selectedDayData.intercourse}
+          health={selectedDayData.health}
           onClose={() => setShowDayDetailModal(false)}
           onEditPeriod={(period: Period) => {
             setEditingPeriod(period);
@@ -3423,6 +3773,14 @@ return (
           }}
           onDeleteIntercourse={(id: number) => {
             setDeletingIntercourseId(id);
+            setShowDayDetailModal(false);
+          }}
+          onEditHealth={(record: HealthRecord) => {
+            setEditingHealth(record);
+            setShowDayDetailModal(false);
+          }}
+          onDeleteHealth={(id: number) => {
+            setDeletingHealthId(id);
             setShowDayDetailModal(false);
           }}
           onAddNew={() => {
@@ -3446,6 +3804,22 @@ return (
           deleteIntercourse={deleteIntercourse}
           deletingIntercourseId={deletingIntercourseId}
           setDeletingIntercourseId={setDeletingIntercourseId}
+        />
+      )}
+
+      {editingHealth && (
+        <EditHealthModal
+          record={editingHealth}
+          updateHealth={updateHealth}
+          setEditingHealth={setEditingHealth}
+        />
+      )}
+
+      {deletingHealthId && (
+        <DeleteHealthModal
+          deleteHealth={deleteHealth}
+          deletingHealthId={deletingHealthId}
+          setDeletingHealthId={setDeletingHealthId}
         />
       )}
 
