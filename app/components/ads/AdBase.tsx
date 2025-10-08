@@ -25,7 +25,7 @@ export const AdBase = ({ title, description, items }: AdBaseProps) => {
             <li key={index} className="text-xs text-gray-600 dark:text-gray-400 flex items-start gap-1">
               <span>•</span>
               
-                href={item.link}
+               <a href={item.link}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="hover:text-blue-600 dark:hover:text-blue-400 hover:underline"
