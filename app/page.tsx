@@ -1124,9 +1124,7 @@ return (
             </div>
           </div>
 
-          </div>
-
-          {/* テキスト広告 */}
+           {/* テキスト広告 */}
           <CalendarTextAd />
 
           <div className="flex gap-2 mb-4">
