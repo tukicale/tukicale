@@ -713,6 +713,26 @@ const HelpSection = ({ setCurrentView }: {
         
         <div className="space-y-2">
           <div className="border-b pb-2">
+            <button onClick={() => toggleSection('free')} className="w-full text-left flex items-center justify-between py-2 hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-800 rounded px-2">
+              <span className="text-sm font-medium">TukiCaleは利用料無料ですか？</span>
+              <span>{expandedSection === 'free' ? '−' : '+'}</span>
+            </button>
+            {expandedSection === 'free' && (
+              <div className="mt-2 p-3 bg-gray-50 dark:bg-gray-800 rounded text-sm text-gray-700 dark:text-gray-300">
+                <p className="mb-2"><strong>はい、完全無料です！</strong></p>
+                <ul className="list-disc ml-4 space-y-1 mb-3">
+                  <li>アプリの全機能を無料でご利用いただけます</li>
+                  <li>登録料や月額料金は一切かかりません</li>
+                  <li>Googleアカウントがあればすぐに始められます</li>
+                </ul>
+                <p className="mb-2"><strong>無料で提供できる理由：</strong></p>
+                <p className="mb-2">アプリ内に表示される広告収益により、無料でのサービス提供を実現しています。広告収益はアプリの運営・改善に使用されます。</p>
+                <p className="text-xs text-gray-600 dark:text-gray-400 mt-2">※将来的に有料プランを追加する可能性がありますが、基本機能は引き続き無料でご利用いただけます。</p>
+              </div>
+            )}
+          </div>
+
+          <div className="border-b pb-2">
             <button onClick={() => toggleSection('data')} className="w-full text-left flex items-center justify-between py-2 hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-800 rounded px-2">
               <span className="text-sm font-medium">データはどこに保存されますか？</span>
               <span>{expandedSection === 'data' ? '−' : '+'}</span>
