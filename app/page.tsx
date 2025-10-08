@@ -1,8 +1,6 @@
 "use client"
 
 import React, { useState, useEffect } from 'react';
-import { CalendarTextAd, BannerAd, AgeBasedAdCard } from './components/ads';
-import { TikTokCard } from './components/TikTokCard';
 
 type Period = {
   id: number;
@@ -1323,6 +1321,40 @@ return (
     </div>
   );
 };
+
+const TikTokCard = () => (
+  <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-800 dark:to-gray-700 p-4 rounded-lg border border-blue-200 dark:border-gray-600">
+    <div className="flex items-center gap-2 mb-2">
+      <i className="fa-brands fa-tiktok text-2xl text-gray-900 dark:text-gray-100"></i>
+      <h3 className="font-semibold text-gray-900 dark:text-gray-100">コミュニティに参加</h3>
+    </div>
+    <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
+      TukiCaleユーザーと交流して、使い方のヒントや体験談をシェアしよう！
+    </p>
+    <a 
+      href="https://www.tiktok.com/@tukicale_app" 
+      target="_blank" 
+      rel="noopener noreferrer"
+      className="block w-full bg-gray-800 dark:bg-gray-900 text-white text-center py-2 rounded-lg hover:bg-gray-700 dark:hover:bg-gray-600"
+    >
+      <i className="fa-brands fa-tiktok mr-2"></i>
+      @tukicale_app をフォロー
+    </a>
+  </div>
+);
+
+const AgeBasedAdCard = () => (
+  <div>
+    <div className="text-center mb-4">
+      <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">おすすめ情報</h3>
+      <p className="text-sm text-gray-600 dark:text-gray-300">生理周期管理をもっと快適に</p>
+    </div>
+    <div className="text-xs text-gray-500 dark:text-gray-400 text-right mb-1">[AD]</div>
+    <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg">
+      <p className="text-sm text-gray-600 dark:text-gray-300 mb-2 text-center">40代の体の変化に。更年期に備えた健康管理を。</p>
+    </div>
+  </div>
+);
 
 const TikTokCard = () => (
   <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-800 dark:to-gray-700 p-4 rounded-lg border border-blue-200 dark:border-gray-600">
