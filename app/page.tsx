@@ -1,6 +1,6 @@
 "use client"
 import React, { useState, useEffect } from 'react';
-import TikTokCard from './components/TikTokCard';
+import { TikTokCard } from './components/TikTokCard';
 import { AgeBasedAdCard, BannerAd, CalendarTextAd } from './components/ads';
 
 type Period = {
@@ -319,1084 +319,6 @@ if (settings.period) {
     console.error('Sync to calendar error:', error);
     return false;
   }
-};
-
-const PeriodTrackerApp = () => {
-  const [currentView, setCurrentView] = useState('calendar');
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const [records, setRecords] = useState<Records>({
-    periods: [],
-    intercourse: []
-  });
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [modalType, setModalType] = useState('period');
-  const [isGoogleAuthed, setIsGoogleAuthed] = useState(false);
-  const [showLoginScreen, setShowLoginScreen] = useState(true);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isInitializing, setIsInitializing] = useState(true);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [deleteCalendar, setDeleteCalendar] = useState(false);
-  const [showBulkAddModal, setShowBulkAddModal] = useState(false);
-  const [bulkRecords, setBulkRecords] = useState<BulkRecord[]>([{ id: 1, startDate: '', endDate: '' }]);
-  const [bulkPickerState, setBulkPickerState] = useState<{ recordId: number | null; field: string | null }>({ recordId: null, field: null });
-  const [showRecordsList, setShowRecordsList] = useState(false);
-  const [editingPeriod, setEditingPeriod] = useState<Period | null>(null);
-  const [deletingPeriodId, setDeletingPeriodId] = useState<number | null>(null);
-  const [showIntercourseList, setShowIntercourseList] = useState(false);
-  const [showInitialSyncModal, setShowInitialSyncModal] = useState(false);
-  const [syncSettings, setSyncSettings] = useState<SyncSettings>({
-    period: true,
-    fertile: true,
-    pms: true,
-    intercourse: false
-  });
-  const [notification, setNotification] = useState<{
-    message: string;
-    type: 'success' | 'error';
-  } | null>(null);
-  const [showDayDetailModal, setShowDayDetailModal] = useState(false);
-  const [selectedDayData, setSelectedDayData] = useState<{
-    date: Date;
-    periods: Period[];
-    intercourse: IntercourseRecord[];
-  } | null>(null);
-  const [deletingIntercourseId, setDeletingIntercourseId] = useState<number | null>(null);
-const [editingIntercourse, setEditingIntercourse] = useState<IntercourseRecord | null>(null);
-  const [isReloading, setIsReloading] = useState(false);
-
-  const loadFromDrive = async () => {
-    const token = await getAccessToken();
-    if (!token) return null;
-    
-    try {
-      const searchResponse = await fetch(
-        `https://www.googleapis.com/drive/v3/files?q=name='${DRIVE_FILE_NAME}'&fields=files(id,name)`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      
-      if (!searchResponse.ok) return null;
-      
-      const searchData = await searchResponse.json();
-      
-      if (searchData.files && searchData.files.length > 0) {
-        const fileId = searchData.files[0].id;
-        const response = await fetch(
-          `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        
-        if (response.ok) {
-          const data = await response.json();
-          return data;
-        }
-      }
-      
-      return null;
-    } catch (error) {
-      console.error('Load from Drive error:', error);
-      return null;
-    }
-  };
-
-  const handleReload = async () => {
-    setIsReloading(true);
-    
-    try {
-      // Googleドライブから最新データを取得
-      const driveData = await loadFromDrive();
-      
-      if (driveData) {
-        setRecords(driveData);
-        localStorage.setItem('myflow_data', JSON.stringify(driveData));
-        
-        // 年齢層をlocalStorageに復元
-        if (driveData.ageGroup) {
-          localStorage.setItem('tukicale_age_group', driveData.ageGroup);
-        }
-        
-        // Googleカレンダーも同期
-        await syncToCalendar(driveData, syncSettings, getAverageCycle, getFertileDays, getPMSDays, getNextPeriodDays);
-        
-        setNotification({
-          message: '最新データに更新しました',
-          type: 'success'
-        });
-      } else {
-        setNotification({
-          message: 'データの読み込みに失敗しました',
-          type: 'error'
-        });
-      }
-    } catch (error) {
-      console.error('Reload error:', error);
-      setNotification({
-        message: 'エラーが発生しました',
-        type: 'error'
-      });
-    } finally {
-      setIsReloading(false);
-    }
-  };
-
-  useEffect(() => {
-
-    const params = new URLSearchParams(window.location.search);
-    const token = params.get('access_token');
-    const refreshToken = params.get('refresh_token');
-
-// 既存のトークンとセットアップ状態を確認
-    const savedToken = localStorage.getItem('tukicale_access_token');
-    const hasCompletedInitialSetup = localStorage.getItem('tukicale_initial_setup_completed');
-    const savedData = localStorage.getItem('myflow_data');
-    const savedSyncSettings = localStorage.getItem('tukicale_sync_settings');
-
-    // データが存在する場合は、セットアップ完了済みとみなす
-    const hasData = savedData && JSON.parse(savedData).periods && JSON.parse(savedData).periods.length > 0;
-
-    if (token) {
-      // 新規ログイン(OAuth リダイレクト後)
-      localStorage.setItem('tukicale_access_token', token);
-      if (refreshToken) {
-        localStorage.setItem('tukicale_refresh_token', refreshToken);
-      }
-      setIsGoogleAuthed(true);
-      setShowLoginScreen(false);
-
-      // データがない場合かつ初期設定が未完了の場合のみ、初期設定モーダルを表示
-      if (!hasCompletedInitialSetup && !hasData) {
-        setShowInitialSyncModal(true);
-      } else if (hasData && !hasCompletedInitialSetup) {
-        // データがある場合は、自動的に初期設定完了フラグを立てる
-        localStorage.setItem('tukicale_initial_setup_completed', 'true');
-      }
-} else if (savedToken) {
-      // 既存ログイン(トークンが保存されている)
-      setIsGoogleAuthed(true);
-      setShowLoginScreen(false);
-           
-      // データがあるのに初期設定フラグがない場合、フラグを立てる
-      if (hasData && !hasCompletedInitialSetup) {
-        localStorage.setItem('tukicale_initial_setup_completed', 'true');
-      }
-    } else {
-      // トークンがない場合のみログイン画面を表示
-      setShowLoginScreen(true);
-    }
-    
-    // 同期設定を読み込み
-    if (savedSyncSettings) {
-      setSyncSettings(JSON.parse(savedSyncSettings));
-    }
-    
-    // データを読み込み
-    if (savedData) {
-      setRecords(JSON.parse(savedData));
-    }
-
-    setCurrentDate(new Date());
-    setIsInitializing(false);
-  }, []);
-
-  useEffect(() => {
-    localStorage.setItem('myflow_data', JSON.stringify(records));
-  }, [records]);
-
-  const getDaysInMonth = (date: Date) => {
-    const year = date.getFullYear();
-    const month = date.getMonth();
-    const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
-    const daysInMonth = lastDay.getDate();
-    const startingDayOfWeek = firstDay.getDay();
-    
-    return { daysInMonth, startingDayOfWeek };
-  };
-
-const formatDate = (date: Date): string => {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-};
-
-const isToday = (day: number): boolean => {
-  const today = new Date();
-  return day === today.getDate() && 
-         currentDate.getMonth() === today.getMonth() && 
-         currentDate.getFullYear() === today.getFullYear();
-};
-
-  const getRecordForDate = (day: number) => {
-    const dateStr = formatDate(new Date(currentDate.getFullYear(), currentDate.getMonth(), day));
-    
-    const period = records.periods.find(p => 
-      dateStr >= p.startDate && dateStr <= p.endDate
-    );
-    
-    const intercourse = records.intercourse.find(i => i.date === dateStr);
-    
-    const fertile = getFertileDays().includes(dateStr);
-    const pms = getPMSDays().includes(dateStr);
-    const nextPeriod = getNextPeriodDays().includes(dateStr);
-    
-    return { period, intercourse, fertile, pms, nextPeriod };
-  };
-
-const getAverageCycle = (): number => {
-    if (records.periods.length < 2) return 28;
-    
-    const sortedPeriods = [...records.periods].sort((a, b) => 
-      new Date(a.startDate).getTime() - new Date(b.startDate).getTime()
-    );
-    
-    let totalDays = 0;
-    for (let i = 1; i < sortedPeriods.length; i++) {
-      const days = Math.floor(
-        (new Date(sortedPeriods[i].startDate).getTime() - new Date(sortedPeriods[i-1].startDate).getTime()) / (1000 * 60 * 60 * 24)
-      );
-      totalDays += days;
-    }
-    
-    return Math.round(totalDays / (sortedPeriods.length - 1)) || 28;
-  };
-
-  const getAveragePeriodLength = (): number => {
-    if (records.periods.length === 0) return 5;
-    
-    const avgLength = Math.round(
-      records.periods.reduce((sum, p) => sum + p.days, 0) / records.periods.length
-    );
-    
-    return avgLength || 5;
-  };
-
-const getFertileDays = () => {
-    if (records.periods.length === 0) return [];
-    
-    const lastPeriod = [...records.periods].sort((a, b) => 
-      new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
-    )[0];
-    
-    const avgCycle = getAverageCycle();
-    const ovulationDay = new Date(lastPeriod.startDate);
-    ovulationDay.setDate(ovulationDay.getDate() + avgCycle - 14);
-    
-    // 最新の生理終了日より後の日付のみ予測を表示
-    const lastPeriodEnd = new Date(lastPeriod.endDate);
-    
-    const fertileDays = [];
-    for (let i = -3; i <= 3; i++) {
-      const day = new Date(ovulationDay);
-      day.setDate(day.getDate() + i);
-      // 最新生理の終了日より後の日付のみ追加
-      if (day > lastPeriodEnd) {
-        fertileDays.push(formatDate(day));
-      }
-    }
-    
-    return fertileDays;
-  };
-
-const getPMSDays = () => {
-    if (records.periods.length === 0) return [];
-    
-    const lastPeriod = [...records.periods].sort((a, b) => 
-      new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
-    )[0];
-    
-    const avgCycle = getAverageCycle();
-    const nextPeriod = new Date(lastPeriod.startDate);
-    nextPeriod.setDate(nextPeriod.getDate() + avgCycle);
-    
-    // 最新の生理終了日より後の日付のみ予測を表示
-    const lastPeriodEnd = new Date(lastPeriod.endDate);
-    
-    const pmsDays = [];
-    for (let i = -10; i <= -3; i++) {
-      const day = new Date(nextPeriod);
-      day.setDate(day.getDate() + i);
-      // 最新生理の終了日より後の日付のみ追加
-      if (day > lastPeriodEnd) {
-        pmsDays.push(formatDate(day));
-      }
-    }
-    
-    return pmsDays;
-  };
-
-const getNextPeriodDays = () => { 
-  if (records.periods.length === 0) {
-    return [];
-  }
-  
-  const lastPeriod = [...records.periods].sort((a, b) => 
-    new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
-  )[0];
-
-  const avgCycle = getAverageCycle();
- 
-  const avgPeriodLength = records.periods.length > 0 
-    ? Math.round(records.periods.reduce((sum, p) => sum + p.days, 0) / records.periods.length)
-    : 5;
- 
-  const nextPeriodStart = new Date(lastPeriod.startDate);
-  nextPeriodStart.setDate(nextPeriodStart.getDate() + avgCycle);
-  
-  // 最新の生理終了日より後の日付のみ予測を表示
-  const lastPeriodEnd = new Date(lastPeriod.endDate);
- 
-  const nextPeriodDays = [];
-  for (let i = 0; i < avgPeriodLength; i++) {
-    const day = new Date(nextPeriodStart);
-    day.setDate(day.getDate() + i);
-    // 最新生理の終了日より後の日付のみ追加
-    if (day > lastPeriodEnd) {
-      nextPeriodDays.push(formatDate(day));
-    }
-  }
-  
-  return nextPeriodDays;
-};
-
-  const handleDayClick = (day: number) => {
-    const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
-    const dateStr = formatDate(date);
-    
-    // その日の生理記録を取得
-    const dayPeriods = records.periods.filter(p => 
-      dateStr >= p.startDate && dateStr <= p.endDate
-    );
-    
-    // その日のSEX記録を取得
-    const dayIntercourse = records.intercourse.filter(i => i.date === dateStr);
-    
-    // 記録がある場合は詳細モーダル、ない場合は追加モーダル
-    if (dayPeriods.length > 0 || dayIntercourse.length > 0) {
-      setSelectedDayData({
-        date,
-        periods: dayPeriods,
-        intercourse: dayIntercourse
-      });
-      setShowDayDetailModal(true);
-    } else {
-      setSelectedDate(date);
-      setShowAddModal(true);
-    }
-  };
-
-const addPeriodRecord = (startDate: string, endDate: string) => {
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    const days = Math.floor((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-  
-    const newPeriod = {
-      id: Date.now(),
-      startDate,
-      endDate,
-      days
-    };
-  
-    const newRecords = {
-      ...records,
-      periods: [...records.periods, newPeriod]
-    };
-    
-    setRecords(newRecords);
-    saveToDrive(newRecords);
-    syncToCalendar(newRecords, syncSettings, getAverageCycle, getFertileDays, getPMSDays, getNextPeriodDays);
-  
-    setShowAddModal(false);
-  };
-
-const updatePeriod = (id: number, startDate: string, endDate: string) => {
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    const days = Math.floor((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-  
-    const newRecords = {
-      ...records,
-      periods: records.periods.map(p => p.id === id ? { ...p, startDate, endDate, days } : p)
-    };
-    
-    setRecords(newRecords);
-    saveToDrive(newRecords);
-    syncToCalendar(newRecords, syncSettings, getAverageCycle, getFertileDays, getPMSDays, getNextPeriodDays);
-    setEditingPeriod(null);
-    setNotification({
-      message: '生理記録を更新しました',
-      type: 'success'
-    });
-  };
-
-const deletePeriod = async (id: number) => {
-  const newRecords = {
-    ...records,
-    periods: records.periods.filter(p => p.id !== id)
-  };
-  
-  setRecords(newRecords);
-  await saveToDrive(newRecords);
-  await syncToCalendar(newRecords, syncSettings, getAverageCycle, getFertileDays, getPMSDays, getNextPeriodDays);
-  setDeletingPeriodId(null);
-  setNotification({
-    message: '生理記録を削除しました',
-    type: 'success'
-  });
-};
-
-const deleteIntercourse = async (id: number) => {
-  const newRecords = {
-    ...records,
-    intercourse: records.intercourse.filter(i => i.id !== id)
-  };
-  
-  setRecords(newRecords);
-  await saveToDrive(newRecords);
-  await syncToCalendar(newRecords, syncSettings, getAverageCycle, getFertileDays, getPMSDays, getNextPeriodDays);
-  setDeletingIntercourseId(null);
-  setNotification({
-    message: 'SEX記録を削除しました',
-    type: 'success'
-  });
-};
-
-const updateIntercourse = async (id: number, date: string, contraception: string, partner: string, memo: string) => {
-  const newRecords = {
-    ...records,
-    intercourse: records.intercourse.map(i => 
-      i.id === id ? { ...i, date, contraception, partner, memo } : i
-    )
-  };
-  
-  setRecords(newRecords);
-  await saveToDrive(newRecords);
-  await syncToCalendar(newRecords, syncSettings, getAverageCycle, getFertileDays, getPMSDays, getNextPeriodDays);
-  setEditingIntercourse(null);
-  setNotification({
-    message: 'SEX記録を更新しました',
-    type: 'success'
-  });
-};
-
-const addIntercourseRecord = (date: string, contraception: string, partner: string, memo: string) => {
-    const newRecord = {
-      id: Date.now(),
-      date,
-      contraception,
-      partner,
-      memo
-    };
-    
-    const newRecords = {
-      ...records,
-      intercourse: [...records.intercourse, newRecord]
-    };
-    
-    setRecords(newRecords);
-    saveToDrive(newRecords);
-    syncToCalendar(newRecords, syncSettings, getAverageCycle, getFertileDays, getPMSDays, getNextPeriodDays);
-    
-    setShowAddModal(false);
-  };
-
-  const renderCalendar = () => {
-    const { daysInMonth, startingDayOfWeek } = getDaysInMonth(currentDate);
-    const days = [];
-    
-for (let i = 0; i < startingDayOfWeek; i++) {
-days.push(<div key={`empty-${i}`} className="h-14 border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800"></div>);
-}    
-for (let day = 1; day <= daysInMonth; day++) {
-      const { period, intercourse, fertile, pms, nextPeriod } = getRecordForDate(day);
-      
-      days.push(
-<div
-          key={day}
-          onClick={() => handleDayClick(day)}
-          className={`h-14 border border-gray-200 dark:border-gray-700 p-1 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 dark:bg-gray-800 relative`}
-          style={isToday(day) ? {backgroundColor: '#C2D2DA'} : {}}
-        >
-          <div className={`text-sm font-medium ${isToday(day) ? 'text-gray-900' : ''}`}>{day}</div>
-          <div className="flex flex-wrap gap-0.5 mt-1">
-            {period && <div className="w-2 h-2 rounded-full bg-red-400" title="生理"></div>}
-            {nextPeriod && !period && <div className="w-2 h-2 rounded-full bg-red-200" title="次回生理予測"></div>}
-            {fertile && <div className="w-2 h-2 rounded-full bg-green-300" title="妊娠可能日"></div>}
-            {pms && <div className="w-2 h-2 rounded-full bg-yellow-300" title="PMS予測"></div>}
-            {intercourse && <div className="w-2 h-2 rounded-full bg-gray-300" title="SEX"></div>}
-          </div>
-        </div>
-      );
-    }
-        
-    return days;
-  };
-
-  const prevMonth = () => {
-    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1));
-  };
-
-  const nextMonth = () => {
-    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1));
-  };
-
-  const handleYearChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setCurrentDate(new Date(parseInt(e.target.value), currentDate.getMonth(), 1));
-  };
-
-  const handleMonthChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setCurrentDate(new Date(currentDate.getFullYear(), parseInt(e.target.value), 1));
-  };
-
-  const handleGoogleLogin = () => {
-    setIsLoading(true);
-    const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
-    const redirectUri = `${window.location.origin}/api/auth`;
-    const scope = [
-      'https://www.googleapis.com/auth/drive.file',
-      'https://www.googleapis.com/auth/calendar',
-    ].join(' ');
-
-    const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?${new URLSearchParams({
-      client_id: clientId as string,
-      redirect_uri: redirectUri,
-      response_type: 'code',
-      scope: scope,
-      access_type: 'offline',
-      prompt: 'consent',
-    })}`;
-
-    window.location.href = authUrl;
-  };
-
-const handleLogout = () => {
-  localStorage.removeItem('tukicale_access_token');
-  localStorage.removeItem('tukicale_refresh_token');
-  localStorage.removeItem('tukicale_initial_setup_completed');
-  setIsGoogleAuthed(false);
-  setShowLoginScreen(true);
-};
-
-const handleDeleteData = async () => {
-  const newRecords = {
-    periods: [],
-    intercourse: []
-  };
-  
-  setRecords(newRecords);
-  localStorage.removeItem('myflow_data');
-  
-  // Google Driveのデータも削除
-  await saveToDrive(newRecords);
-  
-  if (deleteCalendar) {
-    // Googleカレンダーのイベントも削除
-    await syncToCalendar(newRecords, syncSettings, getAverageCycle, getFertileDays, getPMSDays, getNextPeriodDays);
-    setNotification({
-      message: 'アプリ内のデータとGoogleカレンダーのイベントを削除しました',
-      type: 'success'
-    });
-  } else {
-    setNotification({
-      message: 'アプリ内のデータを削除しました\nGoogleカレンダーのイベントは残っています',
-      type: 'success'
-    });
-  }
-  
-  setShowDeleteConfirm(false);
-  setDeleteCalendar(false);
-};
-
-  const addBulkRecord = () => {
-    if (bulkRecords.length < 20) {
-      setBulkRecords([...bulkRecords, { id: Date.now(), startDate: '', endDate: '' }]);
-    }
-  };
-
-  const removeBulkRecord = (id: number) => {
-    if (bulkRecords.length > 1) {
-      setBulkRecords(bulkRecords.filter(r => r.id !== id));
-    }
-  };
-
-  const updateBulkRecord = (id: number, field: 'startDate' | 'endDate', value: string) => {
-    setBulkRecords(bulkRecords.map(r => {
-      if (r.id === id) {
-        const updated = { ...r, [field]: value };
-if (field === 'startDate' && value && !r.endDate) {
-          const startDateObj = new Date(value);
-          const endDateObj = new Date(startDateObj);
-          const avgLength = getAveragePeriodLength();
-          endDateObj.setDate(startDateObj.getDate() + avgLength - 1);
-          updated.endDate = formatDate(endDateObj);
-        }
-        return updated;
-      }
-      return r;
-    }));
-  };
-
-const submitBulkRecords = () => {
-    const validRecords = bulkRecords.filter(r => r.startDate && r.endDate);
-    
-    if (validRecords.length === 0) {
-      setNotification({
-        message: '開始日と終了日を入力してください',
-        type: 'error'
-      });
-      return;
-    }
-
-    const newPeriods = validRecords.map(r => {
-      const days = Math.floor((new Date(r.endDate).getTime() - new Date(r.startDate).getTime()) / (1000 * 60 * 60 * 24)) + 1;
-      return {
-        id: Date.now() + Math.random(),
-        startDate: r.startDate,
-        endDate: r.endDate,
-        days
-      };
-    });
-
-    const newRecords = {
-      ...records,
-      periods: [...records.periods, ...newPeriods]
-    };
-
-    setRecords(newRecords);
-    saveToDrive(newRecords);
-    syncToCalendar(newRecords, syncSettings, getAverageCycle, getFertileDays, getPMSDays, getNextPeriodDays);
-
-    setNotification({
-      message: `${validRecords.length}件の生理期間を登録しました`,
-      type: 'success'
-    });
-    setShowBulkAddModal(false);
-    setBulkRecords([{ id: 1, startDate: '', endDate: '' }]);
-  };
-
-  const formatBulkDisplayDate = (dateStr: string): string => {
-    if (!dateStr) return '日付を選択';
-    const d = new Date(dateStr);
-    return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`;
-  };
-
-const handleSaveSyncSettings = (newSettings: SyncSettings) => {
-    setSyncSettings(newSettings);
-    localStorage.setItem('tukicale_sync_settings', JSON.stringify(newSettings));
-    localStorage.setItem('tukicale_initial_setup_completed', 'true');
-    
-    // 年齢層をRecordsに保存してGoogleドライブに同期
-    const ageGroup = localStorage.getItem('tukicale_age_group') || '';
-    const updatedRecords = {
-      ...records,
-      ageGroup
-    };
-    setRecords(updatedRecords);
-    saveToDrive(updatedRecords);
-    
-    syncToCalendar(updatedRecords, newSettings, getAverageCycle, getFertileDays, getPMSDays, getNextPeriodDays);
-    setShowInitialSyncModal(false);
-  };
-
-  if (isInitializing) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-900">
-        <div className="flex flex-col items-center gap-4">
-          <i className="fa-regular fa-moon text-5xl text-gray-400 animate-pulse"></i>
-          <p className="text-gray-600 dark:text-gray-300">読み込み中...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (showLoginScreen) {
-    return <LoginScreen onLogin={handleGoogleLogin} isLoading={isLoading} />;
-  }
-
-return (
-    <div className="max-w-4xl mx-auto p-4 bg-white dark:bg-gray-900 dark:bg-gray-900 min-h-screen">
-      <div className="flex items-center justify-between mb-6">
-        <h1 
-          className="text-lg font-semibold text-gray-600 dark:text-gray-300 dark:text-gray-300 flex items-center gap-2 cursor-pointer hover:opacity-70"
-          onClick={() => setCurrentView('calendar')}
-        >
-          <i className="fa-regular fa-moon"></i>
-          TukiCale
-        </h1>
-        <div className="flex gap-2">
-          <button
-            onClick={handleReload}
-            disabled={isReloading}
-            className="p-2 rounded hover:border hover:border-gray-300 dark:border-gray-600 disabled:opacity-50"
-            title="最新データに更新"
-          >
-            {isReloading ? (
-              <div className="w-4 h-4 border-2 border-gray-600 dark:border-gray-300 border-t-transparent rounded-full animate-spin"></div>
-            ) : (
-              <i className="fa-solid fa-rotate-right text-gray-600 dark:text-gray-300"></i>
-            )}
-          </button>
-          <button
-            onClick={() => setCurrentView('calendar')}
-            className={`p-2 rounded ${currentView === 'calendar' ? 'border-2 border-gray-600' : 'hover:border hover:border-gray-300 dark:border-gray-600'}`}
-            title="カレンダー"
-          >
-            <i className="fa-regular fa-calendar-days text-gray-600 dark:text-gray-300"></i>
-          </button>
-          <button
-            onClick={() => setCurrentView('stats')}
-            className={`p-2 rounded ${currentView === 'stats' ? 'border-2 border-gray-600' : 'hover:border hover:border-gray-300 dark:border-gray-600'}`}
-            title="マイデータ"
-          >
-            <i className="fa-solid fa-user-circle text-gray-600 dark:text-gray-300"></i>
-          </button>
-          <button
-            onClick={() => setCurrentView('settings')}
-            className={`p-2 rounded ${currentView === 'settings' ? 'border-2 border-gray-600' : 'hover:border hover:border-gray-300 dark:border-gray-600'}`}
-            title="設定"
-          >
-            <i className="fa-solid fa-gear text-gray-600 dark:text-gray-300"></i>
-          </button>
-        </div>
-      </div>
-
-{currentView === 'calendar' && (
-        <>
-          <div className="flex items-center justify-between mb-4 gap-2">
-            <button onClick={prevMonth} className="px-4 py-2 border border-gray-300 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-600 rounded text-gray-900 dark:text-gray-100">
-              ←
-            </button>
-            <div className="flex gap-2 items-center">
-              <select 
-                value={currentDate.getFullYear()} 
-                onChange={handleYearChange}
-                className="border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-lg font-semibold bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-              >
-                {Array.from({length: 11}, (_, i) => new Date().getFullYear() - 10 + i).map(year => (
-                  <option key={year} value={year}>{year}年</option>
-                ))}
-              </select>
-              <select 
-                value={currentDate.getMonth()} 
-                onChange={handleMonthChange}
-                className="border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-lg font-semibold bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-              >
-                {Array.from({length: 12}, (_, i) => i).map(month => (
-                  <option key={month} value={month}>{month + 1}月</option>
-                ))}
-              </select>
-            </div>
-            <button onClick={nextMonth} className="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-gray-900 dark:text-gray-100">
-              →
-            </button>
-          </div>
-
-          <div className="grid grid-cols-7 gap-0 mb-4">
-            {['日', '月', '火', '水', '木', '金', '土'].map(day => (
-              <div key={day} className="text-center font-semibold p-2 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
-                {day}
-              </div>
-            ))}
-            {renderCalendar()}
-          </div>
-
-          <CalendarTextAd />
-
-          <div className="flex flex-wrap gap-4 gap-y-1 mb-4 text-sm text-gray-500 dark:text-gray-400">            <div className="flex items-center gap-1">
-              <div className="w-3 h-3 rounded-full bg-red-400"></div>
-              <span>生理</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <div className="w-3 h-3 rounded-full bg-red-200"></div>
-              <span>次回生理予測</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <div className="w-3 h-3 rounded-full bg-green-300"></div>
-              <span>妊娠可能日</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <div className="w-3 h-3 rounded-full bg-yellow-300"></div>
-              <span>PMS予測</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <div className="w-3 h-3 rounded-full bg-gray-300"></div>
-              <span>SEX</span>
-            </div>
-          </div>
-
-          <div className="flex gap-2 mb-4">
-            <button 
-              onClick={() => setShowBulkAddModal(true)}
-              className="flex-1 px-3 py-2 rounded text-sm flex items-center justify-center gap-2 text-gray-700 dark:text-gray-900"
-              style={{backgroundColor: '#C2D2DA'}}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#91AEBD'}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#C2D2DA'}
-            >
-              <i className="fa-solid fa-calendar-plus"></i>
-              <span>データ一括登録</span>
-            </button>
-            <button 
-              onClick={() => setCurrentView('settings')}
-              className="flex-1 px-3 py-2 rounded text-sm flex items-center justify-center gap-2 text-gray-700 dark:text-gray-900"
-              style={{backgroundColor: '#C2D2DA'}}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#91AEBD'}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#C2D2DA'}
-            >
-              <i className="fa-solid fa-arrows-rotate"></i>
-              <span>同期設定</span>
-            </button>
-          </div>
-          </>
-      )}
-
-{currentView === 'stats' && (
-        <StatsView records={records} getAverageCycle={getAverageCycle} getAveragePeriodLength={getAveragePeriodLength} setShowIntercourseList={setShowIntercourseList} />
-      )}
-
-{currentView === 'settings' && (
-  <SettingsView 
-    isGoogleAuthed={isGoogleAuthed}
-    handleLogout={handleLogout}
-    setShowBulkAddModal={setShowBulkAddModal}
-    setShowRecordsList={setShowRecordsList}
-    setShowDeleteConfirm={setShowDeleteConfirm}
-    setCurrentView={setCurrentView}
-    records={records}
-    syncSettings={syncSettings}
-    setSyncSettings={setSyncSettings}
-    getAverageCycle={getAverageCycle}
-    getFertileDays={getFertileDays}
-    getPMSDays={getPMSDays}
-    getNextPeriodDays={getNextPeriodDays}
-  />
-)}
-
-      {showAddModal && (
-        <AddModal
-          selectedDate={selectedDate}
-          modalType={modalType}
-          setModalType={setModalType}
-          addPeriodRecord={addPeriodRecord}
-          addIntercourseRecord={addIntercourseRecord}
-          setShowAddModal={setShowAddModal}
-          currentDate={currentDate}
-          getAveragePeriodLength={getAveragePeriodLength}
-        />
-      )}
-
-      {showDeleteConfirm && (
-        <DeleteConfirmModal
-          deleteCalendar={deleteCalendar}
-          setDeleteCalendar={setDeleteCalendar}
-          handleDeleteData={handleDeleteData}
-          setShowDeleteConfirm={setShowDeleteConfirm}
-        />
-      )}
-
-      {showBulkAddModal && (
-        <BulkAddModal
-          bulkRecords={bulkRecords}
-          setBulkRecords={setBulkRecords}
-          bulkPickerState={bulkPickerState}
-          setBulkPickerState={setBulkPickerState}
-          formatBulkDisplayDate={formatBulkDisplayDate}
-          addBulkRecord={addBulkRecord}
-          removeBulkRecord={removeBulkRecord}
-          updateBulkRecord={updateBulkRecord}
-          submitBulkRecords={submitBulkRecords}
-          setShowBulkAddModal={setShowBulkAddModal}
-          currentDate={currentDate}
-        />
-      )}
-
-      {showRecordsList && (
-        <RecordsList
-          records={records}
-          onClose={() => setShowRecordsList(false)}
-          onEdit={(period) => setEditingPeriod(period)}
-          onDelete={(id) => setDeletingPeriodId(id)}
-        />
-      )}
-
-      {editingPeriod && (
-        <EditPeriodModal
-          period={editingPeriod}
-          updatePeriod={updatePeriod}
-          setEditingPeriod={setEditingPeriod}
-        />
-      )}
-
-      {deletingPeriodId && (
-        <DeletePeriodModal
-          deletePeriod={deletePeriod}
-          deletingPeriodId={deletingPeriodId}
-          setDeletingPeriodId={setDeletingPeriodId}
-        />
-      )}
-
-      {showIntercourseList && (
-        <IntercourseList
-          records={records.intercourse}
-          onClose={() => setShowIntercourseList(false)}
-          onEdit={(record) => setEditingIntercourse(record)}
-          onDelete={(id) => setDeletingIntercourseId(id)}
-        />
-      )}
-
-      {showDayDetailModal && selectedDayData && (
-        <DayDetailModal
-          date={selectedDayData.date}
-          periods={selectedDayData.periods}
-          intercourse={selectedDayData.intercourse}
-          onClose={() => setShowDayDetailModal(false)}
-          onEditPeriod={(period) => {
-            setEditingPeriod(period);
-            setShowDayDetailModal(false);
-          }}
-          onDeletePeriod={(id) => {
-            setDeletingPeriodId(id);
-            setShowDayDetailModal(false);
-          }}
-          onEditIntercourse={(record) => {
-            setEditingIntercourse(record);
-            setShowDayDetailModal(false);
-          }}
-          onDeleteIntercourse={(id) => {
-            setDeletingIntercourseId(id);
-            setShowDayDetailModal(false);
-          }}
-          onAddNew={() => {
-            setSelectedDate(selectedDayData.date);
-            setShowDayDetailModal(false);
-            setShowAddModal(true);
-          }}
-        />
-      )}
-
-      {editingIntercourse && (
-        <EditIntercourseModal
-          record={editingIntercourse}
-          updateIntercourse={updateIntercourse}
-          setEditingIntercourse={setEditingIntercourse}
-        />
-      )}
-
-      {deletingIntercourseId && (
-        <DeleteIntercourseModal
-          deleteIntercourse={deleteIntercourse}
-          deletingIntercourseId={deletingIntercourseId}
-          setDeletingIntercourseId={setDeletingIntercourseId}
-        />
-      )}
-
-      {showInitialSyncModal && (
-        <InitialSyncModal
-          onSave={handleSaveSyncSettings}
-        />
-      )}
-
-      {notification && (
-        <NotificationModal
-          message={notification.message}
-          type={notification.type}
-          onClose={() => setNotification(null)}
-        />
-      )}
-
-      {/* テキスト広告 */}
-      <CalendarTextAd />
-
-      {/* フッター：コピーライト */}
-      <footer className="mt-4 pt-4 pb-4">
-        <div className="text-center">
-          <p className="text-xs text-gray-500 dark:text-gray-400">
-            ©TukiCale 2025
-          </p>
-        </div>
-      </footer>
-    </div>
-  );
-};
-
-const TikTokCard = () => (
-  <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-800 dark:to-gray-700 p-4 rounded-lg border border-blue-200 dark:border-gray-600">
-    <div className="flex items-center gap-2 mb-2">
-      <i className="fa-brands fa-tiktok text-2xl text-gray-900 dark:text-gray-100"></i>
-      <h3 className="font-semibold text-gray-900 dark:text-gray-100">コミュニティに参加</h3>
-    </div>
-    <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
-      TukiCaleユーザーと交流して、使い方のヒントや体験談をシェアしよう！
-    </p>
-    <a 
-      href="https://www.tiktok.com/@tukicale_app" 
-      target="_blank" 
-      rel="noopener noreferrer"
-      className="block w-full bg-gray-800 dark:bg-gray-900 text-white text-center py-2 rounded-lg hover:bg-gray-700 dark:hover:bg-gray-600"
-    >
-      <i className="fa-brands fa-tiktok mr-2"></i>
-      @tukicale_app をフォロー
-    </a>
-  </div>
-);
-
-const AgeBasedAdCard = () => {
-  const ageGroup = localStorage.getItem('tukicale_age_group') || '';
-  
-  const getAdContent = () => {
-    switch(ageGroup) {
-      case '10代':
-        return {
-          title: '10代の健康サポート',
-          description: '初めての生理管理。不規則な周期も記録して、自分の体を知ろう。'
-        };
-      case '20代':
-        return {
-          title: '20代の体づくり',
-          description: 'キャリアとの両立をサポート。生理周期を把握して快適な毎日を。'
-        };
-      case '30代':
-        return {
-          title: '30代の健康管理',
-          description: '妊活・出産計画にも。周期を記録して体調管理を始めましょう。'
-        };
-      case '40代':
-        return {
-          title: '40代からの体の変化',
-          description: '更年期に備えた健康管理。自分の体の変化を記録しましょう。'
-        };
-        case '50代':
-        return {
-          title: '50代からの健康サポート',
-          description: '更年期の体調管理。健康的な生活をサポートします。'
-        };
-      case '50代以上':
-        return {
-          title: '50代からの健康サポート',
-          description: '更年期後の体調管理。健康的な生活をサポートします。'
-        };
-      default:
-        return {
-          title: 'あなたの健康をサポート',
-          description: '生理周期を記録して、より快適な毎日を過ごしましょう。'
-        };
-    }
-  };
-  
-  const adContent = getAdContent();
-  
-  return (
-    <div>
-      <div className="text-center mb-4">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">おすすめ情報</h3>
-        <p className="text-sm text-gray-600 dark:text-gray-300">生理周期管理をもっと快適に</p>
-      </div>
-      <div className="text-xs text-gray-500 dark:text-gray-400 text-right mb-1">[AD]</div>
-      <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg">
-        <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-2 text-center">{adContent.title}</h4>
-        <p className="text-sm text-gray-600 dark:text-gray-300 text-center">{adContent.description}</p>
-      </div>
-    </div>
-  );
 };
 
 const StatsView = ({ records, getAverageCycle, getAveragePeriodLength, setShowIntercourseList }: {
@@ -3031,7 +1953,7 @@ const InitialSyncModal = ({ onSave }: {
               ))}
             </div>
           </div>
-
+         </div>
           {/* 同期設定 */}
           <h4 className="text-sm font-semibold mb-3 text-gray-900 dark:text-gray-100">Googleカレンダー同期</h4>
           <div className="space-y-3">
@@ -3126,7 +2048,7 @@ const InitialSyncModal = ({ onSave }: {
       </div>
     </div>
   );
-};
+  };
 
 const NotificationModal = ({ message, type, onClose }: {
   message: string;
@@ -3377,6 +2299,1007 @@ const DeleteIntercourseModal = ({ deleteIntercourse, deletingIntercourseId, setD
           </button>
         </div>
       </div>
+    </div>
+  );
+};
+
+
+const PeriodTrackerApp = () => {
+  const [currentView, setCurrentView] = useState('calendar');
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [records, setRecords] = useState<Records>({
+    periods: [],
+    intercourse: []
+  });
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [modalType, setModalType] = useState('period');
+  const [isGoogleAuthed, setIsGoogleAuthed] = useState(false);
+  const [showLoginScreen, setShowLoginScreen] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(true);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteCalendar, setDeleteCalendar] = useState(false);
+  const [showBulkAddModal, setShowBulkAddModal] = useState(false);
+  const [bulkRecords, setBulkRecords] = useState<BulkRecord[]>([{ id: 1, startDate: '', endDate: '' }]);
+  const [bulkPickerState, setBulkPickerState] = useState<{ recordId: number | null; field: string | null }>({ recordId: null, field: null });
+  const [showRecordsList, setShowRecordsList] = useState(false);
+  const [editingPeriod, setEditingPeriod] = useState<Period | null>(null);
+  const [deletingPeriodId, setDeletingPeriodId] = useState<number | null>(null);
+  const [showIntercourseList, setShowIntercourseList] = useState(false);
+  const [showInitialSyncModal, setShowInitialSyncModal] = useState(false);
+  const [syncSettings, setSyncSettings] = useState<SyncSettings>({
+    period: true,
+    fertile: true,
+    pms: true,
+    intercourse: false
+  });
+  const [notification, setNotification] = useState<{
+    message: string;
+    type: 'success' | 'error';
+  } | null>(null);
+  const [showDayDetailModal, setShowDayDetailModal] = useState(false);
+  const [selectedDayData, setSelectedDayData] = useState<{
+    date: Date;
+    periods: Period[];
+    intercourse: IntercourseRecord[];
+  } | null>(null);
+  const [deletingIntercourseId, setDeletingIntercourseId] = useState<number | null>(null);
+const [editingIntercourse, setEditingIntercourse] = useState<IntercourseRecord | null>(null);
+  const [isReloading, setIsReloading] = useState(false);
+
+  const loadFromDrive = async () => {
+    const token = await getAccessToken();
+    if (!token) return null;
+    
+    try {
+      const searchResponse = await fetch(
+        `https://www.googleapis.com/drive/v3/files?q=name='${DRIVE_FILE_NAME}'&fields=files(id,name)`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      
+      if (!searchResponse.ok) return null;
+      
+      const searchData = await searchResponse.json();
+      
+      if (searchData.files && searchData.files.length > 0) {
+        const fileId = searchData.files[0].id;
+        const response = await fetch(
+          `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        
+        if (response.ok) {
+          const data = await response.json();
+          return data;
+        }
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Load from Drive error:', error);
+      return null;
+    }
+  };
+
+  const handleReload = async () => {
+    setIsReloading(true);
+    
+    try {
+      // Googleドライブから最新データを取得
+      const driveData = await loadFromDrive();
+      
+      if (driveData) {
+        setRecords(driveData);
+        localStorage.setItem('myflow_data', JSON.stringify(driveData));
+        
+        // 年齢層をlocalStorageに復元
+        if (driveData.ageGroup) {
+          localStorage.setItem('tukicale_age_group', driveData.ageGroup);
+        }
+        
+        // Googleカレンダーも同期
+        await syncToCalendar(driveData, syncSettings, getAverageCycle, getFertileDays, getPMSDays, getNextPeriodDays);
+        
+        setNotification({
+          message: '最新データに更新しました',
+          type: 'success'
+        });
+      } else {
+        setNotification({
+          message: 'データの読み込みに失敗しました',
+          type: 'error'
+        });
+      }
+    } catch (error) {
+      console.error('Reload error:', error);
+      setNotification({
+        message: 'エラーが発生しました',
+        type: 'error'
+      });
+    } finally {
+      setIsReloading(false);
+    }
+  };
+
+  useEffect(() => {
+
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('access_token');
+    const refreshToken = params.get('refresh_token');
+
+// 既存のトークンとセットアップ状態を確認
+    const savedToken = localStorage.getItem('tukicale_access_token');
+    const hasCompletedInitialSetup = localStorage.getItem('tukicale_initial_setup_completed');
+    const savedData = localStorage.getItem('myflow_data');
+    const savedSyncSettings = localStorage.getItem('tukicale_sync_settings');
+
+    // データが存在する場合は、セットアップ完了済みとみなす
+    const hasData = savedData && JSON.parse(savedData).periods && JSON.parse(savedData).periods.length > 0;
+
+    if (token) {
+      // 新規ログイン(OAuth リダイレクト後)
+      localStorage.setItem('tukicale_access_token', token);
+      if (refreshToken) {
+        localStorage.setItem('tukicale_refresh_token', refreshToken);
+      }
+      setIsGoogleAuthed(true);
+      setShowLoginScreen(false);
+
+      // データがない場合かつ初期設定が未完了の場合のみ、初期設定モーダルを表示
+      if (!hasCompletedInitialSetup && !hasData) {
+        setShowInitialSyncModal(true);
+      } else if (hasData && !hasCompletedInitialSetup) {
+        // データがある場合は、自動的に初期設定完了フラグを立てる
+        localStorage.setItem('tukicale_initial_setup_completed', 'true');
+      }
+} else if (savedToken) {
+      // 既存ログイン(トークンが保存されている)
+      setIsGoogleAuthed(true);
+      setShowLoginScreen(false);
+           
+      // データがあるのに初期設定フラグがない場合、フラグを立てる
+      if (hasData && !hasCompletedInitialSetup) {
+        localStorage.setItem('tukicale_initial_setup_completed', 'true');
+      }
+    } else {
+      // トークンがない場合のみログイン画面を表示
+      setShowLoginScreen(true);
+    }
+    
+    // 同期設定を読み込み
+    if (savedSyncSettings) {
+      setSyncSettings(JSON.parse(savedSyncSettings));
+    }
+    
+    // データを読み込み
+    if (savedData) {
+      setRecords(JSON.parse(savedData));
+    }
+
+    setCurrentDate(new Date());
+    setIsInitializing(false);
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem('myflow_data', JSON.stringify(records));
+  }, [records]);
+
+  const getDaysInMonth = (date: Date) => {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const daysInMonth = lastDay.getDate();
+    const startingDayOfWeek = firstDay.getDay();
+    
+    return { daysInMonth, startingDayOfWeek };
+  };
+
+const formatDate = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const isToday = (day: number): boolean => {
+  const today = new Date();
+  return day === today.getDate() && 
+         currentDate.getMonth() === today.getMonth() && 
+         currentDate.getFullYear() === today.getFullYear();
+};
+
+  const getRecordForDate = (day: number) => {
+    const dateStr = formatDate(new Date(currentDate.getFullYear(), currentDate.getMonth(), day));
+    
+    const period = records.periods.find(p => 
+      dateStr >= p.startDate && dateStr <= p.endDate
+    );
+    
+    const intercourse = records.intercourse.find(i => i.date === dateStr);
+    
+    const fertile = getFertileDays().includes(dateStr);
+    const pms = getPMSDays().includes(dateStr);
+    const nextPeriod = getNextPeriodDays().includes(dateStr);
+    
+    return { period, intercourse, fertile, pms, nextPeriod };
+  };
+
+const getAverageCycle = (): number => {
+    if (records.periods.length < 2) return 28;
+    
+    const sortedPeriods = [...records.periods].sort((a, b) => 
+      new Date(a.startDate).getTime() - new Date(b.startDate).getTime()
+    );
+    
+    let totalDays = 0;
+    for (let i = 1; i < sortedPeriods.length; i++) {
+      const days = Math.floor(
+        (new Date(sortedPeriods[i].startDate).getTime() - new Date(sortedPeriods[i-1].startDate).getTime()) / (1000 * 60 * 60 * 24)
+      );
+      totalDays += days;
+    }
+    
+    return Math.round(totalDays / (sortedPeriods.length - 1)) || 28;
+  };
+
+  const getAveragePeriodLength = (): number => {
+    if (records.periods.length === 0) return 5;
+    
+    const avgLength = Math.round(
+      records.periods.reduce((sum, p) => sum + p.days, 0) / records.periods.length
+    );
+    
+    return avgLength || 5;
+  };
+
+const getFertileDays = () => {
+    if (records.periods.length === 0) return [];
+    
+    const lastPeriod = [...records.periods].sort((a, b) => 
+      new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
+    )[0];
+    
+    const avgCycle = getAverageCycle();
+    const ovulationDay = new Date(lastPeriod.startDate);
+    ovulationDay.setDate(ovulationDay.getDate() + avgCycle - 14);
+    
+    // 最新の生理終了日より後の日付のみ予測を表示
+    const lastPeriodEnd = new Date(lastPeriod.endDate);
+    
+    const fertileDays = [];
+    for (let i = -3; i <= 3; i++) {
+      const day = new Date(ovulationDay);
+      day.setDate(day.getDate() + i);
+      // 最新生理の終了日より後の日付のみ追加
+      if (day > lastPeriodEnd) {
+        fertileDays.push(formatDate(day));
+      }
+    }
+    
+    return fertileDays;
+  };
+
+const getPMSDays = () => {
+    if (records.periods.length === 0) return [];
+    
+    const lastPeriod = [...records.periods].sort((a, b) => 
+      new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
+    )[0];
+    
+    const avgCycle = getAverageCycle();
+    const nextPeriod = new Date(lastPeriod.startDate);
+    nextPeriod.setDate(nextPeriod.getDate() + avgCycle);
+    
+    // 最新の生理終了日より後の日付のみ予測を表示
+    const lastPeriodEnd = new Date(lastPeriod.endDate);
+    
+    const pmsDays = [];
+    for (let i = -10; i <= -3; i++) {
+      const day = new Date(nextPeriod);
+      day.setDate(day.getDate() + i);
+      // 最新生理の終了日より後の日付のみ追加
+      if (day > lastPeriodEnd) {
+        pmsDays.push(formatDate(day));
+      }
+    }
+    
+    return pmsDays;
+  };
+
+const getNextPeriodDays = () => { 
+  if (records.periods.length === 0) {
+    return [];
+  }
+  
+  const lastPeriod = [...records.periods].sort((a, b) => 
+    new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
+  )[0];
+
+  const avgCycle = getAverageCycle();
+ 
+  const avgPeriodLength = records.periods.length > 0 
+    ? Math.round(records.periods.reduce((sum, p) => sum + p.days, 0) / records.periods.length)
+    : 5;
+ 
+  const nextPeriodStart = new Date(lastPeriod.startDate);
+  nextPeriodStart.setDate(nextPeriodStart.getDate() + avgCycle);
+  
+  // 最新の生理終了日より後の日付のみ予測を表示
+  const lastPeriodEnd = new Date(lastPeriod.endDate);
+ 
+  const nextPeriodDays = [];
+  for (let i = 0; i < avgPeriodLength; i++) {
+    const day = new Date(nextPeriodStart);
+    day.setDate(day.getDate() + i);
+    // 最新生理の終了日より後の日付のみ追加
+    if (day > lastPeriodEnd) {
+      nextPeriodDays.push(formatDate(day));
+    }
+  }
+  
+  return nextPeriodDays;
+};
+
+  const handleDayClick = (day: number) => {
+    const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
+    const dateStr = formatDate(date);
+    
+    // その日の生理記録を取得
+    const dayPeriods = records.periods.filter(p => 
+      dateStr >= p.startDate && dateStr <= p.endDate
+    );
+    
+    // その日のSEX記録を取得
+    const dayIntercourse = records.intercourse.filter(i => i.date === dateStr);
+    
+    // 記録がある場合は詳細モーダル、ない場合は追加モーダル
+    if (dayPeriods.length > 0 || dayIntercourse.length > 0) {
+      setSelectedDayData({
+        date,
+        periods: dayPeriods,
+        intercourse: dayIntercourse
+      });
+      setShowDayDetailModal(true);
+    } else {
+      setSelectedDate(date);
+      setShowAddModal(true);
+    }
+  };
+
+const addPeriodRecord = (startDate: string, endDate: string) => {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const days = Math.floor((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+  
+    const newPeriod = {
+      id: Date.now(),
+      startDate,
+      endDate,
+      days
+    };
+  
+    const newRecords = {
+      ...records,
+      periods: [...records.periods, newPeriod]
+    };
+    
+    setRecords(newRecords);
+    saveToDrive(newRecords);
+    syncToCalendar(newRecords, syncSettings, getAverageCycle, getFertileDays, getPMSDays, getNextPeriodDays);
+  
+    setShowAddModal(false);
+  };
+
+const updatePeriod = (id: number, startDate: string, endDate: string) => {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const days = Math.floor((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+  
+    const newRecords = {
+      ...records,
+      periods: records.periods.map(p => p.id === id ? { ...p, startDate, endDate, days } : p)
+    };
+    
+    setRecords(newRecords);
+    saveToDrive(newRecords);
+    syncToCalendar(newRecords, syncSettings, getAverageCycle, getFertileDays, getPMSDays, getNextPeriodDays);
+    setEditingPeriod(null);
+    setNotification({
+      message: '生理記録を更新しました',
+      type: 'success'
+    });
+  };
+
+const deletePeriod = async (id: number) => {
+  const newRecords = {
+    ...records,
+    periods: records.periods.filter(p => p.id !== id)
+  };
+  
+  setRecords(newRecords);
+  await saveToDrive(newRecords);
+  await syncToCalendar(newRecords, syncSettings, getAverageCycle, getFertileDays, getPMSDays, getNextPeriodDays);
+  setDeletingPeriodId(null);
+  setNotification({
+    message: '生理記録を削除しました',
+    type: 'success'
+  });
+};
+
+const deleteIntercourse = async (id: number) => {
+  const newRecords = {
+    ...records,
+    intercourse: records.intercourse.filter(i => i.id !== id)
+  };
+  
+  setRecords(newRecords);
+  await saveToDrive(newRecords);
+  await syncToCalendar(newRecords, syncSettings, getAverageCycle, getFertileDays, getPMSDays, getNextPeriodDays);
+  setDeletingIntercourseId(null);
+  setNotification({
+    message: 'SEX記録を削除しました',
+    type: 'success'
+  });
+};
+
+const updateIntercourse = async (id: number, date: string, contraception: string, partner: string, memo: string) => {
+  const newRecords = {
+    ...records,
+    intercourse: records.intercourse.map(i => 
+      i.id === id ? { ...i, date, contraception, partner, memo } : i
+    )
+  };
+  
+  setRecords(newRecords);
+  await saveToDrive(newRecords);
+  await syncToCalendar(newRecords, syncSettings, getAverageCycle, getFertileDays, getPMSDays, getNextPeriodDays);
+  setEditingIntercourse(null);
+  setNotification({
+    message: 'SEX記録を更新しました',
+    type: 'success'
+  });
+};
+
+const addIntercourseRecord = (date: string, contraception: string, partner: string, memo: string) => {
+    const newRecord = {
+      id: Date.now(),
+      date,
+      contraception,
+      partner,
+      memo
+    };
+    
+    const newRecords = {
+      ...records,
+      intercourse: [...records.intercourse, newRecord]
+    };
+    
+    setRecords(newRecords);
+    saveToDrive(newRecords);
+    syncToCalendar(newRecords, syncSettings, getAverageCycle, getFertileDays, getPMSDays, getNextPeriodDays);
+    
+    setShowAddModal(false);
+  };
+
+  const renderCalendar = () => {
+    const { daysInMonth, startingDayOfWeek } = getDaysInMonth(currentDate);
+    const days = [];
+    
+for (let i = 0; i < startingDayOfWeek; i++) {
+days.push(<div key={`empty-${i}`} className="h-14 border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800"></div>);
+}    
+for (let day = 1; day <= daysInMonth; day++) {
+      const { period, intercourse, fertile, pms, nextPeriod } = getRecordForDate(day);
+      
+      days.push(
+<div
+          key={day}
+          onClick={() => handleDayClick(day)}
+          className={`h-14 border border-gray-200 dark:border-gray-700 p-1 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 dark:bg-gray-800 relative`}
+          style={isToday(day) ? {backgroundColor: '#C2D2DA'} : {}}
+        >
+          <div className={`text-sm font-medium ${isToday(day) ? 'text-gray-900' : ''}`}>{day}</div>
+          <div className="flex flex-wrap gap-0.5 mt-1">
+            {period && <div className="w-2 h-2 rounded-full bg-red-400" title="生理"></div>}
+            {nextPeriod && !period && <div className="w-2 h-2 rounded-full bg-red-200" title="次回生理予測"></div>}
+            {fertile && <div className="w-2 h-2 rounded-full bg-green-300" title="妊娠可能日"></div>}
+            {pms && <div className="w-2 h-2 rounded-full bg-yellow-300" title="PMS予測"></div>}
+            {intercourse && <div className="w-2 h-2 rounded-full bg-gray-300" title="SEX"></div>}
+          </div>
+        </div>
+      );
+    }
+        
+    return days;
+  };
+
+  const prevMonth = () => {
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1));
+  };
+
+  const nextMonth = () => {
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1));
+  };
+
+  const handleYearChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setCurrentDate(new Date(parseInt(e.target.value), currentDate.getMonth(), 1));
+  };
+
+  const handleMonthChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setCurrentDate(new Date(currentDate.getFullYear(), parseInt(e.target.value), 1));
+  };
+
+  const handleGoogleLogin = () => {
+    setIsLoading(true);
+    const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+    const redirectUri = `${window.location.origin}/api/auth`;
+    const scope = [
+      'https://www.googleapis.com/auth/drive.file',
+      'https://www.googleapis.com/auth/calendar',
+    ].join(' ');
+
+    const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?${new URLSearchParams({
+      client_id: clientId as string,
+      redirect_uri: redirectUri,
+      response_type: 'code',
+      scope: scope,
+      access_type: 'offline',
+      prompt: 'consent',
+    })}`;
+
+    window.location.href = authUrl;
+  };
+
+const handleLogout = () => {
+  localStorage.removeItem('tukicale_access_token');
+  localStorage.removeItem('tukicale_refresh_token');
+  localStorage.removeItem('tukicale_initial_setup_completed');
+  setIsGoogleAuthed(false);
+  setShowLoginScreen(true);
+};
+
+const handleDeleteData = async () => {
+  const newRecords = {
+    periods: [],
+    intercourse: []
+  };
+  
+  setRecords(newRecords);
+  localStorage.removeItem('myflow_data');
+  
+  // Google Driveのデータも削除
+  await saveToDrive(newRecords);
+  
+  if (deleteCalendar) {
+    // Googleカレンダーのイベントも削除
+    await syncToCalendar(newRecords, syncSettings, getAverageCycle, getFertileDays, getPMSDays, getNextPeriodDays);
+    setNotification({
+      message: 'アプリ内のデータとGoogleカレンダーのイベントを削除しました',
+      type: 'success'
+    });
+  } else {
+    setNotification({
+      message: 'アプリ内のデータを削除しました\nGoogleカレンダーのイベントは残っています',
+      type: 'success'
+    });
+  }
+  
+  setShowDeleteConfirm(false);
+  setDeleteCalendar(false);
+};
+
+  const addBulkRecord = () => {
+    if (bulkRecords.length < 20) {
+      setBulkRecords([...bulkRecords, { id: Date.now(), startDate: '', endDate: '' }]);
+    }
+  };
+
+  const removeBulkRecord = (id: number) => {
+    if (bulkRecords.length > 1) {
+      setBulkRecords(bulkRecords.filter(r => r.id !== id));
+    }
+  };
+
+  const updateBulkRecord = (id: number, field: 'startDate' | 'endDate', value: string) => {
+    setBulkRecords(bulkRecords.map(r => {
+      if (r.id === id) {
+        const updated = { ...r, [field]: value };
+if (field === 'startDate' && value && !r.endDate) {
+          const startDateObj = new Date(value);
+          const endDateObj = new Date(startDateObj);
+          const avgLength = getAveragePeriodLength();
+          endDateObj.setDate(startDateObj.getDate() + avgLength - 1);
+          updated.endDate = formatDate(endDateObj);
+        }
+        return updated;
+      }
+      return r;
+    }));
+  };
+
+const submitBulkRecords = () => {
+    const validRecords = bulkRecords.filter(r => r.startDate && r.endDate);
+    
+    if (validRecords.length === 0) {
+      setNotification({
+        message: '開始日と終了日を入力してください',
+        type: 'error'
+      });
+      return;
+    }
+
+    const newPeriods = validRecords.map(r => {
+      const days = Math.floor((new Date(r.endDate).getTime() - new Date(r.startDate).getTime()) / (1000 * 60 * 60 * 24)) + 1;
+      return {
+        id: Date.now() + Math.random(),
+        startDate: r.startDate,
+        endDate: r.endDate,
+        days
+      };
+    });
+
+    const newRecords = {
+      ...records,
+      periods: [...records.periods, ...newPeriods]
+    };
+
+    setRecords(newRecords);
+    saveToDrive(newRecords);
+    syncToCalendar(newRecords, syncSettings, getAverageCycle, getFertileDays, getPMSDays, getNextPeriodDays);
+
+    setNotification({
+      message: `${validRecords.length}件の生理期間を登録しました`,
+      type: 'success'
+    });
+    setShowBulkAddModal(false);
+    setBulkRecords([{ id: 1, startDate: '', endDate: '' }]);
+  };
+
+  const formatBulkDisplayDate = (dateStr: string): string => {
+    if (!dateStr) return '日付を選択';
+    const d = new Date(dateStr);
+    return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`;
+  };
+
+const handleSaveSyncSettings = (newSettings: SyncSettings) => {
+    setSyncSettings(newSettings);
+    localStorage.setItem('tukicale_sync_settings', JSON.stringify(newSettings));
+    localStorage.setItem('tukicale_initial_setup_completed', 'true');
+    
+    // 年齢層をRecordsに保存してGoogleドライブに同期
+    const ageGroup = localStorage.getItem('tukicale_age_group') || '';
+    const updatedRecords = {
+      ...records,
+      ageGroup
+    };
+    setRecords(updatedRecords);
+    saveToDrive(updatedRecords);
+    
+    syncToCalendar(updatedRecords, newSettings, getAverageCycle, getFertileDays, getPMSDays, getNextPeriodDays);
+    setShowInitialSyncModal(false);
+  };
+
+  if (isInitializing) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-900">
+        <div className="flex flex-col items-center gap-4">
+          <i className="fa-regular fa-moon text-5xl text-gray-400 animate-pulse"></i>
+          <p className="text-gray-600 dark:text-gray-300">読み込み中...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (showLoginScreen) {
+    return <LoginScreen onLogin={handleGoogleLogin} isLoading={isLoading} />;
+  }
+
+return (
+    <div className="max-w-4xl mx-auto p-4 bg-white dark:bg-gray-900 dark:bg-gray-900 min-h-screen">
+      <div className="flex items-center justify-between mb-6">
+        <h1 
+          className="text-lg font-semibold text-gray-600 dark:text-gray-300 dark:text-gray-300 flex items-center gap-2 cursor-pointer hover:opacity-70"
+          onClick={() => setCurrentView('calendar')}
+        >
+          <i className="fa-regular fa-moon"></i>
+          TukiCale
+        </h1>
+        <div className="flex gap-2">
+          <button
+            onClick={handleReload}
+            disabled={isReloading}
+            className="p-2 rounded hover:border hover:border-gray-300 dark:border-gray-600 disabled:opacity-50"
+            title="最新データに更新"
+          >
+            {isReloading ? (
+              <div className="w-4 h-4 border-2 border-gray-600 dark:border-gray-300 border-t-transparent rounded-full animate-spin"></div>
+            ) : (
+              <i className="fa-solid fa-rotate-right text-gray-600 dark:text-gray-300"></i>
+            )}
+          </button>
+          <button
+            onClick={() => setCurrentView('calendar')}
+            className={`p-2 rounded ${currentView === 'calendar' ? 'border-2 border-gray-600' : 'hover:border hover:border-gray-300 dark:border-gray-600'}`}
+            title="カレンダー"
+          >
+            <i className="fa-regular fa-calendar-days text-gray-600 dark:text-gray-300"></i>
+          </button>
+          <button
+            onClick={() => setCurrentView('stats')}
+            className={`p-2 rounded ${currentView === 'stats' ? 'border-2 border-gray-600' : 'hover:border hover:border-gray-300 dark:border-gray-600'}`}
+            title="マイデータ"
+          >
+            <i className="fa-solid fa-user-circle text-gray-600 dark:text-gray-300"></i>
+          </button>
+          <button
+            onClick={() => setCurrentView('settings')}
+            className={`p-2 rounded ${currentView === 'settings' ? 'border-2 border-gray-600' : 'hover:border hover:border-gray-300 dark:border-gray-600'}`}
+            title="設定"
+          >
+            <i className="fa-solid fa-gear text-gray-600 dark:text-gray-300"></i>
+          </button>
+        </div>
+      </div>
+
+{currentView === 'calendar' && (
+        <>
+          <div className="flex items-center justify-between mb-4 gap-2">
+            <button onClick={prevMonth} className="px-4 py-2 border border-gray-300 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-600 rounded text-gray-900 dark:text-gray-100">
+              ←
+            </button>
+            <div className="flex gap-2 items-center">
+              <select 
+                value={currentDate.getFullYear()} 
+                onChange={handleYearChange}
+                className="border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-lg font-semibold bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+              >
+                {Array.from({length: 11}, (_, i) => new Date().getFullYear() - 10 + i).map(year => (
+                  <option key={year} value={year}>{year}年</option>
+                ))}
+              </select>
+              <select 
+                value={currentDate.getMonth()} 
+                onChange={handleMonthChange}
+                className="border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-lg font-semibold bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+              >
+                {Array.from({length: 12}, (_, i) => i).map(month => (
+                  <option key={month} value={month}>{month + 1}月</option>
+                ))}
+              </select>
+            </div>
+            <button onClick={nextMonth} className="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-gray-900 dark:text-gray-100">
+              →
+            </button>
+          </div>
+
+          <div className="grid grid-cols-7 gap-0 mb-4">
+            {['日', '月', '火', '水', '木', '金', '土'].map(day => (
+              <div key={day} className="text-center font-semibold p-2 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+                {day}
+              </div>
+            ))}
+            {renderCalendar()}
+          </div>
+
+          <div className="flex flex-wrap gap-4 gap-y-1 mb-4 text-sm text-gray-500 dark:text-gray-400">            <div className="flex items-center gap-1">
+              <div className="w-3 h-3 rounded-full bg-red-400"></div>
+              <span>生理</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-3 rounded-full bg-red-200"></div>
+              <span>次回生理予測</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-3 rounded-full bg-green-300"></div>
+              <span>妊娠可能日</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-3 rounded-full bg-yellow-300"></div>
+              <span>PMS予測</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-3 rounded-full bg-gray-300"></div>
+              <span>SEX</span>
+            </div>
+          </div>
+
+          <div className="flex gap-2 mb-4">
+            <button 
+              onClick={() => setShowBulkAddModal(true)}
+              className="flex-1 px-3 py-2 rounded text-sm flex items-center justify-center gap-2 text-gray-700 dark:text-gray-900"
+              style={{backgroundColor: '#C2D2DA'}}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#91AEBD'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#C2D2DA'}
+            >
+              <i className="fa-solid fa-calendar-plus"></i>
+              <span>データ一括登録</span>
+            </button>
+            <button 
+              onClick={() => setCurrentView('settings')}
+              className="flex-1 px-3 py-2 rounded text-sm flex items-center justify-center gap-2 text-gray-700 dark:text-gray-900"
+              style={{backgroundColor: '#C2D2DA'}}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#91AEBD'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#C2D2DA'}
+            >
+              <i className="fa-solid fa-arrows-rotate"></i>
+              <span>同期設定</span>
+            </button>
+          </div>
+          </>
+      )}
+
+{currentView === 'stats' && (
+        <StatsView 
+          records={records} 
+          getAverageCycle={getAverageCycle} 
+          getAveragePeriodLength={getAveragePeriodLength} 
+          setShowIntercourseList={setShowIntercourseList} 
+        />
+      )}
+
+{currentView === 'settings' && (
+  <SettingsView 
+    isGoogleAuthed={isGoogleAuthed}
+    handleLogout={handleLogout}
+    setShowBulkAddModal={setShowBulkAddModal}
+    setShowRecordsList={setShowRecordsList}
+    setShowDeleteConfirm={setShowDeleteConfirm}
+    setCurrentView={setCurrentView}
+    records={records}
+    syncSettings={syncSettings}
+    setSyncSettings={setSyncSettings}
+    getAverageCycle={getAverageCycle}
+    getFertileDays={getFertileDays}
+    getPMSDays={getPMSDays}
+    getNextPeriodDays={getNextPeriodDays}
+  />
+)}
+
+      {showAddModal && (
+        <AddModal
+          selectedDate={selectedDate}
+          modalType={modalType}
+          setModalType={setModalType}
+          addPeriodRecord={addPeriodRecord}
+          addIntercourseRecord={addIntercourseRecord}
+          setShowAddModal={setShowAddModal}
+          currentDate={currentDate}
+          getAveragePeriodLength={getAveragePeriodLength}
+        />
+      )}
+
+      {showDeleteConfirm && (
+        <DeleteConfirmModal
+          deleteCalendar={deleteCalendar}
+          setDeleteCalendar={setDeleteCalendar}
+          handleDeleteData={handleDeleteData}
+          setShowDeleteConfirm={setShowDeleteConfirm}
+        />
+      )}
+
+      {showBulkAddModal && (
+        <BulkAddModal
+          bulkRecords={bulkRecords}
+          setBulkRecords={setBulkRecords}
+          bulkPickerState={bulkPickerState}
+          setBulkPickerState={setBulkPickerState}
+          formatBulkDisplayDate={formatBulkDisplayDate}
+          addBulkRecord={addBulkRecord}
+          removeBulkRecord={removeBulkRecord}
+          updateBulkRecord={updateBulkRecord}
+          submitBulkRecords={submitBulkRecords}
+          setShowBulkAddModal={setShowBulkAddModal}
+          currentDate={currentDate}
+        />
+      )}
+
+      {showRecordsList && (
+        <RecordsList
+          records={records}
+          onClose={() => setShowRecordsList(false)}
+          onEdit={(period) => setEditingPeriod(period)}
+          onDelete={(id) => setDeletingPeriodId(id)}
+        />
+      )}
+
+      {editingPeriod && (
+        <EditPeriodModal
+          period={editingPeriod}
+          updatePeriod={updatePeriod}
+          setEditingPeriod={setEditingPeriod}
+        />
+      )}
+
+      {deletingPeriodId && (
+        <DeletePeriodModal
+          deletePeriod={deletePeriod}
+          deletingPeriodId={deletingPeriodId}
+          setDeletingPeriodId={setDeletingPeriodId}
+        />
+      )}
+
+      {showIntercourseList && (
+        <IntercourseList
+          records={records.intercourse}
+          onClose={() => setShowIntercourseList(false)}
+          onEdit={(record) => setEditingIntercourse(record)}
+          onDelete={(id) => setDeletingIntercourseId(id)}
+        />
+      )}
+
+      {showDayDetailModal && selectedDayData && (
+        <DayDetailModal
+          date={selectedDayData.date}
+          periods={selectedDayData.periods}
+          intercourse={selectedDayData.intercourse}
+          onClose={() => setShowDayDetailModal(false)}
+          onEditPeriod={(period: Period) => {
+            setEditingPeriod(period);
+            setShowDayDetailModal(false);
+          }}
+          onDeletePeriod={(id: number) => {
+            setDeletingPeriodId(id);
+            setShowDayDetailModal(false);
+          }}
+          onEditIntercourse={(record: IntercourseRecord) => {
+            setEditingIntercourse(record);
+            setShowDayDetailModal(false);
+          }}
+          onDeleteIntercourse={(id: number) => {
+            setDeletingIntercourseId(id);
+            setShowDayDetailModal(false);
+          }}
+          onAddNew={() => {
+            setSelectedDate(selectedDayData.date);
+            setShowDayDetailModal(false);
+            setShowAddModal(true);
+          }}
+        />
+      )}
+
+      {editingIntercourse && (
+        <EditIntercourseModal
+          record={editingIntercourse}
+          updateIntercourse={updateIntercourse}
+          setEditingIntercourse={setEditingIntercourse}
+        />
+      )}
+
+      {deletingIntercourseId && (
+        <DeleteIntercourseModal
+          deleteIntercourse={deleteIntercourse}
+          deletingIntercourseId={deletingIntercourseId}
+          setDeletingIntercourseId={setDeletingIntercourseId}
+        />
+      )}
+
+      {showInitialSyncModal && (
+        <InitialSyncModal
+          onSave={handleSaveSyncSettings}
+        />
+      )}
+
+      {notification && (
+        <NotificationModal
+          message={notification.message}
+          type={notification.type}
+          onClose={() => setNotification(null)}
+        />
+      )}
+
+      {/* テキスト広告 */}
+      <CalendarTextAd />
+
+      {/* フッター：コピーライト */}
+      <footer className="mt-4 pt-4 pb-4">
+        <div className="text-center">
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            ©TukiCale 2025
+          </p>
+        </div>
+      </footer>
     </div>
   );
 };
