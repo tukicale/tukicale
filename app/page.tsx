@@ -1227,6 +1227,8 @@ const DatePicker = ({ selectedDate, onSelect, onClose }: {
     }
     return today;
   });
+  const [showYearPicker, setShowYearPicker] = useState(false);
+  const [showMonthPicker, setShowMonthPicker] = useState(false);
   
   const getDaysInMonth = (date: Date) => {
     const year = date.getFullYear();
@@ -1281,25 +1283,68 @@ return (
       <div className="bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg p-4 w-80 max-w-full">      
 <div className="flex items-center justify-between mb-3">
         <button type="button" onClick={() => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() - 1))} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-gray-900 dark:text-gray-100">←</button>
-        <div className="flex items-center gap-2">
-          <select 
-            value={viewDate.getFullYear()} 
-            onChange={(e) => setViewDate(new Date(parseInt(e.target.value), viewDate.getMonth(), 1))}
-            className="border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-base font-semibold bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-          >
-            {Array.from({length: 11}, (_, i) => currentYear - 10 + i).map(year => (
-              <option key={year} value={year}>{year}年</option>
-            ))}
-          </select>
-          <select 
-            value={viewDate.getMonth()} 
-            onChange={(e) => setViewDate(new Date(viewDate.getFullYear(), parseInt(e.target.value), 1))}
-            className="border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-base font-semibold bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-          >
-            {Array.from({length: 12}, (_, i) => i).map(month => (
-              <option key={month} value={month}>{month + 1}月</option>
-            ))}
-          </select>
+        <div className="flex items-center gap-2 relative">
+          {/* 年選択 */}
+          <div className="relative">
+            <button 
+              type="button"
+              onClick={() => {
+                setShowYearPicker(!showYearPicker);
+                setShowMonthPicker(false);
+              }}
+              className="border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-base font-semibold bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 min-w-[80px]"
+            >
+              {viewDate.getFullYear()}年
+            </button>
+            {showYearPicker && (
+              <div className="absolute top-full mt-1 left-0 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded shadow-lg z-50 max-h-60 overflow-y-auto">
+                {Array.from({length: 21}, (_, i) => currentYear - 10 + i).map(year => (
+                  <button
+                    key={year}
+                    type="button"
+                    onClick={() => {
+                      setViewDate(new Date(year, viewDate.getMonth(), 1));
+                      setShowYearPicker(false);
+                    }}
+                    className={`block w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 ${viewDate.getFullYear() === year ? 'bg-gray-200 dark:bg-gray-600 font-bold' : ''}`}
+                  >
+                    {year}年
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          
+          {/* 月選択 */}
+          <div className="relative">
+            <button 
+              type="button"
+              onClick={() => {
+                setShowMonthPicker(!showMonthPicker);
+                setShowYearPicker(false);
+              }}
+              className="border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-base font-semibold bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 min-w-[60px]"
+            >
+              {viewDate.getMonth() + 1}月
+            </button>
+            {showMonthPicker && (
+              <div className="absolute top-full mt-1 left-0 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded shadow-lg z-50 max-h-60 overflow-y-auto">
+                {Array.from({length: 12}, (_, i) => i).map(month => (
+                  <button
+                    key={month}
+                    type="button"
+                    onClick={() => {
+                      setViewDate(new Date(viewDate.getFullYear(), month, 1));
+                      setShowMonthPicker(false);
+                    }}
+                    className={`block w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 ${viewDate.getMonth() === month ? 'bg-gray-200 dark:bg-gray-600 font-bold' : ''}`}
+                  >
+                    {month + 1}月
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
         <button type="button" onClick={() => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() + 1))} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-gray-900 dark:text-gray-100">→</button>
       </div>
@@ -2388,6 +2433,8 @@ const DeleteIntercourseModal = ({ deleteIntercourse, deletingIntercourseId, setD
 const PeriodTrackerApp = () => {
   const [currentView, setCurrentView] = useState('calendar');
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [showYearPicker, setShowYearPicker] = useState(false);
+  const [showMonthPicker, setShowMonthPicker] = useState(false);
   const [records, setRecords] = useState<Records>({
     periods: [],
     intercourse: []
@@ -3131,25 +3178,68 @@ return (
             <button onClick={prevMonth} className="px-4 py-2 border border-gray-300 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-600 rounded text-gray-900 dark:text-gray-100">
               ←
             </button>
-            <div className="flex gap-2 items-center">
-              <select 
-                value={currentDate.getFullYear()} 
-                onChange={handleYearChange}
-                className="border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-lg font-semibold bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-              >
-                {Array.from({length: 11}, (_, i) => new Date().getFullYear() - 10 + i).map(year => (
-                  <option key={year} value={year}>{year}年</option>
-                ))}
-              </select>
-              <select 
-                value={currentDate.getMonth()} 
-                onChange={handleMonthChange}
-                className="border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-lg font-semibold bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-              >
-                {Array.from({length: 12}, (_, i) => i).map(month => (
-                  <option key={month} value={month}>{month + 1}月</option>
-                ))}
-              </select>
+            <div className="flex gap-2 items-center relative">
+              {/* 年選択 */}
+              <div className="relative">
+                <button 
+                  type="button"
+                  onClick={() => {
+                    setShowYearPicker(!showYearPicker);
+                    setShowMonthPicker(false);
+                  }}
+                  className="border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-lg font-semibold bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 min-w-[100px]"
+                >
+                  {currentDate.getFullYear()}年
+                </button>
+                {showYearPicker && (
+                  <div className="absolute top-full mt-1 left-0 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded shadow-lg z-50 max-h-60 overflow-y-auto">
+                    {Array.from({length: 21}, (_, i) => new Date().getFullYear() - 10 + i).map(year => (
+                      <button
+                        key={year}
+                        type="button"
+                        onClick={() => {
+                          setCurrentDate(new Date(year, currentDate.getMonth(), 1));
+                          setShowYearPicker(false);
+                        }}
+                        className={`block w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 ${currentDate.getFullYear() === year ? 'bg-gray-200 dark:bg-gray-600 font-bold' : ''}`}
+                      >
+                        {year}年
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+              
+              {/* 月選択 */}
+              <div className="relative">
+                <button 
+                  type="button"
+                  onClick={() => {
+                    setShowMonthPicker(!showMonthPicker);
+                    setShowYearPicker(false);
+                  }}
+                  className="border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-lg font-semibold bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 min-w-[70px]"
+                >
+                  {currentDate.getMonth() + 1}月
+                </button>
+                {showMonthPicker && (
+                  <div className="absolute top-full mt-1 left-0 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded shadow-lg z-50 max-h-60 overflow-y-auto">
+                    {Array.from({length: 12}, (_, i) => i).map(month => (
+                      <button
+                        key={month}
+                        type="button"
+                        onClick={() => {
+                          setCurrentDate(new Date(currentDate.getFullYear(), month, 1));
+                          setShowMonthPicker(false);
+                        }}
+                        className={`block w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 ${currentDate.getMonth() === month ? 'bg-gray-200 dark:bg-gray-600 font-bold' : ''}`}
+                      >
+                        {month + 1}月
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
             <button onClick={nextMonth} className="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-gray-900 dark:text-gray-100">
               →
