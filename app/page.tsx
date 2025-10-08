@@ -3289,9 +3289,6 @@ return (
         />
       )}
 
-      {/* テキスト広告 */}
-      <CalendarTextAd />
-
       {/* フッター：コピーライト */}
       <footer className="mt-4 pt-4 pb-4">
         <div className="text-center">
