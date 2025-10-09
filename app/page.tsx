@@ -2005,7 +2005,8 @@ const BulkAddModal = ({ bulkRecords, setBulkRecords, bulkPickerState, setBulkPic
       </div>
     </div>
   </div>
-);
+  );
+};
 
 const EditPeriodModal = ({ period, updatePeriod, setEditingPeriod }: {
   period: Period;
@@ -3737,10 +3738,10 @@ return (
               <span>同期設定</span>
             </button>
           </div>
-          </>
+        </>
       )}
 
-{currentView === 'stats' && (
+      {currentView === 'stats' && (
         <StatsView 
           records={records} 
           getAverageCycle={getAverageCycle} 
@@ -3749,24 +3750,24 @@ return (
         />
       )}
 
-{currentView === 'settings' && (
-  <SettingsView 
-    isGoogleAuthed={isGoogleAuthed}
-    handleLogout={handleLogout}
-    setShowBulkAddModal={setShowBulkAddModal}
-    setShowRecordsList={setShowRecordsList}
-    setShowDeleteConfirm={setShowDeleteConfirm}
-    setCurrentView={setCurrentView}
-    records={records}
-    setRecords={setRecords}
-    syncSettings={syncSettings}
-    setSyncSettings={setSyncSettings}
-    getAverageCycle={getAverageCycle}
-    getFertileDays={getFertileDays}
-    getPMSDays={getPMSDays}
-    getNextPeriodDays={getNextPeriodDays}
-  />
-)}
+      {currentView === 'settings' && (
+        <SettingsView 
+          isGoogleAuthed={isGoogleAuthed}
+          handleLogout={handleLogout}
+          setShowBulkAddModal={setShowBulkAddModal}
+          setShowRecordsList={setShowRecordsList}
+          setShowDeleteConfirm={setShowDeleteConfirm}
+          setCurrentView={setCurrentView}
+          records={records}
+          setRecords={setRecords}
+          syncSettings={syncSettings}
+          setSyncSettings={setSyncSettings}
+          getAverageCycle={getAverageCycle}
+          getFertileDays={getFertileDays}
+          getPMSDays={getPMSDays}
+          getNextPeriodDays={getNextPeriodDays}
+        />
+      )}
 
       {showAddModal && (
         <AddModal
@@ -3925,13 +3926,13 @@ return (
           onClose={() => setNotification(null)}
         />
       )}
-     {currentView === 'calendar' && (
+
+      {currentView === 'calendar' && (
         <>
           {/* テキスト広告 */}
           <CalendarTextAd />
         </>
       )}
-
 
       {/* フッター：コピーライト */}
       <footer className="mt-4 pt-4 pb-4">
