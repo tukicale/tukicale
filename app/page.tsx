@@ -1605,7 +1605,7 @@ const IntercourseForm = ({ selectedDate, onSubmit, onCancel }: {
       <div className="flex gap-2">
         <button type="button" onClick={onCancel} className="flex-1 border px-4 py-2 rounded">キャンセル</button>
         <button   type="button" onClick={(e) => { e.preventDefault(); onSubmit(date, contraception, partner, memo); }} 
-  className="flex-1 bg-gray-400 dark:bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-500 dark:hover:bg-gray-600"
+  className="flex-1 bg-gray-400 dark:bg-gray-500 text-gray-700 dark:text-gray-900 px-4 py-2 rounded hover:bg-gray-500 dark:hover:bg-gray-600"
 >
   保存
 </button>
@@ -1674,7 +1674,7 @@ const HealthForm = ({ selectedDate, onSubmit, onCancel }: {
       </div>
       <div className="flex gap-2">
         <button type="button" onClick={onCancel} className="flex-1 border px-4 py-2 rounded">キャンセル</button>
-        <button type="button" onClick={(e) => { e.preventDefault(); onSubmit(date, healthType, memo); }} className="flex-1 bg-orange-300 text-white px-4 py-2 rounded hover:bg-orange-500">
+        <button type="button" onClick={(e) => { e.preventDefault(); onSubmit(date, healthType, memo); }} className="flex-1 bg-orange-300 text-gray-700 dark:text-gray-900 px-4 py-2 rounded hover:bg-orange-400">
           保存
         </button>
       </div>
@@ -1709,17 +1709,16 @@ const AddModal = ({ selectedDate, modalType, setModalType, addPeriodRecord, addI
         </button>
         <button
           onClick={() => setModalType('health')}
-          className={`flex-1 py-2 rounded text-sm ${modalType === 'health' ? 'bg-orange-300 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100'}`}
+          className={`flex-1 py-2 rounded text-sm ${modalType === 'health' ? 'bg-orange-300 text-gray-700 dark:text-gray-900' : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100'}`}
         >
           体調
         </button>
         <button
           onClick={() => setModalType('intercourse')}
-          className={`flex-1 py-2 rounded text-sm ${modalType === 'intercourse' ? 'bg-gray-400 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100'}`}
+          className={`flex-1 py-2 rounded text-sm ${modalType === 'intercourse' ? 'bg-gray-400 text-gray-700 dark:text-gray-900' : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100'}`}
         >
           SEX
         </button>
-      </div>
 
 {modalType === 'period' ? (
         <PeriodForm 
@@ -2602,7 +2601,7 @@ const EditHealthModal = ({ record, updateHealth, setEditingHealth }: {
             <button 
               type="button" 
               onClick={() => updateHealth(record.id, date, healthType, memo)} 
-              className="flex-1 bg-orange-300 text-white px-4 py-2 rounded hover:bg-orange-500"
+              className="flex-1 bg-orange-300 text-gray-700 dark:text-gray-900 px-4 py-2 rounded hover:bg-orange-400"
             >
               更新
             </button>
