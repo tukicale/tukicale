@@ -1530,7 +1530,6 @@ const EditPeriodForm = ({ period, onSubmit, onCancel }: {
           ) : '更新'}
         </button>
       </div>
-      </div>
     </div>
   );
 };
@@ -1743,9 +1742,9 @@ const AddModal = ({ selectedDate, modalType, setModalType, addPeriodRecord, addI
   selectedDate: Date | null;
   modalType: string;
   setModalType: (type: string) => void;
-  addPeriodRecord: (startDate: string, endDate: string) => void;
-  addIntercourseRecord: (date: string, contraception: string, partner: string, memo: string) => void;
-  addHealthRecord: (date: string, type: string, memo: string) => void;
+  addPeriodRecord: (startDate: string, endDate: string) => Promise<void>;
+  addIntercourseRecord: (date: string, contraception: string, partner: string, memo: string) => Promise<void>;
+  addHealthRecord: (date: string, type: string, memo: string) => Promise<void>;
   setShowAddModal: (show: boolean) => void;
   currentDate: Date;
   getAveragePeriodLength: () => number;
@@ -1889,7 +1888,7 @@ const BulkAddModal = ({ bulkRecords, setBulkRecords, bulkPickerState, setBulkPic
   const [isSaving, setIsSaving] = useState(false);
 
   return (
-  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center p-4 overflow-y-auto" style={{zIndex: 9999}}>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center p-4 overflow-y-auto" style={{zIndex: 9999}}>
     <div className="bg-white dark:bg-gray-900 rounded-lg p-6 w-full max-w-2xl my-4">
       <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">
         過去の生理記録を一括登録
@@ -1977,7 +1976,7 @@ const BulkAddModal = ({ bulkRecords, setBulkRecords, bulkPickerState, setBulkPic
         >
           キャンセル
         </button>
-        <button 
+<button 
           type="button"
           onClick={async () => {
             setIsSaving(true);
@@ -2006,12 +2005,11 @@ const BulkAddModal = ({ bulkRecords, setBulkRecords, bulkPickerState, setBulkPic
       </div>
     </div>
   </div>
-  );
-};
+);
 
 const EditPeriodModal = ({ period, updatePeriod, setEditingPeriod }: {
   period: Period;
-  updatePeriod: (id: number, startDate: string, endDate: string) => void;
+  updatePeriod: (id: number, startDate: string, endDate: string) => Promise<void>;
   setEditingPeriod: (period: Period | null) => void;
 }) => (
   <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4" style={{zIndex: 10001}}>
@@ -2019,7 +2017,7 @@ const EditPeriodModal = ({ period, updatePeriod, setEditingPeriod }: {
       <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">生理記録を修正</h3>
       <EditPeriodForm
         period={period}
-        onSubmit={(startDate, endDate) => updatePeriod(period.id, startDate, endDate)}
+        onSubmit={async (startDate, endDate) => await updatePeriod(period.id, startDate, endDate)}
         onCancel={() => setEditingPeriod(null)}
       />
     </div>
@@ -2431,7 +2429,7 @@ const DayDetailModal = ({ date, periods, intercourse, health, onClose, onEditPer
   onDeleteIntercourse: (id: number) => void;
   onEditHealth: (record: HealthRecord) => void;
   onDeleteHealth: (id: number) => void;
-  onAddNew: () => void;
+  onAddNew: () => Promise<void>;
 }) => {
 
   return (
@@ -2536,7 +2534,7 @@ const DayDetailModal = ({ date, periods, intercourse, health, onClose, onEditPer
 
         <div className="p-6 border-t space-y-2">
           <button 
-            onClick={onAddNew} 
+            onClick={async () => await onAddNew()} 
             className="w-full px-4 py-2 rounded text-gray-700 dark:text-gray-900"
             style={{backgroundColor: '#C2D2DA'}}
             onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#91AEBD'}
@@ -3874,7 +3872,7 @@ return (
             setDeletingHealthId(id);
             setShowDayDetailModal(false);
           }}
-          onAddNew={() => {
+          onAddNew={async () => {
             setSelectedDate(selectedDayData.date);
             setShowDayDetailModal(false);
             setShowAddModal(true);
