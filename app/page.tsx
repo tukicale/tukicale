@@ -213,13 +213,18 @@ const syncToCalendar = async (
   if (!calendarId) return false;
   
   try {
+    // 既存イベントを全て削除
+    console.log('既存イベントを削除開始');
     const eventsResponse = await fetch(
-      `https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events?timeMin=${new Date(new Date().getFullYear() - 1, 0, 1).toISOString()}`,
+      `https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events?timeMin=${new Date(new Date().getFullYear() - 1, 0, 1).toISOString()}&maxResults=2500`,
       { headers: { Authorization: `Bearer ${token}` } }
     );
     
     if (eventsResponse.ok) {
       const eventsData = await eventsResponse.json() as { items?: Array<{ id: string }> };
+      console.log('削除するイベント数:', eventsData.items?.length || 0);
+      
+      // 全イベントを削除
       for (const event of eventsData.items || []) {
         await fetch(
           `https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events/${event.id}`,
@@ -229,9 +234,11 @@ const syncToCalendar = async (
           }
         );
       }
+      
+      // 削除完了を待つ
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      console.log('既存イベント削除完了');
     }
-    
-    // ... 既存のイベント削除処理 ...
     
     const events: Array<{
       summary: string;
@@ -322,8 +329,10 @@ if (settings.period) {
       });
     }
     
+    // 新しいイベントを作成
+    console.log('新しいイベントを作成開始、件数:', events.length);
     for (const event of events) {
-      await fetch(
+      const response = await fetch(
         `https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events`,
         {
           method: 'POST',
@@ -334,8 +343,13 @@ if (settings.period) {
           body: JSON.stringify(event)
         }
       );
+      
+      if (!response.ok) {
+        console.error('イベント作成エラー:', await response.text());
+      }
     }
     
+    console.log('=== syncToCalendar 完了 ===');
     return true;
   } catch (error) {
     console.error('Sync to calendar error:', error);
