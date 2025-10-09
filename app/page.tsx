@@ -1412,10 +1412,11 @@ return (
 
 const PeriodForm = ({ selectedDate, onSubmit, onCancel, getAveragePeriodLength }: {
   selectedDate: Date | null;
-  onSubmit: (startDate: string, endDate: string) => void;
+  onSubmit: (startDate: string, endDate: string) => Promise<void>;
   onCancel: () => void;
   getAveragePeriodLength: () => number;
 }) => {
+  const [isSaving, setIsSaving] = useState(false);
     const formatLocalDate = (date: Date | null): string => {
     if (!date) return '';
     const year = date.getFullYear();
@@ -1462,8 +1463,28 @@ const [startDate, setStartDate] = useState(formatLocalDate(selectedDate));
         )}
       </div>
       <div className="flex gap-2">
-        <button type="button" onClick={onCancel} className="flex-1 border px-4 py-2 rounded">キャンセル</button>
-        <button type="button" onClick={(e) => { e.preventDefault(); onSubmit(startDate, endDate); }} className="flex-1 text-gray-700 dark:text-gray-900 px-4 py-2 rounded" style={{backgroundColor: '#E3D0DA'}} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#CBA9BA'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#E3D0DA'}>保存</button>
+        <button type="button" onClick={onCancel} disabled={isSaving} className="flex-1 border px-4 py-2 rounded disabled:opacity-50">キャンセル</button>
+        <button 
+          type="button" 
+          onClick={async (e) => { 
+            e.preventDefault(); 
+            setIsSaving(true);
+            await onSubmit(startDate, endDate);
+            setIsSaving(false);
+          }} 
+          disabled={isSaving}
+          className="flex-1 text-gray-700 dark:text-gray-900 px-4 py-2 rounded disabled:opacity-50 flex items-center justify-center gap-2" 
+          style={{backgroundColor: '#E3D0DA'}} 
+          onMouseEnter={(e) => !isSaving && (e.currentTarget.style.backgroundColor = '#CBA9BA')} 
+          onMouseLeave={(e) => !isSaving && (e.currentTarget.style.backgroundColor = '#E3D0DA')}
+        >
+          {isSaving ? (
+            <>
+              <div className="w-4 h-4 border-2 border-gray-700 dark:border-gray-900 border-t-transparent rounded-full animate-spin"></div>
+              保存中...
+            </>
+          ) : '保存'}
+        </button>
       </div>
     </div>
   );
@@ -1524,9 +1545,10 @@ const EditPeriodForm = ({ period, onSubmit, onCancel }: {
 
 const IntercourseForm = ({ selectedDate, onSubmit, onCancel }: {
   selectedDate: Date | null;
-  onSubmit: (date: string, contraception: string, partner: string, memo: string) => void;
+  onSubmit: (date: string, contraception: string, partner: string, memo: string) => Promise<void>;
   onCancel: () => void;
 }) => {
+  const [isSaving, setIsSaving] = useState(false);
   const formatLocalDate = (date: Date | null): string => {
     if (!date) return '';
     const year = date.getFullYear();
@@ -1617,12 +1639,25 @@ const IntercourseForm = ({ selectedDate, onSubmit, onCancel }: {
         <textarea value={memo} onChange={(e) => setMemo(e.target.value)} placeholder="体調, その他" className="w-full border border-gray-300 dark:border-gray-600 rounded px-3 py-2 bg-gray-50 dark:bg-gray-800" rows={2} />
       </div>
       <div className="flex gap-2">
-        <button type="button" onClick={onCancel} className="flex-1 border px-4 py-2 rounded">キャンセル</button>
-        <button   type="button" onClick={(e) => { e.preventDefault(); onSubmit(date, contraception, partner, memo); }} 
-  className="flex-1 bg-gray-400 dark:bg-gray-500 text-gray-700 dark:text-gray-900 px-4 py-2 rounded hover:bg-gray-500 dark:hover:bg-gray-600"
->
-  保存
-</button>
+        <button type="button" onClick={onCancel} disabled={isSaving} className="flex-1 border px-4 py-2 rounded disabled:opacity-50">キャンセル</button>
+        <button 
+          type="button" 
+          onClick={async (e) => { 
+            e.preventDefault(); 
+            setIsSaving(true);
+            await onSubmit(date, contraception, partner, memo);
+            setIsSaving(false);
+          }} 
+          disabled={isSaving}
+          className="flex-1 bg-gray-400 dark:bg-gray-500 text-gray-700 dark:text-gray-900 px-4 py-2 rounded hover:bg-gray-500 dark:hover:bg-gray-600 disabled:opacity-50 flex items-center justify-center gap-2"
+        >
+          {isSaving ? (
+            <>
+              <div className="w-4 h-4 border-2 border-gray-700 dark:border-gray-900 border-t-transparent rounded-full animate-spin"></div>
+              保存中...
+            </>
+          ) : '保存'}
+        </button>
       </div>
     </div>
   );
@@ -1630,9 +1665,10 @@ const IntercourseForm = ({ selectedDate, onSubmit, onCancel }: {
 
 const HealthForm = ({ selectedDate, onSubmit, onCancel }: {
   selectedDate: Date | null;
-  onSubmit: (date: string, type: string, memo: string) => void;
+  onSubmit: (date: string, type: string, memo: string) => Promise<void>;
   onCancel: () => void;
 }) => {
+  const [isSaving, setIsSaving] = useState(false);
   const formatLocalDate = (date: Date | null): string => {
     if (!date) return '';
     const year = date.getFullYear();
@@ -1687,9 +1723,24 @@ const HealthForm = ({ selectedDate, onSubmit, onCancel }: {
         <textarea value={memo} onChange={(e) => setMemo(e.target.value)} placeholder="症状の詳細など" className="w-full border border-gray-300 dark:border-gray-600 rounded px-3 py-2 bg-gray-50 dark:bg-gray-800" rows={3} />
       </div>
       <div className="flex gap-2">
-        <button type="button" onClick={onCancel} className="flex-1 border px-4 py-2 rounded">キャンセル</button>
-        <button type="button" onClick={(e) => { e.preventDefault(); onSubmit(date, healthType, memo); }} className="flex-1 bg-orange-300 text-gray-700 dark:text-gray-900 px-4 py-2 rounded hover:bg-orange-400">
-          保存
+        <button type="button" onClick={onCancel} disabled={isSaving} className="flex-1 border px-4 py-2 rounded disabled:opacity-50">キャンセル</button>
+        <button 
+          type="button" 
+          onClick={async (e) => { 
+            e.preventDefault(); 
+            setIsSaving(true);
+            await onSubmit(date, healthType, memo);
+            setIsSaving(false);
+          }} 
+          disabled={isSaving}
+          className="flex-1 bg-orange-300 text-gray-700 dark:text-gray-900 px-4 py-2 rounded hover:bg-orange-400 disabled:opacity-50 flex items-center justify-center gap-2"
+        >
+          {isSaving ? (
+            <>
+              <div className="w-4 h-4 border-2 border-gray-700 dark:border-gray-900 border-t-transparent rounded-full animate-spin"></div>
+              保存中...
+            </>
+          ) : '保存'}
         </button>
       </div>
     </div>
@@ -3097,7 +3148,7 @@ const getNextPeriodDays = () => {
     }
   };
 
-const addPeriodRecord = (startDate: string, endDate: string) => {
+const addPeriodRecord = async (startDate: string, endDate: string) => {
     const start = new Date(startDate);
     const end = new Date(endDate);
     const days = Math.floor((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
@@ -3115,13 +3166,20 @@ const addPeriodRecord = (startDate: string, endDate: string) => {
     };
     
     setRecords(newRecords);
-    saveToDrive(newRecords);
-    syncToCalendar(newRecords, syncSettings, getAverageCycle, getFertileDays, getPMSDays, getNextPeriodDays);
+    
+    // 保存と同期を確実に完了させる
+    await saveToDrive(newRecords);
+    await syncToCalendar(newRecords, syncSettings, getAverageCycle, getFertileDays, getPMSDays, getNextPeriodDays);
   
     setShowAddModal(false);
+    
+    setNotification({
+      message: '生理記録を登録しました',
+      type: 'success'
+    });
   };
 
-const updatePeriod = (id: number, startDate: string, endDate: string) => {
+const updatePeriod = async (id: number, startDate: string, endDate: string) => {
     const start = new Date(startDate);
     const end = new Date(endDate);
     const days = Math.floor((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
@@ -3132,9 +3190,12 @@ const updatePeriod = (id: number, startDate: string, endDate: string) => {
     };
     
     setRecords(newRecords);
-    saveToDrive(newRecords);
-    syncToCalendar(newRecords, syncSettings, getAverageCycle, getFertileDays, getPMSDays, getNextPeriodDays);
     setEditingPeriod(null);
+    
+    // 保存と同期を確実に完了させる
+    await saveToDrive(newRecords);
+    await syncToCalendar(newRecords, syncSettings, getAverageCycle, getFertileDays, getPMSDays, getNextPeriodDays);
+    
     setNotification({
       message: '生理記録を更新しました',
       type: 'success'
@@ -3225,7 +3286,7 @@ const deleteHealth = async (id: number) => {
   });
 };
 
-const addIntercourseRecord = (date: string, contraception: string, partner: string, memo: string) => {
+const addIntercourseRecord = async (date: string, contraception: string, partner: string, memo: string) => {
     const newRecord = {
       id: Date.now(),
       date,
@@ -3240,13 +3301,20 @@ const addIntercourseRecord = (date: string, contraception: string, partner: stri
     };
     
     setRecords(newRecords);
-    saveToDrive(newRecords);
-    syncToCalendar(newRecords, syncSettings, getAverageCycle, getFertileDays, getPMSDays, getNextPeriodDays);
+    
+    // 保存と同期を確実に完了させる
+    await saveToDrive(newRecords);
+    await syncToCalendar(newRecords, syncSettings, getAverageCycle, getFertileDays, getPMSDays, getNextPeriodDays);
     
     setShowAddModal(false);
+    
+    setNotification({
+      message: 'SEX記録を登録しました',
+      type: 'success'
+    });
   };
 
-  const addHealthRecord = (date: string, type: string, memo: string) => {
+  const addHealthRecord = async (date: string, type: string, memo: string) => {
     const newRecord = {
       id: Date.now(),
       date,
@@ -3260,10 +3328,17 @@ const addIntercourseRecord = (date: string, contraception: string, partner: stri
     };
     
     setRecords(newRecords);
-    saveToDrive(newRecords);
-    syncToCalendar(newRecords, syncSettings, getAverageCycle, getFertileDays, getPMSDays, getNextPeriodDays);
+    
+    // 保存と同期を確実に完了させる
+    await saveToDrive(newRecords);
+    await syncToCalendar(newRecords, syncSettings, getAverageCycle, getFertileDays, getPMSDays, getNextPeriodDays);
     
     setShowAddModal(false);
+    
+    setNotification({
+      message: '体調記録を登録しました',
+      type: 'success'
+    });
   };
 
   const renderCalendar = () => {
@@ -3404,7 +3479,7 @@ if (field === 'startDate' && value && !r.endDate) {
     }));
   };
 
-const submitBulkRecords = () => {
+const submitBulkRecords = async () => {
     const validRecords = bulkRecords.filter(r => r.startDate && r.endDate);
     
     if (validRecords.length === 0) {
@@ -3431,15 +3506,17 @@ const submitBulkRecords = () => {
     };
 
     setRecords(newRecords);
-    saveToDrive(newRecords);
-    syncToCalendar(newRecords, syncSettings, getAverageCycle, getFertileDays, getPMSDays, getNextPeriodDays);
+    setShowBulkAddModal(false);
+    setBulkRecords([{ id: 1, startDate: '', endDate: '' }]);
+    
+    // 保存と同期を確実に完了させる
+    await saveToDrive(newRecords);
+    await syncToCalendar(newRecords, syncSettings, getAverageCycle, getFertileDays, getPMSDays, getNextPeriodDays);
 
     setNotification({
       message: `${validRecords.length}件の生理期間を登録しました`,
       type: 'success'
     });
-    setShowBulkAddModal(false);
-    setBulkRecords([{ id: 1, startDate: '', endDate: '' }]);
   };
 
   const formatBulkDisplayDate = (dateStr: string): string => {
