@@ -1719,8 +1719,9 @@ const AddModal = ({ selectedDate, modalType, setModalType, addPeriodRecord, addI
         >
           SEX
         </button>
+      </div>
 
-{modalType === 'period' ? (
+      {modalType === 'period' ? (
         <PeriodForm 
           selectedDate={selectedDate}
           onSubmit={addPeriodRecord}
