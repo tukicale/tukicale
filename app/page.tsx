@@ -201,20 +201,14 @@ const syncToCalendar = async (
   getPMSDays: () => string[], 
   getNextPeriodDays: () => string[]
 ) => {
-  console.log('=== syncToCalendar 開始 ===');
-  console.log('settings:', settings);
-  
   const token = await getAccessToken();
-  console.log('token:', token ? 'あり' : 'なし');
   if (!token) return false;
   
   const calendarId = await getOrCreateCalendar();
-  console.log('calendarId:', calendarId);
   if (!calendarId) return false;
   
   try {
     // 既存イベントを全て削除
-    console.log('既存イベントを削除開始');
     const eventsResponse = await fetch(
       `https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events?timeMin=${new Date(new Date().getFullYear() - 1, 0, 1).toISOString()}&maxResults=2500`,
       { headers: { Authorization: `Bearer ${token}` } }
@@ -222,7 +216,6 @@ const syncToCalendar = async (
     
     if (eventsResponse.ok) {
       const eventsData = await eventsResponse.json() as { items?: Array<{ id: string }> };
-      console.log('削除するイベント数:', eventsData.items?.length || 0);
       
       // 全イベントを削除
       for (const event of eventsData.items || []) {
@@ -237,7 +230,6 @@ const syncToCalendar = async (
       
       // 削除完了を待つ
       await new Promise(resolve => setTimeout(resolve, 1000));
-      console.log('既存イベント削除完了');
     }
     
     const events: Array<{
@@ -257,10 +249,6 @@ const syncToCalendar = async (
         });
       });
     }
-    
-    // ★★★ ここにログ追加 ★★★★
-    console.log('作成するイベント数:', events.length);
-    console.log('イベント詳細:', events);
     
 if (settings.fertile) {
   const fertileDays = getFertileDays();
@@ -330,9 +318,8 @@ if (settings.period) {
     }
     
     // 新しいイベントを作成
-    console.log('新しいイベントを作成開始、件数:', events.length);
     for (const event of events) {
-      const response = await fetch(
+      await fetch(
         `https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events`,
         {
           method: 'POST',
@@ -343,13 +330,8 @@ if (settings.period) {
           body: JSON.stringify(event)
         }
       );
-      
-      if (!response.ok) {
-        console.error('イベント作成エラー:', await response.text());
-      }
     }
     
-    console.log('=== syncToCalendar 完了 ===');
     return true;
   } catch (error) {
     console.error('Sync to calendar error:', error);
@@ -363,8 +345,6 @@ const StatsView = ({ records, getAverageCycle, getAveragePeriodLength, setShowIn
   getAveragePeriodLength: () => number;
   setShowIntercourseList: (show: boolean) => void;
 }) => {
-  const [showAdInfo, setShowAdInfo] = useState(false);
-
   return (
     <div className="space-y-4">
     <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-gray-100">マイデータ</h2>
@@ -1492,9 +1472,10 @@ const [startDate, setStartDate] = useState(formatLocalDate(selectedDate));
 
 const EditPeriodForm = ({ period, onSubmit, onCancel }: {
   period: Period;
-  onSubmit: (startDate: string, endDate: string) => void;
+  onSubmit: (startDate: string, endDate: string) => Promise<void>;
   onCancel: () => void;
 }) => {
+  const [isSaving, setIsSaving] = useState(false);
   const [startDate, setStartDate] = useState(period.startDate);
   const [endDate, setEndDate] = useState(period.endDate);
   const [showStartPicker, setShowStartPicker] = useState(false);
@@ -1527,17 +1508,28 @@ const EditPeriodForm = ({ period, onSubmit, onCancel }: {
         )}
       </div>
       <div className="flex gap-2">
-        <button type="button" onClick={onCancel} className="flex-1 border px-4 py-2 rounded">キャンセル</button>
+        <button type="button" onClick={onCancel} disabled={isSaving} className="flex-1 border px-4 py-2 rounded disabled:opacity-50">キャンセル</button>
         <button 
           type="button" 
-          onClick={() => onSubmit(startDate, endDate)} 
-          className="flex-1 px-4 py-2 rounded text-gray-700 dark:text-gray-900"
+          onClick={async () => {
+            setIsSaving(true);
+            await onSubmit(startDate, endDate);
+            setIsSaving(false);
+          }} 
+          disabled={isSaving}
+          className="flex-1 px-4 py-2 rounded text-gray-700 dark:text-gray-900 disabled:opacity-50 flex items-center justify-center gap-2"
           style={{backgroundColor: '#C2D2DA'}}
-          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#91AEBD'}
-          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#C2D2DA'}
+          onMouseEnter={(e) => !isSaving && (e.currentTarget.style.backgroundColor = '#91AEBD')}
+          onMouseLeave={(e) => !isSaving && (e.currentTarget.style.backgroundColor = '#C2D2DA')}
         >
-          更新
+          {isSaving ? (
+            <>
+              <div className="w-4 h-4 border-2 border-gray-700 dark:border-gray-900 border-t-transparent rounded-full animate-spin"></div>
+              更新中...
+            </>
+          ) : '更新'}
         </button>
+      </div>
       </div>
     </div>
   );
@@ -1890,10 +1882,13 @@ const BulkAddModal = ({ bulkRecords, setBulkRecords, bulkPickerState, setBulkPic
   addBulkRecord: () => void;
   removeBulkRecord: (id: number) => void;
   updateBulkRecord: (id: number, field: 'startDate' | 'endDate', value: string) => void;
-  submitBulkRecords: () => void;
+  submitBulkRecords: () => Promise<void>;
   setShowBulkAddModal: (show: boolean) => void;
   currentDate: Date;
-}) => (
+}) => {
+  const [isSaving, setIsSaving] = useState(false);
+
+  return (
   <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center p-4 overflow-y-auto" style={{zIndex: 9999}}>
     <div className="bg-white dark:bg-gray-900 rounded-lg p-6 w-full max-w-2xl my-4">
       <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">
@@ -1984,20 +1979,35 @@ const BulkAddModal = ({ bulkRecords, setBulkRecords, bulkPickerState, setBulkPic
         </button>
         <button 
           type="button"
-          onClick={submitBulkRecords}
-          className="flex-1 text-gray-700 dark:text-gray-900 px-4 py-2 rounded flex flex-col items-center"
+          onClick={async () => {
+            setIsSaving(true);
+            await submitBulkRecords();
+            setIsSaving(false);
+          }}
+          disabled={isSaving}
+          className="flex-1 text-gray-700 dark:text-gray-900 px-4 py-2 rounded flex flex-col items-center disabled:opacity-50"
           style={{backgroundColor: '#C2D2DA'}}
-          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#91AEBD'}
-          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#C2D2DA'}
+          onMouseEnter={(e) => !isSaving && (e.currentTarget.style.backgroundColor = '#91AEBD')}
+          onMouseLeave={(e) => !isSaving && (e.currentTarget.style.backgroundColor = '#C2D2DA')}
         >
-          <span>一括登録</span>
-          <span className="text-sm">（{bulkRecords.filter(r => r.startDate && r.endDate).length}件）</span>
+          {isSaving ? (
+            <>
+              <div className="w-4 h-4 border-2 border-gray-700 dark:border-gray-900 border-t-transparent rounded-full animate-spin mb-1"></div>
+              <span>登録中...</span>
+            </>
+          ) : (
+            <>
+              <span>一括登録</span>
+              <span className="text-sm">（{bulkRecords.filter(r => r.startDate && r.endDate).length}件）</span>
+            </>
+          )}
         </button>
 
       </div>
     </div>
   </div>
-);
+  );
+};
 
 const EditPeriodModal = ({ period, updatePeriod, setEditingPeriod }: {
   period: Period;
@@ -3380,14 +3390,6 @@ for (let day = 1; day <= daysInMonth; day++) {
 
   const nextMonth = () => {
     setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1));
-  };
-
-  const handleYearChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setCurrentDate(new Date(parseInt(e.target.value), currentDate.getMonth(), 1));
-  };
-
-  const handleMonthChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setCurrentDate(new Date(currentDate.getFullYear(), parseInt(e.target.value), 1));
   };
 
   const handleGoogleLogin = () => {
