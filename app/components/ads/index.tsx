@@ -33,7 +33,7 @@ export const AgeBasedAdCard = () => {
       return <Ad40s />;
     case '50代':
       return <Ad50s />;
-    case '50代以上':
+    case '60代以上':
       return <Ad50sPlus />;
     default:
       return <AdDefault />;

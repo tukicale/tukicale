@@ -427,7 +427,7 @@ const AgeGroupSettings = ({ records, setRecords }: {
             あなたに合った情報をお届けするために年齢層を設定できます
           </p>
           <div className="space-y-2">
-            {['10代', '20代', '30代', '40代', '50代', '50代以上', '回答しない'].map((age) => (
+            {['10代', '20代', '30代', '40代', '50代', '60代以上', '回答しない'].map((age) => (
               <label key={age} className="flex items-center gap-2 cursor-pointer">
                 <div className="relative">
                   <input 
@@ -2579,7 +2579,7 @@ const InitialSyncModal = ({ onSave }: {
               あなたに合った情報をお届けするために教えてください
             </p>
             <div className="grid grid-cols-4 gap-2">
-              {['10代', '20代', '30代', '40代', '50代', '50代以上', '回答しない'].map((age) => (
+              {['10代', '20代', '30代', '40代', '50代', '60代以上', '回答しない'].map((age) => (
                 <label key={age} className="flex items-center gap-1 cursor-pointer">
                   <div className="relative">
                     <input 
