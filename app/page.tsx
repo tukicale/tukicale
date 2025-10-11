@@ -2888,10 +2888,7 @@ const [editingIntercourse, setEditingIntercourse] = useState<IntercourseRecord |
   const [editingHealth, setEditingHealth] = useState<HealthRecord | null>(null);
   const [deletingHealthId, setDeletingHealthId] = useState<number | null>(null);
   const [isReloading, setIsReloading] = useState(false);
-  const [useIntercourseRecord, setUseIntercourseRecord] = useState(() => {
-    const saved = localStorage.getItem('tukicale_use_intercourse_record');
-    return saved !== null ? saved === 'true' : false; // デフォルトはOFF
-  });
+  const [useIntercourseRecord, setUseIntercourseRecord] = useState(false);
 
   const loadFromDrive = async () => {
     const token = await getAccessToken();
@@ -3018,9 +3015,11 @@ const [editingIntercourse, setEditingIntercourse] = useState<IntercourseRecord |
     }
     
     // 性交渉記録の使用設定を読み込み
-    const savedUseIntercourse = localStorage.getItem('tukicale_use_intercourse_record');
-    if (savedUseIntercourse !== null) {
-      setUseIntercourseRecord(savedUseIntercourse === 'true');
+    if (typeof window !== 'undefined') {
+      const savedUseIntercourse = localStorage.getItem('tukicale_use_intercourse_record');
+      if (savedUseIntercourse !== null) {
+        setUseIntercourseRecord(savedUseIntercourse === 'true');
+      }
     }
     
     // データを読み込み
