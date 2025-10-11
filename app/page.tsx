@@ -771,6 +771,28 @@ const UsageGuideSection = ({ setCurrentView }: {
       
       <div className="space-y-2">
         <div className="border-b pb-2">
+          <button onClick={() => toggleSection('about')} className="w-full text-left flex items-center justify-between py-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded px-2">
+            <span className="text-sm font-medium">TukiCaleとは</span>
+            <span>{expandedSection === 'about' ? '−' : '+'}</span>
+          </button>
+          {expandedSection === 'about' && (
+            <div className="mt-2 p-3 bg-gray-50 dark:bg-gray-800 rounded text-sm text-gray-700 dark:text-gray-300">
+              <p className="mb-3">TukiCaleは、不規則な生理周期でも安心して使える、完全プライベートな生理管理アプリです。</p>
+              
+              <p className="mb-2"><strong>主な機能：</strong></p>
+              <ul className="list-disc ml-4 space-y-2">
+                <li><strong>不規則な周期もOK</strong>：どんな周期でも記録できます</li>
+                <li><strong>Googleカレンダー連携</strong>：予定と一緒に管理できます</li>
+                <li><strong>完全プライベート</strong>：すべてのデータはあなたのGoogleドライブにのみ保存され、開発者や運営チームを含む第三者は一切閲覧できません。生理やSEX記録など、デリケートな情報も安心して記録できます。</li>
+                <li><strong>機種変更も簡単</strong>：Googleアカウントでログインするだけ</li>
+                <li><strong>複数端末対応</strong>：PCとスマホで同時に使えます</li>
+                <li><strong>完全無料</strong>：すべての機能が無料で使えます</li>
+              </ul>
+            </div>
+          )}
+        </div>
+
+        <div className="border-b pb-2">
           <button onClick={() => toggleSection('install')} className="w-full text-left flex items-center justify-between py-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded px-2">
             <span className="text-sm font-medium">アプリのインストール方法</span>
             <span>{expandedSection === 'install' ? '−' : '+'}</span>
