@@ -505,6 +505,7 @@ const SettingsView = ({
         {isGoogleAuthed ? '連携済み' : '未連携'}
       </p>
       {isGoogleAuthed && (
+        <div className="space-y-2">
 <button 
           onClick={handleLogout}
           className="w-full text-gray-700 dark:text-gray-900 px-4 py-2 rounded"
@@ -514,6 +515,7 @@ const SettingsView = ({
         >
           ログアウト
         </button>
+        </div>
       )}
     </div>
 
@@ -943,6 +945,36 @@ const HelpSection = ({ setCurrentView }: {
              <p className="text-xs text-gray-600 dark:text-gray-300">※記録が0件の場合、カードは表示されません</p>
            </div>
           )}
+          </div>
+
+          <div className="border-b pb-2">
+            <button onClick={() => toggleSection('sexrecordOnOff')} className="w-full text-left flex items-center justify-between py-2 hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-800 rounded px-2">
+              <span className="text-sm font-medium">性交渉記録機能のON/OFF設定</span>
+              <span>{expandedSection === 'sexrecordOnOff' ? '−' : '+'}</span>
+            </button>
+            {expandedSection === 'sexrecordOnOff' && (
+              <div className="mt-2 p-3 bg-gray-50 dark:bg-gray-800 rounded text-sm text-gray-700 dark:text-gray-300">
+                <p className="mb-2"><strong>性交渉記録機能をオフにすることができます：</strong></p>
+                <ol className="list-decimal ml-4 space-y-1 mb-3">
+                  <li>
+                    <button 
+                      onClick={() => {
+                        setCurrentView('settings');
+                        setExpandedSection(null);
+                      }}
+                      className="inline-flex items-center px-1 py-0.5 rounded hover:bg-gray-200 dark:hover:bg-gray-600"
+                      title="設定を開く"
+                    >
+                      <i className="fa-solid fa-gear text-gray-600 dark:text-gray-300"></i>
+                    </button>
+                    設定から「性交渉記録を使用する」のチェックボックスを確認
+                  </li>
+                  <li>チェックを外すと、カレンダーやマイデータから性交渉関連の機能が非表示になります</li>
+                  <li>オフにしても既存の記録は削除されず、再度オンにすれば表示されます</li>
+                </ol>
+                <p className="text-xs text-gray-600 dark:text-gray-300 mt-2">※プライバシーを重視する方や、共有端末で使用する方におすすめの設定です</p>
+              </div>
+            )}
           </div>
           <div className="border-b pb-2">
             <button onClick={() => toggleSection('sync')} className="w-full text-left flex items-center justify-between py-2 hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-800 rounded px-2">
