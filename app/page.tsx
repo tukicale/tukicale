@@ -509,8 +509,8 @@ const SettingsView = ({
 <a href="https://calendar.google.com" target="_blank" rel="noopener noreferrer" className="w-full block text-center text-gray-700 dark:text-gray-900 px-4 py-2 rounded" style={{backgroundColor: '#C2D2DA'}}>
       Googleカレンダーで確認
     </a>
-    <div className="text-xs text-gray-600 dark:text-gray-300 p-2 bg-yellow-50 dark:bg-yellow-900/20 rounded">
-      <p className="font-semibold">表示専用です</p>
+    <div className="text-xs text-gray-600 dark:text-gray-300 p-2 rounded">
+      <p className="font-semibold">Googleカレンダーは表示専用です</p>
       <p>編集はTukiCaleアプリ内で行ってください</p>
     </div>
     <button onClick={handleLogout} className="w-full text-gray-700 dark:text-gray-900 px-4 py-2 rounded" style={{backgroundColor: '#E3D0DA'}} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#CBA9BA'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#E3D0DA'}>
