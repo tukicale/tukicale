@@ -10,8 +10,8 @@ export const Ad50sPlus = () => {
   
   return (
     <AdBase
-      title="健康的な毎日を"
-      description="更年期を快適に過ごすために"
+      title="60代以上の健康維持に"
+      description="体調の変化を記録して健やかな毎日を"
       items={items}
     />
   );

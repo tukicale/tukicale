@@ -10,8 +10,8 @@ export const Ad40s = () => {
   
   return (
     <AdBase
-      title="更年期に向けた体づくり"
-      description="ホルモンバランスを整えて快適に"
+      title="40代の体の変化に。"
+      description="更年期に備えた健康管理を"
       items={items}
     />
   );

@@ -60,11 +60,11 @@ export const AgeBasedAdCard = () => {
   const getAdContent = () => {
     switch(ageGroup) {
       case '10代':
-        return '10代の健康管理に。生理周期を記録して、自分の体を知ろう';
+        return 'はじめての生理管理。自分の体のリズムを知ることから始めよう';
       case '20代':
-        return '20代の忙しいあなたに。スマホで簡単に生理周期を管理';
+        return '妊活・ライフプラン。将来のために、今からできること';
       case '30代':
-        return '30代のライフプランに。妊活や体調管理をサポート';
+        return '婚活・妊活・産後ケア。あなたのタイミングを大切に';
       case '40代':
         return '40代の体の変化に。更年期に備えた健康管理を';
       case '50代':
