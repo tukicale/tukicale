@@ -943,22 +943,29 @@ const UsageGuideSection = ({ setCurrentView }: {
         </div>
 
         <div className="border-b pb-2">
-          <button onClick={() => toggleSection('syncSpeed')} className="w-full text-left flex items-center justify-between py-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded px-2">
-            <span className="text-sm font-medium">Googleカレンダーへの同期について</span>
-            <span>{expandedSection === 'syncSpeed' ? '−' : '+'}</span>
-          </button>
-          {expandedSection === 'syncSpeed' && (
-            <div className="mt-2 p-3 bg-gray-50 dark:bg-gray-800 rounded text-sm text-gray-700 dark:text-gray-300">
-              <p className="mb-2"><strong>データ入力中にカレンダーにリアルタイムで同期されます。</strong></p>
-              <ul className="list-disc ml-4 space-y-1 mb-3">
-                <li>生理記録を追加・編集・削除すると、即座にGoogleドライブに保存</li>
-                <li>同期設定でONにしている項目は、Googleカレンダーにも即座に反映</li>
-                <li>一括登録の場合も、登録ボタンを押した瞬間に全て同期</li>
-              </ul>
-              <p className="text-gray-600 dark:text-gray-300 text-xs">※データの流れは <strong>TukiCale → Google</strong> の一方向です</p>
-            </div>
-          )}
-        </div>
+            <button onClick={() => toggleSection('sync')} className="w-full text-left flex items-center justify-between py-2 hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-800 rounded px-2">
+              <span className="text-sm font-medium">カレンダーの同期について</span>
+              <span>{expandedSection === 'sync' ? '−' : '+'}</span>
+            </button>
+            {expandedSection === 'sync' && (
+              <div className="mt-2 p-3 bg-gray-50 dark:bg-gray-800 rounded text-sm text-gray-700 dark:text-gray-300">
+                <p className="mb-2"><strong>データ入力中にカレンダーにリアルタイムで同期されます。</strong></p>
+                <ul className="list-disc ml-4 space-y-1 mb-3">
+                  <li>生理記録を追加・編集・削除すると、即座にGoogleドライブに保存</li>
+                  <li>同期設定でONにしている項目は、Googleカレンダーにも即座に反映</li>
+                  <li>一括登録の場合も、登録ボタンを押した瞬間に全て同期</li>
+                </ul>
+                <p className="text-gray-600 dark:text-gray-300 text-xs mb-3">※データの流れは <strong>TukiCale → Google</strong> の一方向です</p>
+                <div className="mt-3 p-2 bg-blue-50 dark:bg-gray-700 rounded">
+                  <p className="font-semibold mb-1">Googleカレンダーへの同期は必須ではありません</p>
+                  <ul className="list-disc ml-4 space-y-1 text-xs">
+                    <li>同期をオフにした場合でも、生理記録やSEX記録などすべてのデータはGoogleドライブに保存され、TukiCaleアプリ内で通常通り閲覧・編集できます</li>
+                    <li>Googleカレンダーと連携すると、スケジュールと一緒に生理予定を確認できて便利です</li>
+                  </ul>
+                </div>
+              </div>
+            )}
+          </div>
 
         <div className="border-b pb-2">
           <button onClick={() => toggleSection('calendarWarning')} className="w-full text-left flex items-center justify-between py-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded px-2">
