@@ -339,11 +339,12 @@ if (settings.period) {
   }
 };
 
-const StatsView = ({ records, getAverageCycle, getAveragePeriodLength, setShowIntercourseList }: {
+const StatsView = ({ records, getAverageCycle, getAveragePeriodLength, setShowIntercourseList, useIntercourseRecord }: {
   records: Records;
   getAverageCycle: () => number;
   getAveragePeriodLength: () => number;
   setShowIntercourseList: (show: boolean) => void;
+  useIntercourseRecord: boolean;
 }) => {
   return (
     <div className="space-y-4">
@@ -378,7 +379,7 @@ const StatsView = ({ records, getAverageCycle, getAveragePeriodLength, setShowIn
         </span>
       </div>
 
-      {records.intercourse.length > 0 && (
+      {useIntercourseRecord && records.intercourse.length > 0 && (
         <div className="flex justify-between items-center">
           <span className="text-sm text-gray-600 dark:text-gray-300">SEX記録</span>
           <button 
@@ -471,7 +472,9 @@ const SettingsView = ({
   getAverageCycle,
   getFertileDays,
   getPMSDays,
-  getNextPeriodDays
+  getNextPeriodDays,
+  useIntercourseRecord,
+  setUseIntercourseRecord
 }: {
   isGoogleAuthed: boolean;
   handleLogout: () => void;
@@ -487,6 +490,8 @@ const SettingsView = ({
   getFertileDays: () => string[];
   getPMSDays: () => string[];
   getNextPeriodDays: () => string[];
+  useIntercourseRecord: boolean;
+  setUseIntercourseRecord: (value: boolean) => void;
 }) => (
   <div className="space-y-4">
     <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-gray-100">設定</h2>
@@ -513,6 +518,29 @@ const SettingsView = ({
     </div>
 
     <AgeGroupSettings records={records} setRecords={setRecords} />
+
+    <div className="border rounded-lg p-4">
+      <button 
+        onClick={() => {
+          const newValue = !useIntercourseRecord;
+          setUseIntercourseRecord(newValue);
+          localStorage.setItem('tukicale_use_intercourse_record', newValue.toString());
+        }}
+        className="w-full flex items-center justify-between"
+      >
+        <div className="flex items-start gap-2">
+          <div className="relative pt-1">
+            <i className={`${useIntercourseRecord ? 'fa-solid fa-square-check text-xl' : 'fa-regular fa-square text-gray-400 text-xl'}`} style={useIntercourseRecord ? {color: '#91AEBD'} : {}}></i>
+          </div>
+          <div className="text-left">
+            <h3 className="font-semibold text-gray-900 dark:text-gray-100">性交渉記録を使用する</h3>
+            <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
+              オフにすると、カレンダーやマイデータから性交渉関連の機能が非表示になります
+            </p>
+          </div>
+        </div>
+      </button>
+    </div>
 
     <SyncSettings 
       records={records}
@@ -1738,7 +1766,7 @@ const HealthForm = ({ selectedDate, onSubmit, onCancel }: {
   );
 };
 
-const AddModal = ({ selectedDate, modalType, setModalType, addPeriodRecord, addIntercourseRecord, addHealthRecord, setShowAddModal, currentDate, getAveragePeriodLength }: {
+const AddModal = ({ selectedDate, modalType, setModalType, addPeriodRecord, addIntercourseRecord, addHealthRecord, setShowAddModal, currentDate, getAveragePeriodLength, useIntercourseRecord }: {
   selectedDate: Date | null;
   modalType: string;
   setModalType: (type: string) => void;
@@ -1748,6 +1776,7 @@ const AddModal = ({ selectedDate, modalType, setModalType, addPeriodRecord, addI
   setShowAddModal: (show: boolean) => void;
   currentDate: Date;
   getAveragePeriodLength: () => number;
+  useIntercourseRecord: boolean;
 }) => (
   <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 overflow-y-auto">
     <div className="bg-white dark:bg-gray-900 rounded-lg p-6 max-w-md w-full my-4">
@@ -1769,12 +1798,14 @@ const AddModal = ({ selectedDate, modalType, setModalType, addPeriodRecord, addI
         >
           体調
         </button>
-        <button
-          onClick={() => setModalType('intercourse')}
-          className={`flex-1 py-2 rounded text-sm ${modalType === 'intercourse' ? 'bg-gray-400 text-gray-700 dark:text-gray-900' : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100'}`}
-        >
-          SEX
-        </button>
+        {useIntercourseRecord && (
+          <button
+            onClick={() => setModalType('intercourse')}
+            className={`flex-1 py-2 rounded text-sm ${modalType === 'intercourse' ? 'bg-gray-400 text-gray-700 dark:text-gray-900' : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100'}`}
+          >
+            SEX
+          </button>
+        )}
       </div>
 
       {modalType === 'period' ? (
@@ -2231,6 +2262,7 @@ const InitialSyncModal = ({ onSave }: {
   });
   const [ageGroup, setAgeGroup] = useState<string>('');
   const [showIntercourseInfo, setShowIntercourseInfo] = useState(false);
+  const [useIntercourse, setUseIntercourse] = useState(false);
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4" style={{zIndex: 10004}}>
@@ -2330,6 +2362,28 @@ const InitialSyncModal = ({ onSave }: {
             </label>
           </div>
           
+          {/* 性交渉記録のON/OFF */}
+          <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+            <h4 className="text-sm font-semibold mb-3 text-gray-900 dark:text-gray-100">性交渉記録機能</h4>
+            <label className="flex items-start gap-2 cursor-pointer">
+              <div className="relative pt-1">
+                <input 
+                  type="checkbox" 
+                  checked={useIntercourse}
+                  onChange={(e) => setUseIntercourse(e.target.checked)}
+                  className="sr-only peer"
+                />
+                <i className={`${useIntercourse ? 'fa-solid fa-square-check text-xl' : 'fa-regular fa-square text-gray-400 text-xl'}`} style={useIntercourse ? {color: '#91AEBD'} : {}}></i>
+              </div>
+              <div>
+                <span className="text-sm text-gray-900 dark:text-gray-100">性交渉記録を使用する</span>
+                <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">
+                  オフにすると、カレンダーやマイデータから性交渉関連の機能が非表示になります。後から設定で変更できます。
+                </p>
+              </div>
+            </label>
+          </div>
+          
           {/* 年齢層選択 */}
           <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
             <h4 className="text-sm font-semibold mb-3 text-gray-900 dark:text-gray-100">年齢層（任意）</h4>
@@ -2364,6 +2418,8 @@ const InitialSyncModal = ({ onSave }: {
               if (ageGroup && ageGroup !== '回答しない') {
                 localStorage.setItem('tukicale_age_group', ageGroup);
               }
+              // 性交渉記録の使用設定を保存
+              localStorage.setItem('tukicale_use_intercourse_record', useIntercourse.toString());
               onSave(settings);
             }}
             className="w-full text-gray-700 dark:text-gray-900 px-4 py-3 rounded-lg font-medium"
@@ -2418,7 +2474,7 @@ const NotificationModal = ({ message, type, onClose }: {
   );
 };
 
-const DayDetailModal = ({ date, periods, intercourse, health, onClose, onEditPeriod, onDeletePeriod, onEditIntercourse, onDeleteIntercourse, onEditHealth, onDeleteHealth, onAddNew }: {
+const DayDetailModal = ({ date, periods, intercourse, health, onClose, onEditPeriod, onDeletePeriod, onEditIntercourse, onDeleteIntercourse, onEditHealth, onDeleteHealth, onAddNew, useIntercourseRecord }: {
   date: Date;
   periods: Period[];
   intercourse: IntercourseRecord[];
@@ -2431,6 +2487,7 @@ const DayDetailModal = ({ date, periods, intercourse, health, onClose, onEditPer
   onEditHealth: (record: HealthRecord) => void;
   onDeleteHealth: (id: number) => void;
   onAddNew: () => Promise<void>;
+  useIntercourseRecord: boolean;
 }) => {
 
   return (
@@ -2503,7 +2560,7 @@ const DayDetailModal = ({ date, periods, intercourse, health, onClose, onEditPer
             </div>
           )}
 
-          {intercourse.length > 0 && (
+          {useIntercourseRecord && intercourse.length > 0 && (
             <div>
               <h4 className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">SEX記録 ({intercourse.length}件)</h4>
               <div className="space-y-2">
@@ -2831,6 +2888,10 @@ const [editingIntercourse, setEditingIntercourse] = useState<IntercourseRecord |
   const [editingHealth, setEditingHealth] = useState<HealthRecord | null>(null);
   const [deletingHealthId, setDeletingHealthId] = useState<number | null>(null);
   const [isReloading, setIsReloading] = useState(false);
+  const [useIntercourseRecord, setUseIntercourseRecord] = useState(() => {
+    const saved = localStorage.getItem('tukicale_use_intercourse_record');
+    return saved !== null ? saved === 'true' : false; // デフォルトはOFF
+  });
 
   const loadFromDrive = async () => {
     const token = await getAccessToken();
@@ -2954,6 +3015,12 @@ const [editingIntercourse, setEditingIntercourse] = useState<IntercourseRecord |
     // 同期設定を読み込み
     if (savedSyncSettings) {
       setSyncSettings(JSON.parse(savedSyncSettings));
+    }
+    
+    // 性交渉記録の使用設定を読み込み
+    const savedUseIntercourse = localStorage.getItem('tukicale_use_intercourse_record');
+    if (savedUseIntercourse !== null) {
+      setUseIntercourseRecord(savedUseIntercourse === 'true');
     }
     
     // データを読み込み
@@ -3136,8 +3203,8 @@ const getNextPeriodDays = () => {
       dateStr >= p.startDate && dateStr <= p.endDate
     );
     
-    // その日のSEX記録を取得
-    const dayIntercourse = records.intercourse.filter(i => i.date === dateStr);
+    // その日のSEX記録を取得（useIntercourseRecordがtrueの場合のみ）
+    const dayIntercourse = useIntercourseRecord ? records.intercourse.filter(i => i.date === dateStr) : [];
     
     // その日の体調記録を取得
     const dayHealth = (records.health || []).filter(h => h.date === dateStr);
@@ -3374,7 +3441,7 @@ for (let day = 1; day <= daysInMonth; day++) {
             {fertile && <div className="w-2 h-2 rounded-full bg-green-300" title="妊娠可能日"></div>}
             {pms && <div className="w-2 h-2 rounded-full bg-yellow-300" title="PMS予測"></div>}
             {health && <div className="w-2 h-2 rounded-full bg-orange-300" title="体調"></div>}
-            {intercourse && <div className="w-2 h-2 rounded-full bg-gray-300" title="SEX"></div>}
+            {useIntercourseRecord && intercourse && <div className="w-2 h-2 rounded-full bg-gray-300" title="SEX"></div>}
           </div>
         </div>
       );
@@ -3710,10 +3777,12 @@ return (
               <div className="w-3 h-3 rounded-full bg-orange-300"></div>
               <span>体調</span>
             </div>
-            <div className="flex items-center gap-1">
-              <div className="w-3 h-3 rounded-full bg-gray-300"></div>
-              <span>SEX</span>
-            </div>
+            {useIntercourseRecord && (
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 rounded-full bg-gray-300"></div>
+                <span>SEX</span>
+              </div>
+            )}
           </div>
 
           <div className="flex gap-2 mb-4">
@@ -3747,6 +3816,7 @@ return (
           getAverageCycle={getAverageCycle} 
           getAveragePeriodLength={getAveragePeriodLength} 
           setShowIntercourseList={setShowIntercourseList} 
+          useIntercourseRecord={useIntercourseRecord}
         />
       )}
 
@@ -3766,6 +3836,8 @@ return (
           getFertileDays={getFertileDays}
           getPMSDays={getPMSDays}
           getNextPeriodDays={getNextPeriodDays}
+          useIntercourseRecord={useIntercourseRecord}
+          setUseIntercourseRecord={setUseIntercourseRecord}
         />
       )}
 
@@ -3780,6 +3852,7 @@ return (
           setShowAddModal={setShowAddModal}
           currentDate={currentDate}
           getAveragePeriodLength={getAveragePeriodLength}
+          useIntercourseRecord={useIntercourseRecord}
         />
       )}
 
@@ -3878,6 +3951,7 @@ return (
             setShowDayDetailModal(false);
             setShowAddModal(true);
           }}
+          useIntercourseRecord={useIntercourseRecord}
         />
       )}
 
