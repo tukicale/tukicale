@@ -553,15 +553,17 @@ const SettingsView = ({
     
     <HelpSection setCurrentView={setCurrentView} />
        
-    <SyncSettings 
-      records={records}
-      syncSettings={syncSettings}
-      setSyncSettings={setSyncSettings}
-      getAverageCycle={getAverageCycle}
-      getFertileDays={getFertileDays}
-      getPMSDays={getPMSDays}
-      getNextPeriodDays={getNextPeriodDays}
-    />
+  <div id="sync-settings">
+  <SyncSettings 
+    records={records}
+    syncSettings={syncSettings}
+    setSyncSettings={setSyncSettings}
+    getAverageCycle={getAverageCycle}
+    getFertileDays={getFertileDays}
+    getPMSDays={getPMSDays}
+    getNextPeriodDays={getNextPeriodDays}
+  />
+ </div>
 
         <div className="border rounded-lg p-4">
       <button 
@@ -3981,7 +3983,12 @@ return (
               <span>データ一括登録</span>
             </button>
             <button 
-              onClick={() => setCurrentView('settings')}
+              onClick={() => {
+                setCurrentView('settings');
+                setTimeout(() => {
+                  document.getElementById('sync-settings')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 100);
+              }}
               className="flex-1 px-3 py-2 rounded text-sm flex items-center justify-center gap-2 text-gray-700 dark:text-gray-900"
               style={{backgroundColor: '#C2D2DA'}}
               onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#91AEBD'}
