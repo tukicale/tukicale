@@ -3084,9 +3084,11 @@ const [editingIntercourse, setEditingIntercourse] = useState<IntercourseRecord |
   const [isReloading, setIsReloading] = useState(false);
   const [useIntercourseRecord, setUseIntercourseRecord] = useState(false);
 
-  const loadFromDrive = async () => {
+  const loadFromDrive = async (): Promise<{ success: boolean; data: Records | null; message?: string }> => {
     const token = await getAccessToken();
-    if (!token) return null;
+    if (!token) {
+      return { success: false, data: null, message: 'no_token' };
+    }
     
     try {
       const searchResponse = await fetch(
@@ -3094,7 +3096,9 @@ const [editingIntercourse, setEditingIntercourse] = useState<IntercourseRecord |
         { headers: { Authorization: `Bearer ${token}` } }
       );
       
-      if (!searchResponse.ok) return null;
+      if (!searchResponse.ok) {
+        return { success: false, data: null, message: 'api_error' };
+      }
       
       const searchData = await searchResponse.json();
       
@@ -3107,14 +3111,16 @@ const [editingIntercourse, setEditingIntercourse] = useState<IntercourseRecord |
         
         if (response.ok) {
           const data = await response.json();
-          return data;
+          return { success: true, data };
+        } else {
+          return { success: false, data: null, message: 'read_error' };
         }
       }
       
-      return null;
+      return { success: false, data: null, message: 'no_file' };
     } catch (error) {
       console.error('Load from Drive error:', error);
-      return null;
+      return { success: false, data: null, message: 'exception' };
     }
   };
 
@@ -3123,28 +3129,37 @@ const [editingIntercourse, setEditingIntercourse] = useState<IntercourseRecord |
     
     try {
       // Googleドライブから最新データを取得
-      const driveData = await loadFromDrive();
+      const result = await loadFromDrive();
       
-      if (driveData) {
-        setRecords(driveData);
-        localStorage.setItem('myflow_data', JSON.stringify(driveData));
+      if (result.success && result.data) {
+        setRecords(result.data);
+        localStorage.setItem('myflow_data', JSON.stringify(result.data));
         
         // 年齢層をlocalStorageに復元
-        if (driveData.ageGroup) {
-          localStorage.setItem('tukicale_age_group', driveData.ageGroup);
+        if (result.data.ageGroup) {
+          localStorage.setItem('tukicale_age_group', result.data.ageGroup);
         }
         
         // Googleカレンダーも同期
-        await syncToCalendar(driveData, syncSettings, getAverageCycle, getFertileDays, getPMSDays, getNextPeriodDays);
+        await syncToCalendar(result.data, syncSettings, getAverageCycle, getFertileDays, getPMSDays, getNextPeriodDays);
         
         setNotification({
           message: '最新データに更新しました',
           type: 'success'
         });
       } else {
+        // エラーの種類に応じてメッセージを変更
+        let errorMessage = 'データの読み込みに失敗しました';
+        
+        if (result.message === 'no_file') {
+          errorMessage = 'まだ保存されたデータがありません\n生理記録を追加すると自動保存されます';
+        } else if (result.message === 'no_token') {
+          errorMessage = '認証が切れています\n再度ログインしてください';
+        }
+        
         setNotification({
-          message: 'データの読み込みに失敗しました',
-          type: 'error'
+          message: errorMessage,
+          type: result.message === 'no_file' ? 'success' : 'error'
         });
       }
     } catch (error) {
