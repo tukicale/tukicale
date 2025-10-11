@@ -549,6 +549,8 @@ const SettingsView = ({
     </div>
 
 
+    <UsageGuideSection setCurrentView={setCurrentView} />
+    
     <HelpSection setCurrentView={setCurrentView} />
        
     <SyncSettings 
@@ -575,9 +577,9 @@ const SettingsView = ({
             <i className={`${useIntercourseRecord ? 'fa-solid fa-square-check text-xl' : 'fa-regular fa-square text-gray-400 text-xl'}`} style={useIntercourseRecord ? {color: '#91AEBD'} : {}}></i>
           </div>
           <div className="text-left">
-            <h3 className="font-semibold text-gray-900 dark:text-gray-100">性交渉記録を使用する</h3>
+            <h3 className="font-semibold text-gray-900 dark:text-gray-100">SEX記録を使用する</h3>
             <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
-              オフにすると、カレンダーやマイデータから性交渉関連の機能が非表示になります
+              オフにすると、カレンダーやマイデータからSEX関連の機能が非表示になります
             </p>
           </div>
         </div>
@@ -752,6 +754,242 @@ return (
     )}
   </div>
 );
+};
+
+const UsageGuideSection = ({ setCurrentView }: {
+  setCurrentView: (view: string) => void;
+}) => {
+  const [expandedSection, setExpandedSection] = useState<string | null>(null);
+
+  const toggleSection = (section: string) => {
+    setExpandedSection(expandedSection === section ? null : section);
+  };
+
+  return (
+    <div className="border rounded-lg p-4">
+      <h3 className="font-semibold mb-3 text-gray-900 dark:text-gray-100">使い方ガイド</h3>
+      
+      <div className="space-y-2">
+        <div className="border-b pb-2">
+          <button onClick={() => toggleSection('install')} className="w-full text-left flex items-center justify-between py-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded px-2">
+            <span className="text-sm font-medium">アプリのインストール方法</span>
+            <span>{expandedSection === 'install' ? '−' : '+'}</span>
+          </button>
+          {expandedSection === 'install' && (
+            <div className="mt-2 p-3 bg-gray-50 dark:bg-gray-800 rounded text-sm text-gray-700 dark:text-gray-300">
+              <p className="mb-2"><strong>PCでのインストール：</strong></p>
+              <ol className="list-decimal ml-4 space-y-1 mb-3">
+                <li>ブラウザでTukiCaleを開く</li>
+                <li>アドレスバー右側のインストールアイコンをクリック</li>
+                <li>「インストール」を選択</li>
+              </ol>
+              
+              <p className="mb-2"><strong>iPhoneでのインストール：</strong></p>
+              <ol className="list-decimal ml-4 space-y-1 mb-3">
+                <li>Safariでアプリを開く</li>
+                <li>画面下部の共有ボタン（□に↑）をタップ</li>
+                <li>「ホーム画面に追加」を選択</li>
+              </ol>
+              
+              <p className="mb-2"><strong>Androidでのインストール：</strong></p>
+              <ol className="list-decimal ml-4 space-y-1">
+                <li>Chromeでアプリを開く</li>
+                <li>メニューから「ホーム画面に追加」を選択</li>
+                <li>「インストール」をタップ</li>
+              </ol>
+            </div>
+          )}
+        </div>
+
+        <div className="border-b pb-2">
+          <button onClick={() => toggleSection('bulkAdd')} className="w-full text-left flex items-center justify-between py-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded px-2">
+            <span className="text-sm font-medium">生理一括登録方法</span>
+            <span>{expandedSection === 'bulkAdd' ? '−' : '+'}</span>
+          </button>
+          {expandedSection === 'bulkAdd' && (
+            <div className="mt-2 p-3 bg-gray-50 dark:bg-gray-800 rounded text-sm text-gray-700 dark:text-gray-300">
+              <p className="mb-2"><strong>手帳やメモの記録を一括登録：</strong></p>
+              <ol className="list-decimal ml-4 space-y-1 mb-3">
+                <li>
+                  <button 
+                    onClick={() => {
+                      setCurrentView('settings');
+                      setExpandedSection(null);
+                    }}
+                    className="inline-flex items-center px-1 py-0.5 rounded hover:bg-gray-200 dark:hover:bg-gray-600"
+                    title="設定を開く"
+                  >
+                    <i className="fa-solid fa-gear text-gray-600 dark:text-gray-300"></i>
+                  </button>
+                  設定から「生理記録を登録」をタップ
+                </li>
+                <li>開始日と終了日を選択して登録</li>
+                <li>最大20件まで一度に登録可能</li>
+              </ol>
+              <p className="text-xs text-gray-600 dark:text-gray-300">※登録後、自動的にGoogleカレンダーに同期されます</p>
+            </div>
+          )}
+        </div>
+
+        <div className="border-b pb-2">
+          <button onClick={() => toggleSection('normalRecord')} className="w-full text-left flex items-center justify-between py-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded px-2">
+            <span className="text-sm font-medium">通常の記録方法（生理・体調・SEX）</span>
+            <span>{expandedSection === 'normalRecord' ? '−' : '+'}</span>
+          </button>
+          {expandedSection === 'normalRecord' && (
+            <div className="mt-2 p-3 bg-gray-50 dark:bg-gray-800 rounded text-sm text-gray-700 dark:text-gray-300">
+              <p className="mb-2"><strong>カレンダーから記録：</strong></p>
+              <ol className="list-decimal ml-4 space-y-1 mb-3">
+                <li>カレンダーで日付をタップ</li>
+                <li>記録したい種類を選択（生理・体調・SEX）</li>
+                <li>必要な情報を入力して保存</li>
+              </ol>
+              
+              <p className="mb-2"><strong>SEXタブについて：</strong></p>
+              <p className="mb-2">SEXタブは、設定で「SEX記録を使用する」をONにすると表示されます。</p>
+              <ul className="list-disc ml-4 space-y-1 mb-3">
+                <li>デフォルトでOFFになっています</li>
+                <li>プライバシーを重視する方はOFFのまま使用できます</li>
+                <li>ONにすると、記録時にSEXタブが選択可能になります</li>
+              </ul>
+              
+              <p className="text-xs text-gray-600 dark:text-gray-300">※記録は即座にGoogleドライブに保存され、カレンダーに同期されます</p>
+            </div>
+          )}
+        </div>
+
+        <div className="border-b pb-2">
+          <button onClick={() => toggleSection('sexrecordOnOff')} className="w-full text-left flex items-center justify-between py-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded px-2">
+            <span className="text-sm font-medium">SEX記録のON/OFF機能</span>
+            <span>{expandedSection === 'sexrecordOnOff' ? '−' : '+'}</span>
+          </button>
+          {expandedSection === 'sexrecordOnOff' && (
+            <div className="mt-2 p-3 bg-gray-50 dark:bg-gray-800 rounded text-sm text-gray-700 dark:text-gray-300">
+              <p className="mb-2"><strong>SEX記録機能をオフにすることができます：</strong></p>
+              <ol className="list-decimal ml-4 space-y-1 mb-3">
+                <li>
+                  <button 
+                    onClick={() => {
+                      setCurrentView('settings');
+                      setExpandedSection(null);
+                    }}
+                    className="inline-flex items-center px-1 py-0.5 rounded hover:bg-gray-200 dark:hover:bg-gray-600"
+                    title="設定を開く"
+                  >
+                    <i className="fa-solid fa-gear text-gray-600 dark:text-gray-300"></i>
+                  </button>
+                  設定から「SEX記録を使用する」のチェックボックスを確認
+                </li>
+                <li>チェックを外すと、カレンダーやマイデータからSEX関連の機能が非表示になります</li>
+                <li>オフにしても既存の記録は削除されず、再度オンにすれば表示されます</li>
+              </ol>
+              <p className="text-xs text-gray-600 dark:text-gray-300 mt-2">※プライバシーを重視する方や、共有端末で使用する方におすすめの設定です</p>
+            </div>
+          )}
+        </div>
+
+        <div className="border-b pb-2">
+          <button onClick={() => toggleSection('editRecord')} className="w-full text-left flex items-center justify-between py-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded px-2">
+            <span className="text-sm font-medium">記録の修正・削除方法</span>
+            <span>{expandedSection === 'editRecord' ? '−' : '+'}</span>
+          </button>
+          {expandedSection === 'editRecord' && (
+            <div className="mt-2 p-3 bg-gray-50 dark:bg-gray-800 rounded text-sm text-gray-700 dark:text-gray-300">
+              <p className="mb-2"><strong>登録済み記録の編集：</strong></p>
+              <p className="mb-2">
+                <button 
+                  onClick={() => {
+                    setCurrentView('settings');
+                    setExpandedSection(null);
+                  }}
+                  className="inline-flex items-center px-1 py-0.5 rounded hover:bg-gray-200 dark:hover:bg-gray-600"
+                  title="設定を開く"
+                >
+                  <i className="fa-solid fa-gear text-gray-600 dark:text-gray-300"></i>
+                </button>
+                設定から「登録済み記録を確認」を選択
+              </p>
+              <ul className="list-disc ml-4 space-y-1 mb-3">
+                <li><i className="fa-solid fa-pen-to-square text-gray-600 dark:text-gray-300"></i> 記録を修正</li>
+                <li><i className="fa-solid fa-trash text-gray-600 dark:text-gray-300"></i> 記録を削除</li>
+              </ul>
+              <p className="text-xs text-gray-600 dark:text-gray-300">※削除した記録は復元できません</p>
+            </div>
+          )}
+        </div>
+
+        <div className="border-b pb-2">
+          <button onClick={() => toggleSection('syncSpeed')} className="w-full text-left flex items-center justify-between py-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded px-2">
+            <span className="text-sm font-medium">Googleカレンダーへの同期について</span>
+            <span>{expandedSection === 'syncSpeed' ? '−' : '+'}</span>
+          </button>
+          {expandedSection === 'syncSpeed' && (
+            <div className="mt-2 p-3 bg-gray-50 dark:bg-gray-800 rounded text-sm text-gray-700 dark:text-gray-300">
+              <p className="mb-2"><strong>データ入力中にカレンダーにリアルタイムで同期されます。</strong></p>
+              <ul className="list-disc ml-4 space-y-1 mb-3">
+                <li>生理記録を追加・編集・削除すると、即座にGoogleドライブに保存</li>
+                <li>同期設定でONにしている項目は、Googleカレンダーにも即座に反映</li>
+                <li>一括登録の場合も、登録ボタンを押した瞬間に全て同期</li>
+              </ul>
+              <p className="text-gray-600 dark:text-gray-300 text-xs">※データの流れは <strong>TukiCale → Google</strong> の一方向です</p>
+            </div>
+          )}
+        </div>
+
+        <div className="border-b pb-2">
+          <button onClick={() => toggleSection('calendarWarning')} className="w-full text-left flex items-center justify-between py-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded px-2">
+            <span className="text-sm font-medium flex items-center gap-2">
+              <i className="fa-solid fa-triangle-exclamation text-yellow-500"></i>
+              Googleカレンダーで直接編集・削除しないでください
+            </span>
+            <span>{expandedSection === 'calendarWarning' ? '−' : '+'}</span>
+          </button>
+          {expandedSection === 'calendarWarning' && (
+            <div className="mt-2 p-3 bg-white dark:bg-gray-900 rounded text-sm text-gray-700 dark:text-gray-300 border-2 border-red-200 dark:border-red-900">
+              <p className="mb-3 font-semibold text-red-700 dark:text-red-400">Googleカレンダー側で変更しないでください</p>
+              <p className="mb-2"><strong>理由：</strong></p>
+              <ul className="list-disc ml-4 space-y-1 mb-3">
+                <li>Googleカレンダー側で変更しても、TukiCaleには反映されません</li>
+                <li>TukiCaleで再同期すると、カレンダーの手動変更は上書きされます</li>
+                <li>データの整合性が保てなくなる可能性があります</li>
+              </ul>
+              <p className="font-semibold text-blue-700 dark:text-blue-400 mb-1 flex items-center gap-1">
+                <i className="fa-regular fa-lightbulb text-yellow-500"></i>
+                正しい使い方：
+              </p>
+              <p>すべての編集・削除は<strong>TukiCaleアプリ内</strong>で行ってください。</p>
+              <p className="mt-2 text-xs text-gray-600 dark:text-gray-400">Googleカレンダーは、「表示用」として使用します。</p>
+            </div>
+          )}
+        </div>
+
+        <div className="border-b pb-2">
+          <button onClick={() => toggleSection('multidevice')} className="w-full text-left flex items-center justify-between py-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded px-2">
+            <span className="text-sm font-medium flex items-center gap-2">
+              <i className="fa-solid fa-circle-info text-blue-600"></i>
+              複数端末で使用する場合の注意
+            </span>
+            <span>{expandedSection === 'multidevice' ? '−' : '+'}</span>
+          </button>
+          {expandedSection === 'multidevice' && (
+            <div className="mt-2 p-3 bg-blue-50 dark:bg-gray-800 rounded text-sm text-gray-700 dark:text-gray-300 border-2 border-blue-200 dark:border-blue-900">
+              <p className="mb-3 font-semibold text-blue-700 dark:text-blue-400">PCとスマホなど、複数端末でご使用の方へ</p>
+              <ul className="list-disc ml-4 space-y-1 mb-3">
+                <li>他の端末で編集した場合は、画面を更新（リロード）してください</li>
+                <li>同時編集すると、後から保存した方が優先されます</li>
+                <li>可能ならば編集中は他の端末での操作をお控えください</li>
+              </ul>
+              <p className="mt-2 text-xs text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-900 p-2 rounded">
+                <i className="fa-regular fa-lightbulb text-yellow-500 mr-1"></i>
+                ヘッダー右上の<i className="fa-solid fa-rotate-right mx-1"></i>ボタンで最新データに更新できます
+              </p>
+            </div>
+          )}
+        </div>
+
+      </div>
+    </div>
+  );
 };
 
 const HelpSection = ({ setCurrentView }: {
@@ -951,12 +1189,12 @@ const HelpSection = ({ setCurrentView }: {
 
           <div className="border-b pb-2">
             <button onClick={() => toggleSection('sexrecordOnOff')} className="w-full text-left flex items-center justify-between py-2 hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-800 rounded px-2">
-              <span className="text-sm font-medium">性交渉記録機能のON/OFF設定</span>
+              <span className="text-sm font-medium">SEX記録機能のON/OFF設定</span>
               <span>{expandedSection === 'sexrecordOnOff' ? '−' : '+'}</span>
             </button>
             {expandedSection === 'sexrecordOnOff' && (
               <div className="mt-2 p-3 bg-gray-50 dark:bg-gray-800 rounded text-sm text-gray-700 dark:text-gray-300">
-                <p className="mb-2"><strong>性交渉記録機能をオフにすることができます：</strong></p>
+                <p className="mb-2"><strong>SEX記録機能をオフにすることができます：</strong></p>
                 <ol className="list-decimal ml-4 space-y-1 mb-3">
                   <li>
                     <button 
@@ -969,9 +1207,9 @@ const HelpSection = ({ setCurrentView }: {
                     >
                       <i className="fa-solid fa-gear text-gray-600 dark:text-gray-300"></i>
                     </button>
-                    設定から「性交渉記録を使用する」のチェックボックスを確認
+                    設定から「SEX記録を使用する」のチェックボックスを確認
                   </li>
-                  <li>チェックを外すと、カレンダーやマイデータから性交渉関連の機能が非表示になります</li>
+                  <li>チェックを外すと、カレンダーやマイデータからSEX関連の機能が非表示になります</li>
                   <li>オフにしても既存の記録は削除されず、再度オンにすれば表示されます</li>
                 </ol>
                 <p className="text-xs text-gray-600 dark:text-gray-300 mt-2">※プライバシーを重視する方や、共有端末で使用する方におすすめの設定です</p>
@@ -2408,9 +2646,9 @@ const InitialSyncModal = ({ onSave }: {
             </label>
           </div>
           
-          {/* 性交渉記録のON/OFF */}
+          {/* SEX記録のON/OFF */}
           <div className="mt-6">
-            <h4 className="text-sm font-semibold mb-3 text-gray-900 dark:text-gray-100">性交渉記録機能</h4>
+            <h4 className="text-sm font-semibold mb-3 text-gray-900 dark:text-gray-100">SEX記録機能</h4>
             <label className="flex items-start gap-2 cursor-pointer">
               <div className="relative pt-1">
                 <input 
@@ -2422,9 +2660,9 @@ const InitialSyncModal = ({ onSave }: {
                 <i className={`${useIntercourse ? 'fa-solid fa-square-check text-xl' : 'fa-regular fa-square text-gray-400 text-xl'}`} style={useIntercourse ? {color: '#91AEBD'} : {}}></i>
               </div>
               <div>
-                <span className="text-sm text-gray-900 dark:text-gray-100">性交渉記録を使用する</span>
+                <span className="text-sm text-gray-900 dark:text-gray-100">SEX記録を使用する</span>
                 <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">
-                  オフにすると、カレンダーやマイデータから性交渉関連の機能が非表示になります。後から設定で変更できます。
+                  オフにすると、カレンダーやマイデータからSEX関連の機能が非表示になります。後から設定で変更できます。
                 </p>
               </div>
             </label>
@@ -2470,7 +2708,7 @@ const InitialSyncModal = ({ onSave }: {
               if (ageGroup && ageGroup !== '回答しない') {
                 localStorage.setItem('tukicale_age_group', ageGroup);
               }
-              // 性交渉記録の使用設定を保存
+              // SEX記録の使用設定を保存
               localStorage.setItem('tukicale_use_intercourse_record', useIntercourse.toString());
               onSave(settings);
             }}
@@ -3066,7 +3304,7 @@ const [editingIntercourse, setEditingIntercourse] = useState<IntercourseRecord |
       setSyncSettings(JSON.parse(savedSyncSettings));
     }
     
-    // 性交渉記録の使用設定を読み込み
+    // SEX記録の使用設定を読み込み
     if (typeof window !== 'undefined') {
       const savedUseIntercourse = localStorage.getItem('tukicale_use_intercourse_record');
       if (savedUseIntercourse !== null) {
