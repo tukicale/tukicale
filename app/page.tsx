@@ -785,7 +785,7 @@ const UsageGuideSection = ({ setCurrentView }: {
               <ul className="list-disc ml-4 space-y-2">
                 <li><strong>不規則な周期もOK</strong>：どんな周期でも記録できます</li>
                 <li><strong>Googleカレンダー連携</strong>：予定と一緒に管理できます</li>
-                <li><strong>完全プライベート</strong>：すべてのデータはあなたのGoogleドライブにのみ保存され、開発者や運営チームを含む第三者は一切閲覧できません。生理やSEX記録など、デリケートな情報も安心して記録できます。</li>
+                <li><strong>完全プライベート</strong>：すべてのデータはあなたのGoogleドライブにのみ保存され、開発者や運営チームを含む第三者は一切閲覧できません。生理やSEX記録など、デリケートな情報も安心して記録できます</li>
                 <li><strong>機種変更も簡単</strong>：Googleアカウントでログインするだけ</li>
                 <li><strong>複数端末対応</strong>：PCとスマホで同時に使えます</li>
                 <li><strong>完全無料</strong>：すべての機能が無料で使えます</li>
