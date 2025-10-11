@@ -520,9 +520,48 @@ const SettingsView = ({
       )}
     </div>
 
-    <AgeGroupSettings records={records} setRecords={setRecords} />
-
     <div className="border rounded-lg p-4">
+      <h3 className="font-semibold mb-2 text-gray-900 dark:text-gray-100">データ一括登録</h3>
+      <p className="text-sm text-gray-600 dark:text-gray-300 mb-1">
+        手帳やメモの記録を登録・編集・削除できます
+      </p>
+      <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+        ※1度に20件登録できます
+      </p>
+      <div className="space-y-2">
+        <button 
+          onClick={() => setShowBulkAddModal(true)}
+          className="w-full text-gray-700 dark:text-gray-900 px-4 py-2 rounded"
+          style={{backgroundColor: '#C2D2DA'}}
+          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#91AEBD'}
+          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#C2D2DA'}
+        >
+          生理記録を登録
+        </button>
+
+        <button 
+          onClick={() => setShowRecordsList(true)}
+          className="w-full border border-gray-300 dark:border-gray-600 px-4 py-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-800"
+        >
+          登録済み記録を確認
+        </button>
+      </div>
+    </div>
+
+
+    <HelpSection setCurrentView={setCurrentView} />
+       
+    <SyncSettings 
+      records={records}
+      syncSettings={syncSettings}
+      setSyncSettings={setSyncSettings}
+      getAverageCycle={getAverageCycle}
+      getFertileDays={getFertileDays}
+      getPMSDays={getPMSDays}
+      getNextPeriodDays={getNextPeriodDays}
+    />
+
+        <div className="border rounded-lg p-4">
       <button 
         onClick={() => {
           const newValue = !useIntercourseRecord;
@@ -545,47 +584,9 @@ const SettingsView = ({
       </button>
     </div>
 
-    <SyncSettings 
-      records={records}
-      syncSettings={syncSettings}
-      setSyncSettings={setSyncSettings}
-      getAverageCycle={getAverageCycle}
-      getFertileDays={getFertileDays}
-      getPMSDays={getPMSDays}
-      getNextPeriodDays={getNextPeriodDays}
-    />
+    <AgeGroupSettings records={records} setRecords={setRecords} />
     
-    <HelpSection setCurrentView={setCurrentView} />
-
-    <div className="border rounded-lg p-4">
-      <h3 className="font-semibold mb-2 text-gray-900 dark:text-gray-100">データ一括登録</h3>
-      <p className="text-sm text-gray-600 dark:text-gray-300 mb-1">
-        手帳やメモの記録を登録・編集・削除できます
-      </p>
-      <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
-        ※1度に20件登録できます
-      </p>
-      <div className="space-y-2">
-<button 
-          onClick={() => setShowBulkAddModal(true)}
-          className="w-full text-gray-700 dark:text-gray-900 px-4 py-2 rounded"
-          style={{backgroundColor: '#C2D2DA'}}
-          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#91AEBD'}
-          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#C2D2DA'}
-        >
-          過去の生理記録を登録
-        </button>
-
-        <button 
-          onClick={() => setShowRecordsList(true)}
-          className="w-full border border-gray-300 dark:border-gray-600 px-4 py-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-800"
-        >
-          登録済み記録を確認
-        </button>
-      </div>
-    </div>
-
-    <div className="border rounded-lg p-4">
+      <div className="border rounded-lg p-4">
       <h3 className="font-semibold mb-2 text-gray-900 dark:text-gray-100">データ管理</h3>
       <div className="space-y-2">
 <button 
