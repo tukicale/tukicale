@@ -2263,19 +2263,31 @@ const InitialSyncModal = ({ onSave }: {
   const [ageGroup, setAgeGroup] = useState<string>('');
   const [showIntercourseInfo, setShowIntercourseInfo] = useState(false);
   const [useIntercourse, setUseIntercourse] = useState(false);
+  const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false);
+  const scrollContainerRef = React.useRef<HTMLDivElement>(null);
+
+  const handleScroll = () => {
+    if (scrollContainerRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = scrollContainerRef.current;
+      // 下から10px以内までスクロールしたら有効化
+      if (scrollTop + clientHeight >= scrollHeight - 10) {
+        setHasScrolledToBottom(true);
+      }
+    }
+  };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4" style={{zIndex: 10004}}>
       <div className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full flex flex-col" style={{maxHeight: '90vh'}}>
         <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-          <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-gray-100">初期設定</h3>
-          <p className="text-sm text-gray-600 dark:text-gray-300">
-            より良い体験のために、いくつか教えてください。<br/>
-            後から設定ページでも変更できます。
-          </p>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">初期設定</h3>
         </div>
         
-        <div className="flex-1 overflow-y-auto px-6 py-4">
+        <div 
+          ref={scrollContainerRef}
+          onScroll={handleScroll}
+          className="flex-1 overflow-y-auto px-6 py-4"
+        >
           {/* 同期設定 */}
           <h4 className="text-sm font-semibold mb-3 text-gray-900 dark:text-gray-100">Googleカレンダー同期</h4>
           <div className="space-y-3">
@@ -2363,7 +2375,7 @@ const InitialSyncModal = ({ onSave }: {
           </div>
           
           {/* 性交渉記録のON/OFF */}
-          <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+          <div className="mt-6">
             <h4 className="text-sm font-semibold mb-3 text-gray-900 dark:text-gray-100">性交渉記録機能</h4>
             <label className="flex items-start gap-2 cursor-pointer">
               <div className="relative pt-1">
@@ -2385,7 +2397,7 @@ const InitialSyncModal = ({ onSave }: {
           </div>
           
           {/* 年齢層選択 */}
-          <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+          <div className="mt-6">
             <h4 className="text-sm font-semibold mb-3 text-gray-900 dark:text-gray-100">年齢層（任意）</h4>
             <p className="text-xs text-gray-600 dark:text-gray-300 mb-3">
               あなたに合った情報をお届けするために教えてください
@@ -2412,7 +2424,13 @@ const InitialSyncModal = ({ onSave }: {
         </div>
 
         <div className="p-6 border-t border-gray-200 dark:border-gray-700">
+          {!hasScrolledToBottom && (
+            <p className="text-xs text-center text-gray-500 dark:text-gray-400 mb-2">
+              ↓ 最後までスクロールしてください
+            </p>
+          )}
           <button 
+            disabled={!hasScrolledToBottom}
             onClick={() => {
               // 年齢層をlocalStorageに保存
               if (ageGroup && ageGroup !== '回答しない') {
@@ -2422,10 +2440,10 @@ const InitialSyncModal = ({ onSave }: {
               localStorage.setItem('tukicale_use_intercourse_record', useIntercourse.toString());
               onSave(settings);
             }}
-            className="w-full text-gray-700 dark:text-gray-900 px-4 py-3 rounded-lg font-medium"
+            className="w-full text-gray-700 dark:text-gray-900 px-4 py-3 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             style={{backgroundColor: '#C2D2DA'}}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#91AEBD'}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#C2D2DA'}
+            onMouseEnter={(e) => !hasScrolledToBottom ? null : e.currentTarget.style.backgroundColor = '#91AEBD'}
+            onMouseLeave={(e) => !hasScrolledToBottom ? null : e.currentTarget.style.backgroundColor = '#C2D2DA'}
           >
             設定を保存して始める
           </button>
