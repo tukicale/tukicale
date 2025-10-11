@@ -506,15 +506,15 @@ const SettingsView = ({
       </p>
       {isGoogleAuthed && (
         <div className="space-y-2">
-<button 
-          onClick={handleLogout}
-          className="w-full text-gray-700 dark:text-gray-900 px-4 py-2 rounded"
-          style={{backgroundColor: '#E3D0DA'}}
-          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#CBA9BA'}
-          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#E3D0DA'}
-        >
-          ログアウト
-        </button>
+<a href="https://calendar.google.com" target="_blank" rel="noopener noreferrer" className="w-full block text-center text-gray-700 dark:text-gray-900 px-4 py-2 rounded" style={{backgroundColor: '#C2D2DA'}}>
+      Googleカレンダーで確認
+    </a>
+    <p className="text-xs text-gray-600 dark:text-gray-300 p-2 bg-yellow-50 dark:bg-yellow-900/20 rounded">
+      ⚠️ 表示専用です。編集はアプリ内で行ってください
+    </p>
+    <button onClick={handleLogout} className="w-full text-gray-700 dark:text-gray-900 px-4 py-2 rounded" style={{backgroundColor: '#E3D0DA'}} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#CBA9BA'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#E3D0DA'}>
+      ログアウト
+    </button>
         </div>
       )}
     </div>
