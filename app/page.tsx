@@ -800,6 +800,11 @@ const UsageGuideSection = ({ setCurrentView }: {
             <span>{expandedSection === 'install' ? '−' : '+'}</span>
           </button>
           {expandedSection === 'install' && (
+            <>
+            <div className="mt-2 mb-3 p-3 bg-blue-50 dark:bg-gray-700 rounded border-l-4 border-blue-400">
+              <p className="text-xs font-semibold mb-1">📱 アプリのように使える！</p>
+              <p className="text-xs">ホーム画面に追加すると、ブラウザのアドレスバーやボタンが非表示になり、アプリのように使えます。</p>
+            </div>
             <div className="mt-2 p-3 bg-gray-50 dark:bg-gray-800 rounded text-sm text-gray-700 dark:text-gray-300">
               <p className="mb-2"><strong>PCでのインストール：</strong></p>
               <ol className="list-decimal ml-4 space-y-1 mb-3">
@@ -821,7 +826,11 @@ const UsageGuideSection = ({ setCurrentView }: {
                 <li>メニューから「ホーム画面に追加」を選択</li>
                 <li>「インストール」をタップ</li>
               </ol>
+              <p className="text-xs text-gray-600 dark:text-gray-400 mt-2 ml-4">
+                ※自動的にアプリとして開きます
+              </p>
             </div>
+            </>
           )}
         </div>
 
