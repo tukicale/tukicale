@@ -2446,7 +2446,8 @@ const InitialSyncModal = ({ onSave }: {
     if (scrollContainerRef.current) {
       const { scrollTop, scrollHeight, clientHeight } = scrollContainerRef.current;
       // 下から10px以内までスクロールしたら有効化
-      if (scrollTop + clientHeight >= scrollHeight - 10) {
+      // または、コンテンツが短くてスクロール不要な場合も有効化
+      if (scrollTop + clientHeight >= scrollHeight - 10 || scrollHeight <= clientHeight) {
         setHasScrolledToBottom(true);
       }
     }

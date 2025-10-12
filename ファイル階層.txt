@@ -13,7 +13,7 @@ TUKICALE/
 │   │   │   ├── Ad30s.tsx         # 30代向け広告
 │   │   │   ├── Ad40s.tsx         # 40代向け広告
 │   │   │   ├── Ad50s.tsx         # 50代向け広告
-│   │   │   ├── Ad50sPlus.tsx     # 50代以上向け広告
+│   │   │   ├── Ad50sPlus.tsx     # 60代以上向け広告
 │   │   │   ├── AdBase.tsx        # 広告ベースコンポーネント
 │   │   │   ├── AdDefault.tsx     # デフォルト広告
 │   │   │   ├── AgeBasedAdCard.tsx # 年齢別広告カード

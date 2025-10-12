@@ -16,6 +16,16 @@ export const AgeBasedAdCard = () => {
   useEffect(() => {
     setIsMounted(true);
     setAgeGroup(localStorage.getItem('tukicale_age_group'));
+    
+    // 初回レンダリング後にスクロール位置をチェック
+    setTimeout(() => {
+      if (scrollContainerRef.current) {
+        const { scrollTop, scrollHeight, clientHeight } = scrollContainerRef.current;
+        if (scrollTop + clientHeight >= scrollHeight - 10 || scrollHeight <= clientHeight) {
+          setHasScrolledToBottom(true);
+        }
+      }
+    }, 100);
   }, []);
 
   if (!isMounted) {
