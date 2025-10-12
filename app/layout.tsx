@@ -72,10 +72,7 @@ export default function RootLayout({
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
-      gtag('config', 'G-RDTZTQYYW8', {
-      'debug_mode': false,
-      'send_page_view': window.location.hostname !== 'localhost'
-      });
+      gtag('config', 'G-RDTZTQYYW8');
     `
   }} />
   <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
