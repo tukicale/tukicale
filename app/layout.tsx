@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "TukiCale(月カレ)",
-  description: "不規則な周期もOK、完全プライベートな生理管理アプリ",
+  description: "完全プライベート・無料の生理管理アプリ。不規則な周期もOK",
   manifest: "/manifest.v2.json",
   metadataBase: new URL('https://tukicale.sukissco.com'),
   openGraph: {
@@ -22,8 +22,8 @@ export const metadata: Metadata = {
     locale: 'ja_JP',
     url: 'https://tukicale.sukissco.com/',
     siteName: 'TukiCale',
-    title: 'TukiCale(月カレ) - 不規則な生理周期も管理できる完全無料アプリ',
-    description: '生理不順でも安心して使える生理管理アプリ。Googleカレンダー連携で予定と一緒に管理。完全プライベート・無料。',
+    title: 'TukiCale(月カレ) - 完全プライベート・無料の生理管理アプリ',
+    description: '完全プライベート・無料で使える生理管理アプリ。Googleカレンダー連携で予定と一緒に管理。不規則な周期もOK。',
     images: [
       {
         url: '/og-image.png',
@@ -35,8 +35,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'TukiCale(月カレ) - 不規則な生理周期も管理できる完全無料アプリ',
-    description: '生理不順でも安心して使える生理管理アプリ。Googleカレンダー連携で予定と一緒に管理。完全プライベート・無料。',
+    title: 'TukiCale(月カレ) - 完全プライベート・無料の生理管理アプリ',
+    description: '完全プライベート・無料で使える生理管理アプリ。Googleカレンダー連携で予定と一緒に管理。不規則な周期もOK。',
     images: ['/og-image.png'],
   },
   robots: {
