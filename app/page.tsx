@@ -1134,18 +1134,24 @@ const HelpSection = ({ setCurrentView }: {
         </div>
 
           <div className="border-b pb-2">
-            <button onClick={() => toggleSection('irregular')} className="w-full text-left flex items-center justify-between py-2 hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-800 rounded px-2">
-              <span className="text-sm font-medium">不規則な周期でも使えますか？</span>
-              <span>{expandedSection === 'irregular' ? '−' : '+'}</span>
-            </button>
-            {expandedSection === 'irregular' && (
-              <div className="mt-2 p-3 bg-gray-50 dark:bg-gray-800 rounded text-sm text-gray-700 dark:text-gray-300">
-                <p className="mb-2"><strong>はい、使えます！</strong></p>
-                <p className="mb-2">このアプリは、生理不順の運営者自身が機種変更時にデータ移行できず、人気アプリでは「周期が不規則すぎる」と数年分のデータを保存できなかった経験から生まれました。</p>
-                <p className="mb-2">同じ悩みを持つ方でも安心して使えるよう、不規則な周期にも対応する設計になっています。</p>                <p>予測は過去のデータの平均から計算されるため、記録が2回以上あれば表示されます。データが増えると平均値がより安定します。</p>
+          <button onClick={() => toggleSection('irregular')} className="w-full text-left flex items-center justify-between py-2 hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-800 rounded px-2">
+            <span className="text-sm font-medium">不規則な周期でも使えますか？</span>
+            <span>{expandedSection === 'irregular' ? '−' : '+'}</span>
+          </button>
+          {expandedSection === 'irregular' && (
+            <div className="mt-2 p-3 bg-gray-50 dark:bg-gray-800 rounded text-sm text-gray-700 dark:text-gray-300">
+              <p className="mb-2"><strong>はい、使えます！</strong></p>
+              <p className="mb-2">このアプリは、生理不順の運営者自身が機種変更時にデータ移行できず、人気アプリでは「周期が不規則すぎる」と数年分のデータを保存できなかった経験から生まれました。</p>
+              <p className="mb-2">同じ悩みを持つ方でも安心して使えるよう、不規則な周期にも対応する設計になっています。</p>
+              <p className="mb-2">予測は過去のデータの平均から計算されるため、記録が2回以上あれば表示されます。データが増えると平均値がより安定します。</p>
+              
+              <div className="mt-3 p-2 bg-yellow-50 dark:bg-gray-700 rounded text-xs border-l-4 border-yellow-400">
+                <p className="font-semibold mb-1">📌 初めて使う時のポイント</p>
+                <p>最初に過去2〜3ヶ月分のデータを「データ一括登録」で追加すると、すぐに予測機能が使えるようになります。記録が増えるほど、予測の精度も上がります。</p>
               </div>
-            )}
-          </div>
+            </div>
+          )}
+        </div>
 
           <div className="border-b pb-2">
             <button onClick={() => toggleSection('sexrecord')} className="w-full text-left flex items-center justify-between py-2 hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-800 rounded px-2">
