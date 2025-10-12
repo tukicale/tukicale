@@ -1,37 +1,52 @@
 TUKICALE/
-├── .next/                        # Next.jsビルド出力
-├── .vscode/                      # VSCode設定
+├── .next/
+├── .vscode/
 │   └── settings.json
-├── app/                          # アプリケーション本体
+├── app/
 │   ├── api/
 │   │   └── auth/
-│   │       └── route.ts          # Google OAuth認証
-│   ├── components/               # コンポーネント
-│   │   ├── ads/                  # 広告コンポーネント
-│   │   │   ├── Ad10s.tsx         # 10代向け広告
-│   │   │   ├── Ad20s.tsx         # 20代向け広告
-│   │   │   ├── Ad30s.tsx         # 30代向け広告
-│   │   │   ├── Ad40s.tsx         # 40代向け広告
-│   │   │   ├── Ad50s.tsx         # 50代向け広告
-│   │   │   ├── Ad50sPlus.tsx     # 60代以上向け広告
-│   │   │   ├── AdBase.tsx        # 広告ベースコンポーネント
-│   │   │   ├── AdDefault.tsx     # デフォルト広告
-│   │   │   ├── AgeBasedAdCard.tsx # 年齢別広告カード
-│   │   │   ├── BannerAd.tsx      # バナー広告
-│   │   │   └── index.tsx         # 広告エクスポート
-│   │   ├── ads.tsx               # 広告統合コンポーネント
-│   │   └── TikTokCard.tsx        # TikTokコミュニティカード
-│   ├── favicon.ico               # ファビコン
-│   ├── globals.css               # グローバルスタイル
-│   ├── layout.tsx                # ルートレイアウト
-│   └── page.tsx                  # メインページ (2065行)
-├── node_modules/                 # 依存パッケージ
-├── public/                       # 静的ファイル
-├── .env.local                    # 環境変数
-├── .gitignore                    # Git除外設定
-├── eslint.config.mjs             # ESLint設定
-├── next-env.d.ts                 # Next.js型定義
-├── next.config.ts                # Next.js設定
-├── package-lock.json             # パッケージロック
-├── package.json                  # パッケージ定義
-└── tsconfig.json                 # TypeScript設定
+│   │       └── route.ts
+│   ├── components/
+│   │   ├── ads/
+│   │   │   ├── Ad10s.tsx
+│   │   │   ├── Ad20s.tsx
+│   │   │   ├── Ad30s.tsx
+│   │   │   ├── Ad40s.tsx
+│   │   │   ├── Ad50s.tsx
+│   │   │   ├── Ad50sPlus.tsx
+│   │   │   ├── AdBase.tsx
+│   │   │   ├── AdDefault.tsx
+│   │   │   ├── AgeBasedAdCard.tsx
+│   │   │   ├── BannerAd.tsx
+│   │   │   └── index.tsx
+│   │   ├── ads.tsx
+│   │   └── TikTokCard.tsx
+│   ├── favicon.ico
+│   ├── globals.css
+│   ├── layout.tsx
+│   ├── page.tsx
+│   └── sitemap.ts
+├── node_modules/
+├── public/
+│   ├── apple-touch-icon.png
+│   ├── file.svg
+│   ├── globe.svg
+│   ├── icon-192.png
+│   ├── icon-512.png
+│   ├── manifest.v2.json
+│   ├── next.svg
+│   ├── og-image.png
+│   ├── robots.txt
+│   ├── sw.js
+│   ├── vercel.svg
+│   └── window.svg
+├── .env.local
+├── .gitignore
+├── eslint.config.mjs
+├── next-env.d.ts
+├── next.config.ts
+├── package-lock.json
+├── package.json
+├── postcss.config.mjs
+├── README.md
+└── tsconfig.json
