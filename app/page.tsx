@@ -2445,15 +2445,65 @@ const InitialSyncModal = ({ onSave }: {
   const handleScroll = () => {
     if (scrollContainerRef.current) {
       const { scrollTop, scrollHeight, clientHeight } = scrollContainerRef.current;
-      // 下から10px以内までスクロールしたら有効化
-      // または、コンテンツが短くてスクロール不要な場合も有効化
-      if (scrollTop + clientHeight >= scrollHeight - 10 || scrollHeight <= clientHeight) {
+      
+      // スクロール不要な場合（コンテンツが短い）
+      if (scrollHeight <= clientHeight) {
+        console.log('✅ No scroll needed - enabling button');
+        setHasScrolledToBottom(true);
+        return;
+      }
+      
+      // スクロール可能な場合は下までスクロールしたかチェック
+      const remaining = scrollHeight - (scrollTop + clientHeight);
+      console.log('🔍 Scroll Debug:', {
+        scrollTop: Math.round(scrollTop),
+        scrollHeight,
+        clientHeight,
+        remaining: Math.round(remaining),
+        shouldEnable: remaining <= 10
+      });
+      
+      if (remaining <= 10) {
+        console.log('✅ Scrolled to bottom - Button enabled!');
         setHasScrolledToBottom(true);
       }
     }
   };
 
-  return (
+  React.useEffect(() => {
+    // マウント時とリサイズ時にチェック
+    const checkScroll = () => {
+      console.log('🔎 Initial check...');
+      if (scrollContainerRef.current) {
+        const { scrollHeight, clientHeight } = scrollContainerRef.current;
+        console.log('📏 Height check:', { scrollHeight, clientHeight, needsScroll: scrollHeight > clientHeight });
+        
+        // スクロール不要な場合は即座に有効化
+        if (scrollHeight <= clientHeight) {
+          console.log('✅ No scroll needed - Button enabled immediately!');
+          setHasScrolledToBottom(true);
+          return;
+        }
+      }
+      handleScroll();
+    };
+
+    // 複数のタイミングでチェック（レンダリング完了を確実に待つ）
+    const timer1 = setTimeout(checkScroll, 50);
+    const timer2 = setTimeout(checkScroll, 200);
+    const timer3 = setTimeout(checkScroll, 500);
+    
+    window.addEventListener('resize', checkScroll);
+
+    return () => {
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+      clearTimeout(timer3);
+      window.removeEventListener('resize', checkScroll);
+    };
+  }, []);
+
+return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4" style={{zIndex: 10004}}>
       <div className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full flex flex-col" style={{maxHeight: '90vh'}}>
         <div className="p-6 border-b border-gray-200 dark:border-gray-700">
