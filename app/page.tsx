@@ -1103,21 +1103,35 @@ const HelpSection = ({ setCurrentView }: {
           </div>
 
           <div className="border-b pb-2">
-            <button onClick={() => toggleSection('prediction')} className="w-full text-left flex items-center justify-between py-2 hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-800 rounded px-2">
-              <span className="text-sm font-medium">予測はどう計算されていますか？</span>
-              <span>{expandedSection === 'prediction' ? '−' : '+'}</span>
-            </button>
-            {expandedSection === 'prediction' && (
-              <div className="mt-2 p-3 bg-gray-50 dark:bg-gray-800 rounded text-sm text-gray-700 dark:text-gray-300">
-                <p className="mb-2"><strong>妊娠可能日：</strong></p>
-                <p className="mb-2">過去の生理周期から平均を計算し、排卵日（生理開始の約14日前）の前後3日間を表示</p>
-                <p className="mb-2"><strong>PMS予測：</strong></p>
-                <p className="mb-2">次回生理予定日の3〜10日前を表示</p>
-                <p className="mb-2"><strong>次回生理予定：</strong></p>
-                <p>過去の平均周期から計算（不規則な場合は目安です）</p>
+          <button onClick={() => toggleSection('prediction')} className="w-full text-left flex items-center justify-between py-2 hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-800 rounded px-2">
+            <span className="text-sm font-medium">予測はどう計算されていますか？</span>
+            <span>{expandedSection === 'prediction' ? '−' : '+'}</span>
+          </button>
+          {expandedSection === 'prediction' && (
+            <div className="mt-2 p-3 bg-gray-50 dark:bg-gray-800 rounded text-sm text-gray-700 dark:text-gray-300">
+              <div className="mb-3 p-2 bg-blue-50 dark:bg-gray-700 rounded border-l-4 border-blue-400">
+                <p className="text-xs font-semibold mb-1">⚠️ 予測が表示される条件</p>
+                <ul className="text-xs space-y-1">
+                  <li>• 生理記録が2件以上必要</li>
+                  <li>• 最新の生理終了日より後の日付のみ表示</li>
+                  <li>• 生理中の期間には予測は表示されません</li>
+                </ul>
               </div>
-            )}
-          </div>
+              
+              <p className="mb-2"><strong>妊娠可能日：</strong></p>
+              <p className="mb-2">過去の生理周期から平均を計算し、排卵日（生理開始の約14日前）の前後3日間を表示</p>
+              <p className="mb-2"><strong>PMS予測：</strong></p>
+              <p className="mb-2">次回生理予定日の3〜10日前を表示</p>
+              <p className="mb-2"><strong>次回生理予定：</strong></p>
+              <p className="mb-2">過去の平均周期から計算（不規則な場合は目安です）</p>
+              
+              <div className="mt-3 p-2 bg-gray-100 dark:bg-gray-700 rounded text-xs">
+                <p className="font-semibold mb-1">💡 使い始めのヒント</p>
+                <p>まずは過去2〜3ヶ月分の生理記録を「データ一括登録」で追加すると、より正確な予測が表示されます。</p>
+              </div>
+            </div>
+          )}
+        </div>
 
           <div className="border-b pb-2">
             <button onClick={() => toggleSection('irregular')} className="w-full text-left flex items-center justify-between py-2 hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-800 rounded px-2">
