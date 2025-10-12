@@ -66,6 +66,16 @@ export default function RootLayout({
     <html lang="ja">
 <head>
   <meta name="google-site-verification" content="zUjP5mf9_dXQR9Hgb6qZgXm1Nf1PdQvTUGup-JeyTOg" />
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-RDTZTQYYW8"></script>
+  <script dangerouslySetInnerHTML={{
+    __html: `
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-RDTZTQYYW8');
+    `
+  }} />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
   <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png" />
