@@ -1,3 +1,5 @@
+import Link from 'next/link';
+
 export default function TermsPage() {
   return (
     <div className="max-w-4xl mx-auto p-6 bg-white dark:bg-gray-900 min-h-screen">
@@ -54,7 +56,7 @@ export default function TermsPage() {
       </div>
 
       <div className="mt-8">
-        <a href="/" className="text-blue-600 hover:underline">← トップページに戻る</a>
+        <Link href="/" className="text-blue-600 hover:underline">← トップページに戻る</Link>
       </div>
     </div>
   );
